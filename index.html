@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Infinity Tec · Seguridad Hospitalaria Inteligente</title>
+<meta name="description" content="Simulador del Sistema Inteligente de Seguridad Hospitalaria de Infinity Tec, con conexión Bluetooth al Arduino y alerta manual.">
+<meta name="theme-color" content="#05060c">
+<link rel="icon" href="icono.png">
+<style>
+:root{
+  --bg:#05060c; --panel:#0c0f1c; --panel2:#121629; --line:#1f2542; --txt:#eef1ff; --mut:#8d94b8;
+  --mor:#9b4dff; --verde:#2ef2a0; --cian:#33d6f0; --rojo:#ff3d5a; --ambar:#ffbf3d;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:radial-gradient(900px 500px at 10% -10%,#1d0f3a55,transparent),radial-gradient(800px 500px at 100% 0,#0b3a2c44,transparent),var(--bg)}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+.wrap{max-width:1280px;margin:0 auto;padding:14px 16px 40px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:4px 0 14px}
+header img{width:58px;height:58px;border-radius:14px;border:1px solid #2a2f55}
+h1{margin:0;font-size:21px;letter-spacing:.08em;font-weight:800;background:linear-gradient(90deg,#fff,#cfd5ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+h1 span{background:linear-gradient(90deg,var(--mor),var(--verde));-webkit-background-clip:text;background-clip:text}
+.sub{color:var(--mut);font-size:13px}
+.conn{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;border:1px solid var(--line);padding:7px 12px;border-radius:999px;background:var(--panel)}
+.conn i{width:9px;height:9px;border-radius:50%;background:#555}
+.conn.sim i{background:var(--cian)} .conn.ok i{background:var(--verde);box-shadow:0 0 8px var(--verde)} .conn.err i{background:var(--rojo);box-shadow:0 0 8px var(--rojo)}
+.tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.tab{background:var(--panel);border:1px solid var(--line);padding:8px 14px;border-radius:10px;color:var(--mut)}
+.tab[aria-selected=true]{background:var(--panel2);color:var(--txt);border-color:#3a3f7a}
+.grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.card h2{font-size:12.5px;margin:0 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.12em;font-weight:600;display:flex;align-items:center;gap:8px}
+.card h2 .der{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500}
+svg{display:block;width:100%;height:auto}
+.plano{border-radius:12px;background:#080b16}
+.persona{transition:transform .85s cubic-bezier(.45,.05,.3,1)}
+.zonaR{transition:fill .3s}
+@keyframes parpadeo{50%{opacity:.25}}
+.alarmando{animation:parpadeo .5s steps(1) infinite}
+
+.bench{display:grid;grid-template-columns:auto auto 1fr;gap:12px;align-items:center;margin-top:12px;background:#080b16;border:1px dashed #2a3060;border-radius:12px;padding:10px 12px}
+@media (max-width:640px){.bench{grid-template-columns:1fr 1fr}}
+.chip{background:#0b5a63;border:2px solid #0e7480;border-radius:6px;padding:6px 8px;font:600 11px var(--mono);color:#d4f5f8}
+.chip.bt{background:#1d2c6b;border-color:#3349a8}
+.chip small{display:block;font-weight:400;opacity:.8}
+.leds{display:flex;gap:14px;justify-content:flex-end;flex-wrap:wrap}
+.led{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut)}
+.led i{width:12px;height:12px;border-radius:50%;background:#262a3d;box-shadow:inset 0 -2px 3px #0008}
+.led.on.v i{background:var(--verde);box-shadow:0 0 10px var(--verde)}
+.led.on.r i{background:var(--rojo);box-shadow:0 0 12px var(--rojo)}
+.led.on.b i{background:var(--ambar);box-shadow:0 0 10px var(--ambar)}
+
+.btn{background:var(--panel2);border:1px solid #2b3163;border-radius:11px;padding:9px 13px;transition:transform .12s,background .15s}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.38;cursor:not-allowed}
+.btn.mor{background:#24124a;border-color:#5b2fb0;color:#e6d9ff}
+.btn.ver{background:#0d3328;border-color:#1f7a5c;color:#c8ffe9}
+.btn.amb{background:#3a2a0a;border-color:#7a5a1c;color:#ffe4ad}
+.btn[aria-pressed=true]{outline:2px solid var(--ambar);outline-offset:1px}
+@media (hover:hover){.btn:hover:not([disabled]){filter:brightness(1.25)}}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ctrls .t{width:100%;font-size:11.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+
+.poder{display:flex;align-items:center;gap:14px}
+.switch{position:relative;width:86px;height:44px;border-radius:999px;border:1px solid #2b3163;background:#1a1d33;flex:none;transition:background .2s}
+.switch::after{content:"";position:absolute;top:4px;left:4px;width:34px;height:34px;border-radius:50%;background:#7a809f;transition:transform .25s cubic-bezier(.3,.7,.3,1),background .2s}
+.switch[aria-checked=true]{background:#0f3d2f;border-color:#1f7a5c}
+.switch[aria-checked=true]::after{transform:translateX(42px);background:var(--verde);box-shadow:0 0 12px var(--verde)}
+.poder b{font-size:20px;display:block}
+.poder small{color:var(--mut)}
+
+.panico{width:100%;margin-top:12px;padding:18px 12px;border-radius:16px;border:2px solid #ff6b81;background:linear-gradient(180deg,#d4143a,#9a0c28);color:#fff;font-weight:800;font-size:19px;letter-spacing:.06em;box-shadow:0 8px 30px #ff2a5040}
+.panico small{display:block;font-weight:500;font-size:12.5px;letter-spacing:0;opacity:.9;margin-top:2px}
+.panico:active{transform:scale(.98)}
+.estados{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kpi .l{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.kpi .v{font:700 17px/1.25 var(--mono);margin-top:4px}
+.ok{color:var(--verde)} .mal{color:var(--rojo)} .aviso{color:var(--ambar)} .neutro{color:var(--cian)}
+.banner{display:none;margin-top:12px;border:1px solid #7a5a1c;background:#2a1f08;color:#ffe4ad;border-radius:12px;padding:10px 12px;font-size:14px}
+.banner.ver{display:block}
+.log{font:12px/1.5 var(--mono);color:var(--mut);max-height:190px;overflow:auto;margin:0;padding:0;list-style:none}
+.log li{padding:3px 0;border-bottom:1px solid #161a33}
+.log b{color:var(--txt);font-weight:500}
+.log .r{color:#ff8a9c}
+
+/* alarma a pantalla completa */
+#alarma{position:fixed;inset:0;z-index:50;display:none;place-items:center;background:#3a0010e6;padding:20px}
+#alarma.on{display:grid}
+#alarma .box{max-width:460px;width:100%;text-align:center;border:2px solid var(--rojo);border-radius:20px;padding:24px 20px;background:#14040b;box-shadow:0 0 60px #ff2a5066}
+#alarma h3{margin:6px 0 4px;font-size:28px;letter-spacing:.08em;color:#fff}
+#alarma p{margin:0 0 18px;color:#ffc2cc}
+#alarma .sir{font-size:52px}
+#alarma.on .sir{animation:parpadeo .5s steps(1) infinite}
+#alarma .btn{width:100%;padding:14px;font-size:17px;margin-top:8px}
+
+.vista[hidden]{display:none!important}
+.txt p,.txt li{color:#c8cdea;max-width:75ch}
+.txt h3{margin:18px 0 6px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+td,th{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:500}
+code{font-family:var(--mono);color:#cfe0ff}
+pre.codigo{background:#03040a;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;max-height:520px;font:12.5px/1.5 var(--mono);color:#cfe0ff}
+.nota{font-size:13px;color:var(--mut)}
+.soporte{border-radius:10px;padding:10px 12px;font-size:13.5px;margin:10px 0;border:1px solid var(--line)}
+.soporte.bien{border-color:#1f7a5c;background:#0b2a21;color:#c8ffe9}
+.soporte.malo{border-color:#7a2b3a;background:#2a0b12;color:#ffd0d8}
+.logoGrande{display:block;max-width:420px;width:100%;margin:0 auto 10px;border-radius:16px}
+footer{margin-top:24px;color:var(--mut);font-size:12px;text-align:center}
+@media (prefers-reduced-motion:reduce){.persona{transition:none}.alarmando,#alarma.on .sir{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <img src="icono.png" alt="Logo de Infinity Tec">
+  <div>
+    <h1>INFINITY <span>TEC</span></h1>
+    <div class="sub">Sistema Inteligente de Seguridad Hospitalaria</div>
+  </div>
+  <div class="conn sim" id="conn"><i></i><span id="connTxt">Simulación</span></div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" aria-selected="true" data-vista="sim">Simulador</button>
+  <button class="tab" role="tab" aria-selected="false" data-vista="bt">Conectar Arduino (Bluetooth)</button>
+  <button class="tab" role="tab" aria-selected="false" data-vista="como">Cómo funciona</button>
+</nav>
+
+<section class="vista" id="v-sim">
+<div class="grid">
+  <div class="card">
+    <h2>Plano del hospital <span class="der nota" id="hora"></span></h2>
+    <svg class="plano" viewBox="0 0 700 420" role="img" aria-label="Plano del hospital con zonas restringidas">
+      <defs>
+        <pattern id="rayas" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="transparent"/><path d="M0 0v10" stroke="#9b4dff" stroke-width="2" opacity=".25"/></pattern>
+      </defs>
+      <!-- pisos -->
+      <rect x="20" y="20" width="660" height="380" fill="#10142a"/>
+      <rect x="20" y="170" width="660" height="50" fill="#141936"/>
+      <!-- zonas restringidas -->
+      <rect id="zF" class="zonaR" x="380" y="20" width="300" height="150" fill="#2a1450"/>
+      <rect x="380" y="20" width="300" height="150" fill="url(#rayas)"/>
+      <rect id="zQ" class="zonaR" x="400" y="220" width="280" height="180" fill="#2a1450"/>
+      <rect x="400" y="220" width="280" height="180" fill="url(#rayas)"/>
+      <!-- muebles -->
+      <g fill="#2a3060">
+        <rect x="40" y="40" width="70" height="40" rx="6"/><rect x="120" y="40" width="70" height="40" rx="6"/>
+        <rect x="220" y="40" width="70" height="40" rx="6"/><rect x="300" y="40" width="70" height="40" rx="6"/>
+        <rect x="60" y="250" width="120" height="26" rx="4"/>
+        <rect x="280" y="250" width="100" height="14" rx="4"/><rect x="280" y="300" width="100" height="14" rx="4"/><rect x="280" y="350" width="100" height="14" rx="4"/>
+        <rect x="400" y="34" width="14" height="120"/><rect x="460" y="34" width="14" height="80"/><rect x="520" y="34" width="14" height="80"/><rect x="580" y="34" width="14" height="80"/><rect x="640" y="34" width="14" height="80"/>
+        <rect x="500" y="275" width="90" height="44" rx="8" fill="#3a4180"/><circle cx="545" cy="262" r="16" fill="#3a4180"/>
+      </g>
+      <!-- camas: cruz -->
+      <g fill="#c8cdea" opacity=".5"><path d="M72 52h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/><path d="M252 52h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/></g>
+      <!-- paredes (con huecos de puertas) -->
+      <g stroke="#cfd5ff" stroke-width="5" stroke-linecap="square" fill="none" opacity=".9">
+        <path d="M20 20H680V400H20V340 M20 280V20"/>
+        <path d="M200 20V170 M380 20V170"/>
+        <path d="M20 170H80 M130 170H260 M310 170H440 M490 170H680"/>
+        <path d="M20 220H120 M170 220H300 M350 220H460 M510 220H680"/>
+        <path d="M260 220V400 M400 220V400"/>
+      </g>
+      <!-- puertas restringidas (se ponen rojas con alerta) -->
+      <line id="pF" x1="440" y1="170" x2="490" y2="170" stroke="#9b4dff" stroke-width="5" stroke-dasharray="6 5"/>
+      <line id="pQ" x1="460" y1="220" x2="510" y2="220" stroke="#9b4dff" stroke-width="5" stroke-dasharray="6 5"/>
+      <!-- textos -->
+      <g fill="#cfd5ff" font-size="12" font-weight="600" text-anchor="middle">
+        <text x="110" y="150">Habitación 101</text>
+        <text x="290" y="150">Habitación 102</text>
+        <text x="530" y="140">FARMACIA</text>
+        <text x="140" y="390">Recepción</text>
+        <text x="330" y="390">Sala de espera</text>
+        <text x="540" y="380">QUIRÓFANO</text>
+        <text x="350" y="200" fill="#8d94b8" font-weight="400">Pasillo</text>
+      </g>
+      <g fill="#c49bff" font-size="9.5" text-anchor="middle" letter-spacing="1">
+        <text x="530" y="156">ZONA RESTRINGIDA</text><text x="540" y="394">ZONA RESTRINGIDA</text>
+      </g>
+      <text x="6" y="312" fill="#8d94b8" font-size="10" text-anchor="middle" transform="rotate(-90 8 312)">ENTRADA</text>
+      <!-- sensores PIR con cono -->
+      <path id="conoF" d="M668 30 L470 165 L668 165 Z" fill="#2ef2a0" opacity="0" style="transition:opacity .2s"/>
+      <path id="conoQ" d="M668 390 L430 228 L668 228 Z" fill="#2ef2a0" opacity="0" style="transition:opacity .2s"/>
+      <g id="pir1"><circle cx="668" cy="30" r="8" fill="#eef1ff"/><circle id="pir1led" cx="668" cy="30" r="3" fill="#444"/><text x="652" y="34" fill="#eef1ff" font-size="9.5" text-anchor="end">PIR 1</text></g>
+      <g id="pir2"><circle cx="668" cy="390" r="8" fill="#eef1ff"/><circle id="pir2led" cx="668" cy="390" r="3" fill="#444"/><text x="652" y="394" fill="#eef1ff" font-size="9.5" text-anchor="end">PIR 2</text></g>
+      <g id="fallaF" opacity="0"><circle cx="668" cy="30" r="12" fill="none" stroke="#ffbf3d" stroke-width="2"/><text x="668" y="58" fill="#ffbf3d" font-size="9" text-anchor="middle">DAÑADO</text></g>
+      <g id="fallaQ" opacity="0"><circle cx="668" cy="390" r="12" fill="none" stroke="#ffbf3d" stroke-width="2"/><text x="640" y="374" fill="#ffbf3d" font-size="9" text-anchor="middle">DAÑADO</text></g>
+      <!-- sirena en recepción -->
+      <g id="sirena"><circle cx="230" cy="245" r="10" fill="#3a1020" stroke="#ff3d5a"/><text x="230" y="249" font-size="11" text-anchor="middle">🔔</text></g>
+      <g id="personas"></g>
+    </svg>
+
+    <div class="bench" aria-label="Electrónica del sistema">
+      <div class="chip">ARDUINO UNO<small id="chipTxt">vigilando</small></div>
+      <div class="chip bt">HC-05<small id="btTxt">Bluetooth</small></div>
+      <div class="leds">
+        <span class="led v" id="ledV"><i></i>Sistema</span>
+        <span class="led r" id="ledR"><i></i>Alerta</span>
+        <span class="led b" id="ledB"><i></i>Buzzer</span>
+      </div>
+    </div>
+
+    <div class="ctrls" id="ctrlSim">
+      <span class="t">Personas</span>
+      <button class="btn" data-acc="visita">🧑 Visitante a Habitación 102</button>
+      <button class="btn" data-acc="enfermera">🩺 Enfermera a Habitación 101</button>
+      <button class="btn mor" data-acc="intrusoF">🕵 Intruso entra a Farmacia</button>
+      <button class="btn mor" data-acc="intrusoQ">🕵 Intruso entra a Quirófano</button>
+      <button class="btn" data-acc="salir">Todos salen</button>
+      <span class="t">Simular fallas del equipo</span>
+      <button class="btn amb" data-falla="F" aria-pressed="false">PIR de Farmacia dañado</button>
+      <button class="btn amb" data-falla="Q" aria-pressed="false">PIR del Quirófano dañado</button>
+      <button class="btn amb" data-falla="E" aria-pressed="false">Arduino sin energía / Bluetooth caído</button>
+    </div>
+  </div>
+
+  <div style="display:grid;gap:14px">
+    <div class="card">
+      <h2>Control del sistema</h2>
+      <div class="poder">
+        <button class="switch" id="sw" role="switch" aria-checked="true" aria-label="Encender o apagar el sistema"></button>
+        <div><b id="swTxt">ENCENDIDO</b><small id="swSub">Vigilando las zonas restringidas</small></div>
+      </div>
+      <button class="panico" id="bPanico">🚨 ACTIVAR ALERTA MANUAL<small>Úsala si ves algo sospechoso o si el equipo falla</small></button>
+      <div class="banner" id="banner"></div>
+      <div class="estados">
+        <div class="kpi"><div class="l">Estado</div><div class="v ok" id="kEstado">NORMAL</div></div>
+        <div class="kpi"><div class="l">Equipo</div><div class="v neutro" id="kEquipo">SIMULACIÓN</div></div>
+        <div class="kpi"><div class="l">Farmacia</div><div class="v ok" id="kF">Sin movimiento</div></div>
+        <div class="kpi"><div class="l">Quirófano</div><div class="v ok" id="kQ">Sin movimiento</div></div>
+        <div class="kpi"><div class="l">Alertas hoy</div><div class="v" id="kAlertas">0</div></div>
+        <div class="kpi"><div class="l">Sonido</div><div class="v"><button class="btn" id="bSonido" style="padding:2px 10px">🔊 Activado</button></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Registro de eventos <span class="der"><button class="btn" id="bLimpiar" style="padding:3px 10px;font-size:12px">Limpiar</button></span></h2>
+      <ul class="log" id="log"></ul>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="vista card txt" id="v-bt" hidden>
+  <h2>Conectar el Arduino por Bluetooth</h2>
+  <div id="soporte" class="soporte"></div>
+  <ol>
+    <li>Enciende el Arduino con el módulo HC-05 conectado.</li>
+    <li>En el celular, entra en <b>Ajustes → Bluetooth</b> y empareja el <b>HC-05</b> (clave <code>1234</code> o <code>0000</code>). En la computadora, emparéjalo desde la configuración de Bluetooth de Windows.</li>
+    <li>Pulsa <b>Conectar HC-05</b> y elige el módulo en la lista.</li>
+  </ol>
+  <div class="ctrls">
+    <button class="btn ver" id="bSerial">🔵 Conectar HC-05 / HC-06</button>
+    <button class="btn" id="bBle">Conectar módulo BLE (HM-10)</button>
+    <button class="btn" id="bDesc" disabled>Desconectar</button>
+  </div>
+  <p class="nota">Funciona en <b>Google Chrome</b> (Android 137 o más nuevo, o computadora con Windows). El iPhone no permite Bluetooth desde páginas web. Si el HC-05 no aparece, revisa que esté emparejado y vuelve a intentarlo.</p>
+  <h3>Qué hace cada botón con el Arduino</h3>
+  <table>
+    <tr><th>En la página</th><th>Orden que se envía</th><th>Qué hace el Arduino</th></tr>
+    <tr><td>Interruptor encendido</td><td><code>ON</code></td><td>Empieza a vigilar las zonas restringidas (LED verde)</td></tr>
+    <tr><td>Interruptor apagado</td><td><code>OFF</code></td><td>Deja de vigilar y apaga la sirena</td></tr>
+    <tr><td>Activar alerta manual</td><td><code>ALERTA</code></td><td>Suena el buzzer y parpadea el LED rojo</td></tr>
+    <tr><td>Silenciar</td><td><code>SILENCIAR</code></td><td>Apaga el buzzer y el LED rojo</td></tr>
+  </table>
+  <p class="nota">El Arduino avisa cada segundo que está vivo. Si deja de responder (sin energía, cable suelto o Bluetooth caído), la página lo marca como <b>EQUIPO SIN RESPUESTA</b>. En ese caso, la <b>alerta manual</b> igual suena y vibra en el celular para avisar a los demás.</p>
+  <h3>Conexiones</h3>
+  <table>
+    <tr><th>Componente</th><th>Pin del Arduino</th><th>Notas</th></tr>
+    <tr><td>HC-05 TXD</td><td>D10</td><td></td></tr>
+    <tr><td>HC-05 RXD</td><td>D11</td><td>Con divisor de voltaje (1 kΩ y 2 kΩ): el RXD del módulo trabaja a 3.3 V</td></tr>
+    <tr><td>HC-05 VCC / GND</td><td>5V / GND</td><td></td></tr>
+    <tr><td>Sensor PIR 1 (Farmacia)</td><td>D2</td><td>VCC 5V, GND</td></tr>
+    <tr><td>Sensor PIR 2 (Quirófano)</td><td>D3</td><td>VCC 5V, GND</td></tr>
+    <tr><td>Botón de pánico</td><td>D4 → botón → GND</td><td>Funciona aunque el sistema esté apagado</td></tr>
+    <tr><td>LED rojo (alerta)</td><td>D6</td><td>Resistencia de 220 Ω</td></tr>
+    <tr><td>LED verde (sistema encendido)</td><td>D7</td><td>Resistencia de 220 Ω</td></tr>
+    <tr><td>Buzzer activo</td><td>D8</td><td></td></tr>
+  </table>
+  <h3>Programa del Arduino</h3>
+  <div class="ctrls"><a class="btn ver" href="hospital_seguro.ino" download>⬇ Descargar programa .ino</a><button class="btn" id="bCopiar">Copiar código</button></div>
+  <pre class="codigo" id="codigo">Cargando…</pre>
+</section>
+
+<section class="vista card txt" id="v-como" hidden>
+  <img class="logoGrande" src="logo.jpg" alt="Infinity Tec">
+  <h2>Cómo funciona</h2>
+  <p>El <b>Sistema Inteligente de Seguridad Hospitalaria</b> vigila las zonas restringidas del hospital (Farmacia y Quirófano). Su objetivo es prevenir accesos no autorizados y dar una respuesta inmediata para proteger a pacientes, trabajadores y visitantes.</p>
+  <h3>1 · Detectar</h3>
+  <p>Un sensor de movimiento PIR en cada zona restringida avisa al Arduino cuando alguien entra.</p>
+  <h3>2 · Alertar</h3>
+  <p>Si el sistema está encendido, el Arduino activa la sirena (buzzer) y el LED rojo, y envía el aviso por Bluetooth al celular del personal encargado. En el celular aparece la alerta en pantalla completa, con sonido y vibración.</p>
+  <h3>3 · Alerta manual</h3>
+  <p>Si un sensor se daña, el equipo se queda sin energía o el Bluetooth se cae, la alarma podría no sonar sola. Por eso, quien tenga la página puede pulsar <b>Activar alerta manual</b>: suena en el Arduino si está conectado y siempre suena y vibra en el celular, para que los demás se enteren. También hay un botón de pánico físico junto al Arduino.</p>
+  <h3>4 · Encender y apagar</h3>
+  <p>Desde la página se enciende o se apaga la vigilancia del Arduino, por ejemplo durante el turno en que el personal autorizado trabaja en esas zonas. Apagado, el Arduino sigue conectado y escuchando, y la alerta manual y el botón de pánico siguen funcionando.</p>
+  <h3>5 · Equipo vigilado</h3>
+  <p>El Arduino envía una señal cada segundo. Si la página deja de recibirla, muestra <b>EQUIPO SIN RESPUESTA</b> para que el personal revise el equipo y use la alerta manual si hace falta.</p>
+</section>
+
+<footer>Infinity Tec · Sistema Inteligente de Seguridad Hospitalaria · Proyecto escolar</footer>
+</div>
+
+<div id="alarma" role="alertdialog" aria-modal="true" aria-labelledby="alTit">
+  <div class="box">
+    <div class="sir">🚨</div>
+    <h3 id="alTit">¡ALERTA!</h3>
+    <p id="alTxt">Movimiento en zona restringida</p>
+    <button class="btn ver" id="bSilenciar">Silenciar alerta</button>
+    <button class="btn" id="bOcultar">Ver el plano (la alerta sigue activa)</button>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+/* ---------- Estado ---------- */
+const S = {
+  modo: 'sim',            // sim | real
+  sistema: true, alerta: false, origen: 0,
+  pir1: false, pir2: false,
+  falla: {F:false, Q:false, E:false},
+  alertasHoy: 0, sonido: true, ocultaAlarma: false,
+  ultimoLatido: 0, equipoVivo: true
+};
+const ORIGEN = {0:'',1:'Movimiento en FARMACIA (zona restringida)',2:'Movimiento en QUIRÓFANO (zona restringida)',3:'Alerta MANUAL activada desde la app',4:'Botón de pánico presionado'};
+
+function hora(){ return new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function log(msg, rojo){
+  const li = document.createElement('li');
+  li.innerHTML = '<b>'+hora()+'</b> '+(rojo?'<span class="r">'+msg+'</span>':msg);
+  const ul = $('log'); ul.prepend(li);
+  while (ul.children.length > 80) ul.lastChild.remove();
+}
+
+/* ---------- Sonido y vibración ---------- */
+let ctx = null, osc = null, gan = null, lfo = null;
+function sirena(on){
+  if (on && S.sonido) {
+    if (osc) return;
+    try {
+      ctx = ctx || new (window.AudioContext||window.webkitAudioContext)();
+      ctx.resume();
+      osc = ctx.createOscillator(); gan = ctx.createGain(); lfo = ctx.createOscillator(); const lg = ctx.createGain();
+      osc.type = 'sawtooth'; osc.frequency.value = 760; lfo.frequency.value = 2.2; lg.gain.value = 260;
+      lfo.connect(lg); lg.connect(osc.frequency); osc.connect(gan); gan.connect(ctx.destination); gan.gain.value = 0.08;
+      osc.start(); lfo.start();
+    } catch {}
+  } else if (osc) { try{ osc.stop(); lfo.stop(); }catch{} osc = lfo = null; }
+}
+let vibra = null;
+function vibrar(on){
+  if (!navigator.vibrate) return;
+  clearInterval(vibra);
+  if (on) { navigator.vibrate([400,200,400]); vibra = setInterval(()=>navigator.vibrate([400,200,400]), 1200); } else navigator.vibrate(0);
+}
+
+/* ---------- Personas en el plano ---------- */
+const gP = $('personas');
+const ENTRADA = [-20,310], RECEP = [70,310];
+const RUTAS = {
+  visita:   {color:'#33d6f0', icono:'🧑', camino:[[150,310],[145,195],[285,195],[285,110]], zona:null, nombre:'Visitante'},
+  enfermera:{color:'#2ef2a0', icono:'🩺', camino:[[150,310],[145,195],[105,195],[105,110]], zona:null, nombre:'Enfermera'},
+  intrusoF: {color:'#ff3d5a', icono:'🕵', camino:[[150,310],[145,195],[465,195],[465,140],[560,100]], zona:'F', nombre:'Intruso'},
+  intrusoQ: {color:'#ff3d5a', icono:'🕵', camino:[[150,310],[145,195],[485,195],[485,250],[600,320]], zona:'Q', nombre:'Intruso'}
+};
+const gente = [];
+function mover(g,[x,y]){ g.style.transform = `translate(${x}px,${y}px)`; }
+function caminar(g, puntos, fin){
+  let i = 0;
+  const sig = () => { if (!g.isConnected) return; if (i >= puntos.length) { fin && fin(); return; } mover(g, puntos[i++]); setTimeout(sig, 850); };
+  sig();
+}
+function agregar(tipo){
+  const r = RUTAS[tipo];
+  const g = el('g',{class:'persona'},gP);
+  el('circle',{r:13,fill:'#05060c',stroke:r.color,'stroke-width':3},g);
+  const t = el('text',{y:5,'font-size':14,'text-anchor':'middle'},g); t.textContent = r.icono;
+  mover(g, ENTRADA); g.getBoundingClientRect();
+  const p = {g, tipo, zona:null};
+  gente.push(p);
+  log(r.nombre+' entra al hospital');
+  requestAnimationFrame(()=>caminar(g, [RECEP, ...r.camino], ()=>{ p.zona = r.zona; if (r.zona) log(r.nombre+' llegó a '+(r.zona==='F'?'Farmacia':'Quirófano'), true); }));
+}
+function todosSalen(){
+  if (!gente.length) return;
+  gente.splice(0).forEach(p => { p.zona = null; caminar(p.g, [[145,195],[150,310],RECEP,ENTRADA], ()=>p.g.remove()); });
+  log('Todas las personas salen');
+}
+
+/* ---------- Lógica del "Arduino" simulado ---------- */
+function tickSim(){
+  if (S.modo !== 'sim') return;
+  const vivo = !S.falla.E;
+  // lo que el sensor ve (si no está dañado)
+  const enF = gente.some(p=>p.zona==='F'), enQ = gente.some(p=>p.zona==='Q');
+  S.pir1 = enF && !S.falla.F; S.pir2 = enQ && !S.falla.Q;
+  if (vivo) {
+    S.ultimoLatido = Date.now();
+    if (S.sistema && !S.alerta) {
+      if (S.pir1) dispararAlerta(1); else if (S.pir2) dispararAlerta(2);
+    }
+  }
+  // aviso de narrador: alguien entró y el equipo no avisó
+  let aviso = '';
+  if (!S.alerta && (enF || enQ)) {
+    const z = enF ? 'Farmacia' : 'Quirófano';
+    if (!vivo) aviso = '⚠ Hay un intruso en '+z+', pero el Arduino no responde. Pulsa <b>ACTIVAR ALERTA MANUAL</b>.';
+    else if (!S.sistema) aviso = '⚠ Hay un intruso en '+z+', pero el sistema está <b>apagado</b>. Enciéndelo o usa la <b>alerta manual</b>.';
+    else if ((enF && S.falla.F) || (enQ && S.falla.Q)) aviso = '⚠ El sensor de '+z+' está dañado y no detectó al intruso. Un guardia lo vio: pulsa <b>ACTIVAR ALERTA MANUAL</b>.';
+  }
+  $('banner').innerHTML = aviso; $('banner').classList.toggle('ver', !!aviso);
+}
+function dispararAlerta(origen){
+  if (S.alerta) return;
+  S.alerta = true; S.origen = origen; S.alertasHoy++; S.ocultaAlarma = false;
+  log('🚨 '+ORIGEN[origen], true);
+  pintar();
+}
+
+/* ---------- Pintar ---------- */
+function pintar(){
+  const vivo = equipoVivo();
+  // plano
+  $('zF').setAttribute('fill', S.alerta && S.origen===1 ? '#5a0f24' : '#2a1450');
+  $('zQ').setAttribute('fill', S.alerta && S.origen===2 ? '#5a0f24' : '#2a1450');
+  $('pF').setAttribute('stroke', S.pir1 ? '#ff3d5a' : '#9b4dff');
+  $('pQ').setAttribute('stroke', S.pir2 ? '#ff3d5a' : '#9b4dff');
+  $('conoF').setAttribute('opacity', S.pir1 && vivo ? '.18' : '0');
+  $('conoQ').setAttribute('opacity', S.pir2 && vivo ? '.18' : '0');
+  $('pir1led').setAttribute('fill', S.pir1 && vivo ? '#ff3d5a' : '#444');
+  $('pir2led').setAttribute('fill', S.pir2 && vivo ? '#ff3d5a' : '#444');
+  $('fallaF').setAttribute('opacity', S.modo==='sim' && S.falla.F ? '1':'0');
+  $('fallaQ').setAttribute('opacity', S.modo==='sim' && S.falla.Q ? '1':'0');
+  $('sirena').classList.toggle('alarmando', S.alerta);
+  // banco de electrónica
+  const ledOn = vivo;
+  $('ledV').classList.toggle('on', ledOn && S.sistema);
+  $('ledR').classList.toggle('on', ledOn && S.alerta);
+  $('ledB').classList.toggle('on', ledOn && S.alerta);
+  $('chipTxt').textContent = !vivo ? 'sin respuesta' : S.sistema ? 'vigilando' : 'en espera';
+  $('btTxt').textContent = S.modo==='real' ? (vivo?'conectado':'sin señal') : (vivo ? 'enlazado' : 'caído');
+  // interruptor
+  $('sw').setAttribute('aria-checked', String(S.sistema));
+  $('swTxt').textContent = S.sistema ? 'ENCENDIDO' : 'APAGADO';
+  $('swTxt').className = S.sistema ? 'ok' : 'mal';
+  $('swSub').textContent = S.sistema ? 'Vigilando las zonas restringidas' : 'Sin vigilancia · la alerta manual sigue activa';
+  // tarjetas
+  const kE = $('kEstado');
+  if (S.alerta) { kE.textContent = '🚨 ALERTA'; kE.className = 'v mal'; }
+  else if (!S.sistema) { kE.textContent = 'APAGADO'; kE.className = 'v aviso'; }
+  else { kE.textContent = 'NORMAL'; kE.className = 'v ok'; }
+  const kQ = $('kEquipo');
+  if (!vivo) { kQ.textContent = 'SIN RESPUESTA'; kQ.className = 'v mal'; }
+  else if (S.modo==='real') { kQ.textContent = 'EN LÍNEA'; kQ.className = 'v ok'; }
+  else { kQ.textContent = 'SIMULACIÓN'; kQ.className = 'v neutro'; }
+  const zona = (id, on, dan) => { const k=$(id); if (!vivo) { k.textContent='Sin datos'; k.className='v aviso'; } else if (dan) { k.textContent='Sensor dañado'; k.className='v aviso'; } else { k.textContent = on ? 'MOVIMIENTO' : 'Sin movimiento'; k.className = 'v '+(on?'mal':'ok'); } };
+  zona('kF', S.pir1, S.modo==='sim' && S.falla.F);
+  zona('kQ', S.pir2, S.modo==='sim' && S.falla.Q);
+  $('kAlertas').textContent = S.alertasHoy;
+  // conexión
+  const c = $('conn');
+  if (S.modo==='sim') { c.className='conn sim'; $('connTxt').textContent='Simulación'; }
+  else if (vivo) { c.className='conn ok'; $('connTxt').textContent='Arduino conectado'; }
+  else { c.className='conn err'; $('connTxt').textContent='Equipo sin respuesta'; }
+  // alarma
+  $('alTxt').textContent = ORIGEN[S.origen] || 'Alerta activada';
+  $('alarma').classList.toggle('on', S.alerta && !S.ocultaAlarma);
+  sirena(S.alerta); vibrar(S.alerta);
+  $('hora').textContent = hora();
+}
+function equipoVivo(){
+  if (S.modo === 'sim') return !S.falla.E;
+  return Date.now() - S.ultimoLatido < 4000;
+}
+
+/* ---------- Acciones del usuario ---------- */
+function setSistema(on){
+  if (S.modo==='real') { enviar(on?'ON':'OFF'); log('Orden enviada al Arduino: <b>'+(on?'ON':'OFF')+'</b>'); if (!equipoVivo()) log('El Arduino no responde: la orden puede no llegar', true); }
+  if (S.modo==='sim' && S.falla.E) { log('El Arduino no responde: no se puede '+(on?'encender':'apagar'), true); return; }
+  S.sistema = on;
+  if (!on && S.alerta) { S.alerta = false; S.origen = 0; }
+  log('Sistema <b>'+(on?'ENCENDIDO':'APAGADO')+'</b>');
+  pintar();
+}
+function alertaManual(){
+  if (ctx) ctx.resume();
+  if (S.modo==='real') { enviar('ALERTA'); if (!equipoVivo()) log('El Arduino no responde: la alerta suena solo en este dispositivo', true); }
+  else if (S.falla.E) log('El Arduino no responde: la alerta suena solo en este dispositivo', true);
+  S.alerta = false; dispararAlerta(3);
+}
+function silenciar(){
+  if (S.modo==='real') enviar('SILENCIAR');
+  S.alerta = false; S.origen = 0;
+  log('Alerta silenciada');
+  if (S.modo==='sim') {
+    // el personal de seguridad atiende la alerta y saca a los intrusos
+    const intrusos = gente.filter(p=>p.tipo.startsWith('intruso'));
+    if (intrusos.length) log('Seguridad atiende la alerta y retira '+(intrusos.length===1?'al intruso':'a los intrusos'));
+    intrusos.forEach(p => { gente.splice(gente.indexOf(p),1); p.zona=null; const r=RUTAS[p.tipo].camino; caminar(p.g, [...r.slice(0,-1).reverse(), RECEP, ENTRADA], ()=>p.g.remove()); });
+  }
+  pintar();
+}
+$('sw').onclick = ()=>{ if (ctx) ctx.resume(); setSistema(!S.sistema); };
+$('bPanico').onclick = alertaManual;
+$('bSilenciar').onclick = silenciar;
+$('bOcultar').onclick = ()=>{ S.ocultaAlarma = true; pintar(); };
+$('bSonido').onclick = ()=>{ S.sonido = !S.sonido; $('bSonido').textContent = S.sonido ? '🔊 Activado' : '🔇 Silencio'; sirena(false); pintar(); };
+$('bLimpiar').onclick = ()=>{ $('log').innerHTML=''; };
+document.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => { if (ctx) ctx.resume(); b.dataset.acc==='salir' ? todosSalen() : agregar(b.dataset.acc); });
+document.querySelectorAll('[data-falla]').forEach(b => b.onclick = () => {
+  const k = b.dataset.falla; S.falla[k] = !S.falla[k]; b.setAttribute('aria-pressed', String(S.falla[k]));
+  const n = {F:'Sensor PIR de Farmacia',Q:'Sensor PIR del Quirófano',E:'Arduino / Bluetooth'}[k];
+  log(S.falla[k] ? '⚠ Falla simulada: '+n : n+' reparado', S.falla[k]);
+  if (k==='E' && S.falla.E && S.alerta && S.origen !== 3) { /* el buzzer del equipo se calla al quedarse sin energía */ S.alerta=false; S.origen=0; }
+  tickSim(); pintar();
+});
+
+/* ---------- Pestañas ---------- */
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x===t)));
+  document.querySelectorAll('.vista').forEach(v => v.hidden = v.id !== 'v-'+t.dataset.vista);
+});
+
+/* ---------- Programa Arduino ---------- */
+let codigo = '';
+fetch('hospital_seguro.ino').then(r=>r.ok?r.text():Promise.reject()).then(t=>{ codigo=t; $('codigo').textContent=t; }).catch(()=>{ $('codigo').textContent='No se pudo cargar. Usa el botón Descargar.'; });
+$('bCopiar').onclick = async ()=>{ try{ await navigator.clipboard.writeText(codigo); $('bCopiar').textContent='¡Copiado!'; }catch{ $('bCopiar').textContent='Selecciona y copia'; } setTimeout(()=>$('bCopiar').textContent='Copiar código',1800); };
+
+/* ---------- Bluetooth ---------- */
+const SPP = '00001101-0000-1000-8000-00805f9b34fb';
+const hayserial = 'serial' in navigator, hayBle = 'bluetooth' in navigator;
+$('soporte').className = 'soporte ' + (hayserial||hayBle ? 'bien' : 'malo');
+$('soporte').innerHTML = hayserial ? '✔ Este navegador puede conectarse al HC-05.' : hayBle ? 'Este navegador solo admite módulos BLE (HM-10). Para el HC-05 usa Google Chrome actualizado en Android o en la computadora.' : '✖ Este navegador no permite Bluetooth. Abre este enlace en <b>Google Chrome</b> en Android o en la computadora (el iPhone no lo permite). La simulación sí funciona aquí.';
+$('bSerial').disabled = !hayserial; $('bBle').disabled = !hayBle;
+
+let puerto = null, lector = null, escritor = null, bleChar = null, bleDev = null, buffer = '';
+const enc = new TextEncoder();
+async function enviar(txt){
+  const datos = enc.encode(txt+'\n');
+  try {
+    if (escritor) await escritor.write(datos);
+    else if (bleChar) { if (bleChar.writeValueWithoutResponse) await bleChar.writeValueWithoutResponse(datos); else await bleChar.writeValue(datos); }
+  } catch (e) { log('No se pudo enviar "'+txt+'"', true); }
+}
+function recibirTexto(t){
+  buffer += t;
+  let i;
+  while ((i = buffer.search(/[\r\n]/)) >= 0) { const linea = buffer.slice(0,i).trim(); buffer = buffer.slice(i+1); if (linea) procesar(linea); }
+  if (buffer.length > 200) buffer = '';
+}
+function procesar(l){
+  const p = l.split(',');
+  if (p[0] === 'ST' && p.length >= 6) {
+    const antesVivo = equipoVivo();
+    S.ultimoLatido = Date.now();
+    if (!antesVivo) log('El Arduino responde de nuevo');
+    S.sistema = p[1]==='1'; S.pir1 = p[3]==='1'; S.pir2 = p[4]==='1';
+    const alerta = p[2]==='1', origen = +p[5]||0;
+    if (alerta && !S.alerta) dispararAlerta(origen);
+    else if (!alerta && S.alerta && S.origen !== 3) { S.alerta = false; S.origen = 0; }
+    pintar();
+  } else if (p[0] === 'EV') {
+    log('Arduino: '+p.slice(1).join(','));
+  }
+}
+function pasarAReal(nombre){
+  S.modo = 'real'; S.ultimoLatido = Date.now(); S.alerta = false; S.origen = 0; S.pir1 = S.pir2 = false;
+  gente.splice(0).forEach(p=>p.g.remove());
+  $('banner').classList.remove('ver');
+  document.querySelectorAll('#ctrlSim button').forEach(b=>b.disabled=true);
+  $('bDesc').disabled = false;
+  log('Conectado a <b>'+nombre+'</b>');
+  setTimeout(()=>enviar('ESTADO'), 600);
+  pintar();
+}
+async function conectarSerial(){
+  try {
+    let pt;
+    try { pt = await navigator.serial.requestPort({ allowedBluetoothServiceClassIds:[SPP], filters:[{ bluetoothServiceClassId: SPP }] }); }
+    catch (e) { if (e.name === 'NotFoundError') throw e; pt = await navigator.serial.requestPort(); }
+    await pt.open({ baudRate: 9600 });
+    puerto = pt; escritor = pt.writable.getWriter();
+    pasarAReal('HC-05');
+    leerSerial();
+  } catch (e) {
+    if (e.name === 'NotFoundError') log('No se eligió ningún módulo. ¿Está emparejado el HC-05?', true);
+    else log('No se pudo conectar: '+(e.message||e), true);
+  }
+}
+async function leerSerial(){
+  const dec = new TextDecoder();
+  while (puerto && puerto.readable) {
+    lector = puerto.readable.getReader();
+    try { for (;;) { const {value, done} = await lector.read(); if (done) break; recibirTexto(dec.decode(value, {stream:true})); } }
+    catch (e) { log('Se perdió la conexión Bluetooth', true); break; }
+    finally { try{ lector.releaseLock(); }catch{} }
+  }
+}
+async function conectarBle(){
+  try {
+    bleDev = await navigator.bluetooth.requestDevice({ filters:[{services:[0xFFE0]}], optionalServices:[0xFFE0] });
+    const srv = await (await bleDev.gatt.connect()).getPrimaryService(0xFFE0);
+    bleChar = await srv.getCharacteristic(0xFFE1);
+    await bleChar.startNotifications();
+    const dec = new TextDecoder();
+    bleChar.addEventListener('characteristicvaluechanged', e => recibirTexto(dec.decode(e.target.value)));
+    bleDev.addEventListener('gattserverdisconnected', () => log('Se perdió la conexión Bluetooth', true));
+    pasarAReal(bleDev.name || 'módulo BLE');
+  } catch (e) { if (e.name !== 'NotFoundError') log('No se pudo conectar: '+(e.message||e), true); }
+}
+async function desconectar(){
+  try { if (lector) await lector.cancel(); } catch {}
+  try { if (escritor) { escritor.releaseLock(); } } catch {}
+  try { if (puerto) await puerto.close(); } catch {}
+  try { if (bleDev && bleDev.gatt.connected) bleDev.gatt.disconnect(); } catch {}
+  puerto = lector = escritor = bleChar = bleDev = null;
+  S.modo = 'sim'; S.alerta = false; S.origen = 0; S.pir1 = S.pir2 = false; S.sistema = true;
+  document.querySelectorAll('#ctrlSim button').forEach(b=>b.disabled=false);
+  $('bDesc').disabled = true;
+  log('Desconectado. De vuelta a la simulación');
+  pintar();
+}
+$('bSerial').onclick = conectarSerial;
+$('bBle').onclick = conectarBle;
+$('bDesc').onclick = desconectar;
+
+/* ---------- Bucle ---------- */
+let antesVivo = true;
+setInterval(() => {
+  tickSim();
+  const v = equipoVivo();
+  if (v !== antesVivo) { log(v ? 'El equipo vuelve a responder' : '⚠ EQUIPO SIN RESPUESTA: usa la alerta manual si hace falta', !v); antesVivo = v; }
+  pintar();
+}, 300);
+log('Sistema listo. Prueba “Intruso entra a Farmacia”.');
+pintar();
+})();
+</script>
+</body>
+</html>
