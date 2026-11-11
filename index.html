@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Infinity Tec · Seguridad Hospitalaria Inteligente</title>
-<meta name="description" content="Simulador del Sistema Inteligente de Seguridad Hospitalaria de Infinity Tec, con conexión Bluetooth al Arduino y alerta manual.">
+<title>Infinity Tec · Hospital Inteligente</title>
+<meta name="description" content="Simulador del Hospital Inteligente de Infinity Tec: acceso con tarjeta RFID, sensor ultrasónico, luz automática y temperatura, con Bluetooth al Arduino UNO R4 WiFi.">
 <meta name="theme-color" content="#05060c">
 <link rel="icon" href="icono.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -145,6 +145,20 @@ pre.codigo{background:#03040a;border:1px solid var(--line);padding:12px;overflow
 .logoGrande{display:block;max-width:420px;width:100%;margin:0 auto 10px;border-radius:16px}
 footer{margin-top:24px;color:var(--mut);font-size:12px}
 @media (prefers-reduced-motion:reduce){.persona{transition:none}.alarmando,#alarma.on .sir,.monitor .cab .rec i{animation:none}}
+/* ---- hospital inteligente ---- */
+.led.on.a i{background:#ffe23d;box-shadow:0 0 10px #ffe23d}
+.rango{display:grid;gap:4px;margin:12px 0 4px}
+.rango label{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:#c8cdea}
+.rango label b{font-family:var(--mono);color:var(--txt);white-space:nowrap}
+.rango small{font-size:11.5px;color:var(--mut)}
+input[type=range]{width:100%;accent-color:var(--verde)}
+.tarj{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-top:6px;border:1px solid #232856;background:var(--panel2);border-radius:4px;font-size:13.5px}
+.tarj b{font:700 20px var(--mono);color:var(--verde)}
+.tarj .ult{margin-left:auto;font:12px var(--mono);color:var(--mut)}
+.btn.rojo{background:#2a0b12;border-color:#7a1f33;color:#ffd0d8}
+.btn.esperando{border-color:var(--ambar);color:var(--ambar);animation:parpadeo 1s steps(1) infinite}
+.solo-sim[hidden]{display:none!important}
+.izq{display:grid;gap:14px}
 </style>
 </head>
 <body>
@@ -152,18 +166,18 @@ footer{margin-top:24px;color:var(--mut);font-size:12px}
 <aside class="side">
   <div class="marca">
     <img src="icono.png" alt="Logo de Infinity Tec">
-    <div><b>INFINITY <span>TEC</span></b><small>Seguridad hospitalaria</small></div>
+    <div><b>INFINITY <span>TEC</span></b><small>Hospital inteligente</small></div>
   </div>
   <nav class="tabs" role="tablist" aria-orientation="vertical">
     <button class="tab" role="tab" aria-selected="true" data-vista="sim">▣ Central de monitoreo</button>
-    <button class="tab" role="tab" aria-selected="false" data-vista="bt">ᛒ Conexión Bluetooth</button>
+    <button class="tab" role="tab" aria-selected="false" data-vista="bt">ᛒ Conexión y conexiones</button>
     <button class="tab" role="tab" aria-selected="false" data-vista="como">ⓘ Cómo funciona</button>
   </nav>
   <div class="conn sim" id="conn"><i></i><span id="connTxt">Simulación</span></div>
   <div class="mando">
     <div class="poder">
       <button class="switch" id="sw" role="switch" aria-checked="true" aria-label="Encender o apagar el sistema"></button>
-      <div><b id="swTxt">ENCENDIDO</b><small id="swSub">Vigilando las zonas restringidas</small></div>
+      <div><b id="swTxt">ENCENDIDO</b><small id="swSub">Vigilando el hospital</small></div>
     </div>
     <button class="panico" id="bPanico">🚨 ALERTA MANUAL<small>Si ves algo sospechoso o el equipo falla</small></button>
     <button class="sonido" id="bSonido">🔊 Sonido activado</button>
@@ -175,29 +189,29 @@ footer{margin-top:24px;color:var(--mut);font-size:12px}
   <div class="barra" aria-live="polite">
     <div class="st"><span class="l">Estado</span><b id="kEstado" class="ok">NORMAL</b></div>
     <div class="st"><span class="l">Equipo</span><b id="kEquipo" class="neutro">SIMULACIÓN</b></div>
-    <div class="st"><span class="l">Farmacia</span><b id="kF" class="ok">Sin movimiento</b></div>
-    <div class="st"><span class="l">Quirófano</span><b id="kQ" class="ok">Sin movimiento</b></div>
+    <div class="st"><span class="l">Puerta Farmacia</span><b id="kPuerta" class="ok">Libre</b></div>
+    <div class="st"><span class="l">Temperatura</span><b id="kTemp">—</b></div>
+    <div class="st"><span class="l">Pasillo</span><b id="kLuz">—</b></div>
     <div class="st"><span class="l">Alertas hoy</span><b id="kAlertas">0</b></div>
-    <div class="st"><span class="l">Turno</span><b id="kTurno">Vigilancia 24 h</b></div>
   </div>
   <div class="banner" id="banner"></div>
 
   <div class="monitor">
-    <div class="cab"><span class="rec"><i></i>EN VIVO</span> Planta 1 · Monitoreo de zonas <span id="hora"></span></div>
-    <svg class="plano" viewBox="0 0 700 420" role="img" aria-label="Plano del hospital con zonas restringidas">
+    <div class="cab"><span class="rec"><i></i>EN VIVO</span> Planta 1 · Hospital inteligente <span id="hora"></span></div>
+    <svg class="plano" viewBox="0 0 700 420" role="img" aria-label="Plano del hospital">
       <defs>
         <filter id="neon" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <pattern id="rayas" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0v10" stroke="#9b4dff" stroke-width="1.5" opacity=".22"/></pattern>
         <pattern id="malla" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#33d6f0" stroke-width=".5" opacity=".08"/></pattern>
+        <radialGradient id="foco"><stop offset="0" stop-color="#ffe23d" stop-opacity=".55"/><stop offset="1" stop-color="#ffe23d" stop-opacity="0"/></radialGradient>
       </defs>
       <rect x="20" y="20" width="660" height="380" fill="#060812"/>
       <rect x="20" y="20" width="660" height="380" fill="url(#malla)"/>
-      <!-- zonas restringidas -->
-      <rect id="zF" class="zonaR" x="380" y="20" width="300" height="150" fill="#1a0d3a"/>
+      <!-- zonas -->
+      <rect id="zF" class="zonaR" x="380" y="20" width="300" height="150" fill="#2a1450"/>
       <rect x="380" y="20" width="300" height="150" fill="url(#rayas)"/>
-      <rect id="zQ" class="zonaR" x="400" y="220" width="280" height="180" fill="#1a0d3a"/>
-      <rect x="400" y="220" width="280" height="180" fill="url(#rayas)"/>
-      <!-- muebles (contorno) -->
+      <rect id="zQ" class="zonaR" x="400" y="220" width="280" height="180" fill="#101a3a"/>
+      <!-- muebles -->
       <g fill="none" stroke="#5b62b0" stroke-width="1.5" opacity=".8">
         <rect x="40" y="40" width="70" height="40" rx="6"/><rect x="120" y="40" width="70" height="40" rx="6"/>
         <rect x="220" y="40" width="70" height="40" rx="6"/><rect x="300" y="40" width="70" height="40" rx="6"/>
@@ -207,6 +221,12 @@ footer{margin-top:24px;color:var(--mut);font-size:12px}
         <rect x="500" y="275" width="90" height="44" rx="8"/><circle cx="545" cy="262" r="16"/>
       </g>
       <g fill="#2ef2a0" opacity=".7"><path d="M72 52h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/><path d="M252 52h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/></g>
+      <!-- noche -->
+      <rect id="oscuro" x="20" y="20" width="660" height="380" fill="#000" opacity="0" style="transition:opacity .6s"/>
+      <g id="focos" opacity="0" style="transition:opacity .6s">
+        <circle cx="100" cy="195" r="46" fill="url(#foco)"/><circle cx="250" cy="195" r="46" fill="url(#foco)"/><circle cx="400" cy="195" r="46" fill="url(#foco)"/><circle cx="600" cy="195" r="46" fill="url(#foco)"/>
+      </g>
+      <g id="lamparas" fill="#2a2a40" stroke="#5b62b0"><circle cx="100" cy="195" r="5"/><circle cx="250" cy="195" r="5"/><circle cx="400" cy="195" r="5"/><circle cx="600" cy="195" r="5"/></g>
       <!-- paredes de neón -->
       <g stroke="#33d6f0" stroke-width="3" stroke-linecap="round" fill="none" filter="url(#neon)">
         <path d="M20 20H680V400H20V340 M20 280V20"/>
@@ -215,57 +235,82 @@ footer{margin-top:24px;color:var(--mut);font-size:12px}
         <path d="M20 220H120 M170 220H300 M350 220H460 M510 220H680"/>
         <path d="M260 220V400 M400 220V400"/>
       </g>
-      <line id="pF" x1="440" y1="170" x2="490" y2="170" stroke="#9b4dff" stroke-width="4" stroke-dasharray="5 4" filter="url(#neon)"/>
-      <line id="pQ" x1="460" y1="220" x2="510" y2="220" stroke="#9b4dff" stroke-width="4" stroke-dasharray="5 4" filter="url(#neon)"/>
+      <line id="pF" x1="440" y1="170" x2="490" y2="170" stroke="#9b4dff" stroke-width="5" stroke-dasharray="5 4" filter="url(#neon)"/>
       <g fill="#cfe9ff" font-family="Exo 2, Segoe UI, sans-serif" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1.5">
         <text x="110" y="150">HAB. 101</text>
         <text x="290" y="150">HAB. 102</text>
-        <text x="530" y="140" fill="#d9c2ff">FARMACIA</text>
+        <text x="580" y="140" fill="#d9c2ff">FARMACIA</text>
         <text x="140" y="390">RECEPCIÓN</text>
         <text x="330" y="390">ESPERA</text>
-        <text x="540" y="380" fill="#d9c2ff">QUIRÓFANO</text>
-        <text x="350" y="200" fill="#5b62b0" font-weight="600">PASILLO</text>
+        <text x="540" y="380">QUIRÓFANO</text>
+        <text x="330" y="212" fill="#5b62b0" font-weight="600">PASILLO</text>
       </g>
-      <g fill="#b98cff" font-family="Exo 2, Segoe UI, sans-serif" font-size="9" text-anchor="middle" letter-spacing="2">
-        <text x="530" y="156">ACCESO RESTRINGIDO</text><text x="540" y="394">ACCESO RESTRINGIDO</text>
-      </g>
+      <text x="580" y="156" fill="#b98cff" font-family="Exo 2, Segoe UI, sans-serif" font-size="9" text-anchor="middle" letter-spacing="2">ACCESO CON TARJETA</text>
       <text x="6" y="312" fill="#5b62b0" font-size="10" text-anchor="middle" transform="rotate(-90 8 312)">ENTRADA</text>
-      <path id="conoF" d="M668 30 L470 165 L668 165 Z" fill="#ff3d5a" opacity="0" style="transition:opacity .2s"/>
-      <path id="conoQ" d="M668 390 L430 228 L668 228 Z" fill="#ff3d5a" opacity="0" style="transition:opacity .2s"/>
-      <g id="pir1"><circle cx="668" cy="30" r="8" fill="#0a0c18" stroke="#2ef2a0" stroke-width="2"/><circle id="pir1led" cx="668" cy="30" r="3" fill="#444"/><text x="652" y="34" fill="#2ef2a0" font-size="9.5" text-anchor="end">PIR 1</text></g>
-      <g id="pir2"><circle cx="668" cy="390" r="8" fill="#0a0c18" stroke="#2ef2a0" stroke-width="2"/><circle id="pir2led" cx="668" cy="390" r="3" fill="#444"/><text x="652" y="394" fill="#2ef2a0" font-size="9.5" text-anchor="end">PIR 2</text></g>
-      <g id="fallaF" opacity="0"><circle cx="668" cy="30" r="12" fill="none" stroke="#ffbf3d" stroke-width="2"/><text x="668" y="58" fill="#ffbf3d" font-size="9" text-anchor="middle">DAÑADO</text></g>
-      <g id="fallaQ" opacity="0"><circle cx="668" cy="390" r="12" fill="none" stroke="#ffbf3d" stroke-width="2"/><text x="640" y="374" fill="#ffbf3d" font-size="9" text-anchor="middle">DAÑADO</text></g>
+      <!-- ultrasónico (mira a la puerta) -->
+      <path id="cono" d="M426 182 L448 176 L482 176 L470 214 L438 214 Z" fill="#ff3d5a" opacity="0" style="transition:opacity .2s"/>
+      <g id="ultra"><rect x="414" y="174" width="14" height="10" rx="2" fill="#2f6fb0"/><circle cx="418" cy="179" r="2.6" fill="#cfd6dd"/><circle cx="424" cy="179" r="2.6" fill="#cfd6dd"/><text x="421" y="198" fill="#33d6f0" font-size="8.5" text-anchor="middle">ULTRA</text></g>
+      <!-- lector RFID -->
+      <g id="rfid"><rect id="rfidCaja" x="496" y="173" width="22" height="16" rx="3" fill="#0a0c18" stroke="#2ef2a0" stroke-width="2"/><circle id="rfidLed" cx="507" cy="181" r="3" fill="#444"/><text x="507" y="200" fill="#2ef2a0" font-size="8.5" text-anchor="middle">RFID</text></g>
+      <text id="espTxt" x="465" y="234" fill="#ffbf3d" font-size="11" font-weight="700" text-anchor="middle" font-family="Exo 2, Segoe UI, sans-serif"></text>
+      <!-- termómetro del quirófano -->
+      <g id="termo"><rect x="640" y="250" width="10" height="44" rx="5" fill="#0a0c18" stroke="#33d6f0"/><rect id="termoNivel" x="642" y="270" width="6" height="22" rx="3" fill="#2ef2a0"/><circle cx="645" cy="298" r="7" fill="#2ef2a0" id="termoBulbo"/></g>
+      <text id="tempTxt" x="610" y="340" fill="#2ef2a0" font-size="20" font-weight="800" text-anchor="middle" font-family="Exo 2, Segoe UI, sans-serif">— °C</text>
+      <text x="610" y="356" fill="#8a90b8" font-size="9" text-anchor="middle" letter-spacing="1.5">TEMPERATURA</text>
       <g id="sirena"><circle cx="230" cy="245" r="10" fill="#3a1020" stroke="#ff3d5a"/><text x="230" y="249" font-size="11" text-anchor="middle">🔔</text></g>
       <g id="personas"></g>
     </svg>
     <div class="hw" aria-label="Electrónica del sistema">
-      <span class="pieza"><b>ARDUINO</b><small id="chipTxt">vigilando</small></span>
+      <span class="pieza"><b>UNO R4 WiFi</b><small id="chipTxt">vigilando</small></span>
       <span class="pieza"><b>HC-05</b><small id="btTxt">Bluetooth</small></span>
       <div class="leds">
-        <span class="led v" id="ledV"><i></i>Sistema</span>
-        <span class="led r" id="ledR"><i></i>Alerta</span>
+        <span class="led v" id="ledV"><i></i>Acceso</span>
+        <span class="led r" id="ledR"><i></i>Alarma</span>
+        <span class="led a" id="ledA"><i></i>Pasillo</span>
         <span class="led b" id="ledB"><i></i>Buzzer</span>
       </div>
     </div>
   </div>
 
   <div class="abajo">
-    <div class="card" id="ctrlSim">
-      <h2>Escenarios de prueba</h2>
-      <div class="sub" style="margin-top:0">Personas</div>
-      <div class="escenas">
-        <button class="esc" data-acc="visita"><span>🧑</span><b>Visitante</b><small>Va a la Habitación 102</small></button>
-        <button class="esc" data-acc="enfermera"><span>🩺</span><b>Enfermera</b><small>Va a la Habitación 101</small></button>
-        <button class="esc peligro" data-acc="intrusoF"><span>🕵</span><b>Intruso → Farmacia</b><small>Zona restringida</small></button>
-        <button class="esc peligro" data-acc="intrusoQ"><span>🕵</span><b>Intruso → Quirófano</b><small>Zona restringida</small></button>
-        <button class="esc" data-acc="salir"><span>🚪</span><b>Todos salen</b><small>Vaciar el hospital</small></button>
+    <div class="izq">
+      <div class="card solo-sim" id="ctrlSim">
+        <h2>Escenarios de prueba</h2>
+        <div class="sub" style="margin-top:0">Personas</div>
+        <div class="escenas">
+          <button class="esc" data-acc="visita"><span>🧑</span><b>Visitante</b><small>Va a la Habitación 102</small></button>
+          <button class="esc" data-acc="enfermera"><span>🩺</span><b>Enfermera con tarjeta</b><small>Entra a Farmacia</small></button>
+          <button class="esc peligro" data-acc="intruso"><span>🕵</span><b>Intruso sin tarjeta</b><small>Se queda en la puerta</small></button>
+          <button class="esc peligro" data-acc="falsa"><span>💳</span><b>Intruso con tarjeta falsa</b><small>La pasa 3 veces</small></button>
+          <button class="esc" data-acc="salir"><span>🚪</span><b>Todos salen</b><small>Vaciar el hospital</small></button>
+        </div>
+        <div class="sub">Ambiente</div>
+        <div class="escenas">
+          <button class="esc" id="bNoche"><span>🌙</span><b>Anochecer</b><small>La fotoresistencia ve poca luz</small></button>
+          <button class="esc" id="bCalor"><span>🔥</span><b>Falla el aire</b><small>Sube la temperatura</small></button>
+          <button class="esc" id="bNueva"><span>🆕</span><b>Tarjeta nueva</b><small>Pasarla por el lector</small></button>
+        </div>
+        <div class="rango"><label for="rTempSim">Temperatura del quirófano <b id="vTempSim">23 °C</b></label><input type="range" id="rTempSim" min="15" max="45" step="0.5" value="23"></div>
+        <div class="sub">Fallas del equipo</div>
+        <div class="escenas">
+          <button class="esc falla" data-falla="R" aria-pressed="false"><span>⚠</span><b>Lector RFID</b><small>No lee tarjetas</small></button>
+          <button class="esc falla" data-falla="U" aria-pressed="false"><span>⚠</span><b>Ultrasónico</b><small>No ve a nadie</small></button>
+          <button class="esc falla" data-falla="T" aria-pressed="false"><span>⚠</span><b>Sensor de temperatura</b><small>Desconectado</small></button>
+          <button class="esc falla" data-falla="E" aria-pressed="false"><span>🔌</span><b>Arduino caído</b><small>Sin energía o sin Bluetooth</small></button>
+        </div>
       </div>
-      <div class="sub">Fallas del equipo</div>
-      <div class="escenas">
-        <button class="esc falla" data-falla="F" aria-pressed="false"><span>⚠</span><b>PIR Farmacia</b><small>Sensor dañado</small></button>
-        <button class="esc falla" data-falla="Q" aria-pressed="false"><span>⚠</span><b>PIR Quirófano</b><small>Sensor dañado</small></button>
-        <button class="esc falla" data-falla="E" aria-pressed="false"><span>🔌</span><b>Arduino caído</b><small>Sin energía o sin Bluetooth</small></button>
+      <div class="card">
+        <h2>Ajustes del Arduino</h2>
+        <div class="rango"><label for="rDist">Distancia para detectar a alguien en la puerta <b id="vDist">30 cm</b></label><input type="range" id="rDist" min="5" max="150" value="30"><small>Ahora mide: <span id="vDistAhora">—</span></small></div>
+        <div class="rango"><label for="rTmax">Temperatura máxima (alarma) <b id="vTmax">30 °C</b></label><input type="range" id="rTmax" min="20" max="60" value="30"></div>
+        <div class="rango"><label for="rLuz">Es de noche con menos de <b id="vLuz">30 %</b></label><input type="range" id="rLuz" min="5" max="90" value="30"><small>Luz ahora: <span id="vLuzAhora">—</span></small></div>
+        <div class="sub">Tarjetas RFID</div>
+        <div class="tarj"><b id="nTarj">0</b> tarjetas autorizadas <span class="ult" id="ultTarj">Última leída: —</span></div>
+        <div class="ctrls">
+          <button class="btn ver" id="bReg">➕ Registrar tarjeta</button>
+          <button class="btn" id="bAbrir">🔓 Abrir puerta</button>
+          <button class="btn rojo" id="bBorrar">Borrar todas</button>
+        </div>
       </div>
     </div>
     <div class="card">
@@ -279,39 +324,44 @@ footer{margin-top:24px;color:var(--mut);font-size:12px}
   <h2>Conectar el Arduino por Bluetooth</h2>
   <div id="soporte" class="soporte"></div>
   <ol>
-    <li>Enciende el Arduino con el módulo HC-05 conectado.</li>
+    <li>Enciende el Arduino UNO R4 WiFi con el módulo HC-05 conectado.</li>
     <li>En el celular, entra en <b>Ajustes → Bluetooth</b> y empareja el <b>HC-05</b> (clave <code>1234</code> o <code>0000</code>). En la computadora, emparéjalo desde la configuración de Bluetooth de Windows.</li>
     <li>Pulsa <b>Conectar HC-05</b> y elige el módulo en la lista.</li>
   </ol>
   <div class="ctrls">
     <button class="btn ver" id="bSerial">🔵 Conectar HC-05 / HC-06</button>
-    <button class="btn" id="bBle">Conectar módulo BLE (HM-10)</button>
+    <button class="btn" id="bUsb">🔌 Conectar por USB</button>
     <button class="btn" id="bDesc" disabled>Desconectar</button>
   </div>
-  <p class="nota">Funciona en <b>Google Chrome</b> (Android 137 o más nuevo, o computadora con Windows). El iPhone no permite Bluetooth desde páginas web. Si el HC-05 no aparece, revisa que esté emparejado y vuelve a intentarlo.</p>
+  <p class="nota">Funciona en <b>Google Chrome</b> (Android 137 o más nuevo, o computadora con Windows). El iPhone no permite Bluetooth desde páginas web.</p>
+
+  <h3>Conexiones (Arduino UNO R4 WiFi)</h3>
+  <table>
+    <tr><th>Componente</th><th>Pata del componente → Arduino</th><th>Notas</th></tr>
+    <tr><td>Bluetooth HC-05</td><td>TXD → <b>D0</b> · RXD ← <b>D1</b> · VCC 5V · GND</td><td>RXD con divisor: D1 → 1 kΩ → RXD, y 2 kΩ de RXD a GND</td></tr>
+    <tr><td>Lector RFID RC522</td><td>SDA → <b>D10</b> · SCK → <b>D13</b> · MOSI → <b>D11</b> · MISO → <b>D12</b> · RST → <b>D9</b> · <b>3.3V</b> · GND</td><td>¡A 3.3V, no a 5V! La pata IRQ no se usa</td></tr>
+    <tr><td>Sensor ultrasónico HC-SR04</td><td>TRIG → <b>D6</b> · ECHO → <b>D7</b> · VCC 5V · GND</td><td>Junto a la puerta de Farmacia, mirando hacia donde llega la persona</td></tr>
+    <tr><td>Sensor de temperatura LM35</td><td>Con la cara plana hacia ti: izquierda <b>5V</b> · centro <b>A1</b> · derecha <b>GND</b></td><td>Si se calienta solo, está al revés: desconéctalo y gíralo</td></tr>
+    <tr><td>Fotoresistencia</td><td>Una pata a 5V, la otra a <b>A0</b> · resistencia 10 kΩ de A0 a GND</td><td></td></tr>
+    <tr><td>LED verde (acceso)</td><td><b>D3</b> → 220 Ω → LED → GND</td><td>Pata larga del LED hacia el Arduino</td></tr>
+    <tr><td>LED rojo (alarma)</td><td><b>D4</b> → 220 Ω → LED → GND</td><td></td></tr>
+    <tr><td>LED amarillo (pasillo)</td><td><b>D5</b> → 220 Ω → LED → GND</td><td></td></tr>
+    <tr><td>Buzzer activo</td><td>+ → <b>D2</b> · − → GND</td><td></td></tr>
+  </table>
+
   <h3>Qué hace cada botón con el Arduino</h3>
   <table>
-    <tr><th>En la página</th><th>Orden que se envía</th><th>Qué hace el Arduino</th></tr>
-    <tr><td>Interruptor encendido</td><td><code>ON</code></td><td>Empieza a vigilar las zonas restringidas (LED verde)</td></tr>
-    <tr><td>Interruptor apagado</td><td><code>OFF</code></td><td>Deja de vigilar y apaga la sirena</td></tr>
-    <tr><td>Activar alerta manual</td><td><code>ALERTA</code></td><td>Suena el buzzer y parpadea el LED rojo</td></tr>
-    <tr><td>Silenciar</td><td><code>SILENCIAR</code></td><td>Apaga el buzzer y el LED rojo</td></tr>
+    <tr><th>En la página</th><th>Orden</th><th>Qué hace el Arduino</th></tr>
+    <tr><td>Interruptor encendido / apagado</td><td><code>ON</code> / <code>OFF</code></td><td>Vigila o deja de vigilar (la luz del pasillo sigue siendo automática)</td></tr>
+    <tr><td>Alerta manual / Silenciar</td><td><code>ALERTA</code> / <code>SILENCIAR</code></td><td>Suena o se calla el buzzer y el LED rojo</td></tr>
+    <tr><td>Registrar tarjeta</td><td><code>REGISTRAR</code></td><td>La próxima tarjeta que pases (15 s) queda autorizada</td></tr>
+    <tr><td>Abrir puerta</td><td><code>ABRIR</code></td><td>Da acceso a Farmacia 8 segundos sin tarjeta</td></tr>
+    <tr><td>Borrar todas</td><td><code>BORRAR</code></td><td>Quita todas las tarjetas autorizadas</td></tr>
+    <tr><td>Barras de ajustes</td><td><code>DIST:n</code> · <code>TMAX:n</code> · <code>LUZ:n</code></td><td>Cambian la distancia de la puerta, la temperatura máxima y el nivel de noche (se guardan aunque lo apagues)</td></tr>
   </table>
-  <p class="nota">El Arduino avisa cada segundo que está vivo. Si deja de responder (sin energía, cable suelto o Bluetooth caído), la página lo marca como <b>EQUIPO SIN RESPUESTA</b>. En ese caso, la <b>alerta manual</b> igual suena y vibra en el celular para avisar a los demás.</p>
-  <h3>Conexiones</h3>
-  <table>
-    <tr><th>Componente</th><th>Pin del Arduino</th><th>Notas</th></tr>
-    <tr><td>HC-05 TXD</td><td>D10</td><td></td></tr>
-    <tr><td>HC-05 RXD</td><td>D11</td><td>Con divisor de voltaje (1 kΩ y 2 kΩ): el RXD del módulo trabaja a 3.3 V</td></tr>
-    <tr><td>HC-05 VCC / GND</td><td>5V / GND</td><td></td></tr>
-    <tr><td>Sensor PIR 1 (Farmacia)</td><td>D2</td><td>VCC 5V, GND</td></tr>
-    <tr><td>Sensor PIR 2 (Quirófano)</td><td>D3</td><td>VCC 5V, GND</td></tr>
-    <tr><td>Botón de pánico</td><td>D4 → botón → GND</td><td>Funciona aunque el sistema esté apagado</td></tr>
-    <tr><td>LED rojo (alerta)</td><td>D6</td><td>Resistencia de 220 Ω</td></tr>
-    <tr><td>LED verde (sistema encendido)</td><td>D7</td><td>Resistencia de 220 Ω</td></tr>
-    <tr><td>Buzzer activo</td><td>D8</td><td></td></tr>
-  </table>
+  <p class="nota">El Arduino avisa dos veces por segundo que está vivo. Si deja de responder, la página marca <b>EQUIPO SIN RESPUESTA</b>, y la alerta manual igual suena y vibra en el celular.</p>
   <h3>Programa del Arduino</h3>
+  <p class="nota">En el Arduino IDE elige la placa <b>Arduino UNO R4 WiFi</b> e instala la librería <b>MFRC522</b> (Programa → Incluir librería → Gestionar librerías).</p>
   <div class="ctrls"><a class="btn ver" href="hospital_seguro.ino" download>⬇ Descargar programa .ino</a><button class="btn" id="bCopiar">Copiar código</button></div>
   <pre class="codigo" id="codigo">Cargando…</pre>
 </section>
@@ -319,20 +369,22 @@ footer{margin-top:24px;color:var(--mut);font-size:12px}
 <section class="vista card txt" id="v-como" hidden>
   <img class="logoGrande" src="logo.jpg" alt="Infinity Tec">
   <h2>Cómo funciona</h2>
-  <p>El <b>Sistema Inteligente de Seguridad Hospitalaria</b> vigila las zonas restringidas del hospital (Farmacia y Quirófano). Su objetivo es prevenir accesos no autorizados y dar una respuesta inmediata para proteger a pacientes, trabajadores y visitantes.</p>
-  <h3>1 · Detectar</h3>
-  <p>Un sensor de movimiento PIR en cada zona restringida avisa al Arduino cuando alguien entra.</p>
-  <h3>2 · Alertar</h3>
-  <p>Si el sistema está encendido, el Arduino activa la sirena (buzzer) y el LED rojo, y envía el aviso por Bluetooth al celular del personal encargado. En el celular aparece la alerta en pantalla completa, con sonido y vibración.</p>
-  <h3>3 · Alerta manual</h3>
-  <p>Si un sensor se daña, el equipo se queda sin energía o el Bluetooth se cae, la alarma podría no sonar sola. Por eso, quien tenga la página puede pulsar <b>Activar alerta manual</b>: suena en el Arduino si está conectado y siempre suena y vibra en el celular, para que los demás se enteren. También hay un botón de pánico físico junto al Arduino.</p>
-  <h3>4 · Encender y apagar</h3>
-  <p>Desde la página se enciende o se apaga la vigilancia del Arduino, por ejemplo durante el turno en que el personal autorizado trabaja en esas zonas. Apagado, el Arduino sigue conectado y escuchando, y la alerta manual y el botón de pánico siguen funcionando.</p>
-  <h3>5 · Equipo vigilado</h3>
-  <p>El Arduino envía una señal cada segundo. Si la página deja de recibirla, muestra <b>EQUIPO SIN RESPUESTA</b> para que el personal revise el equipo y use la alerta manual si hace falta.</p>
+  <p>El <b>Hospital Inteligente</b> de Infinity Tec protege la Farmacia, cuida la temperatura del quirófano y enciende solo la luz del pasillo. Todo se ve y se controla desde el celular por Bluetooth.</p>
+  <h3>1 · Acceso con tarjeta (RFID)</h3>
+  <p>Solo el personal con una tarjeta registrada entra a la Farmacia: al pasarla por el lector se prende el LED verde y suena un pitido corto. Una tarjeta desconocida prende el LED rojo con tres pitidos; con 3 intentos en un minuto, suena la alarma.</p>
+  <h3>2 · Vigilancia de la puerta (ultrasónico)</h3>
+  <p>El sensor ultrasónico mide la distancia frente a la puerta. Si alguien se queda ahí, tiene 8 segundos para pasar una tarjeta válida; si no lo hace, suena la alarma. Una tarjeta autorizada también apaga esa alarma.</p>
+  <h3>3 · Luz automática (fotoresistencia)</h3>
+  <p>Cuando oscurece, la fotoresistencia lo detecta y se enciende la luz del pasillo (LED amarillo). Con luz de día se apaga sola.</p>
+  <h3>4 · Temperatura (LM35)</h3>
+  <p>El sensor de temperatura vigila el quirófano. Si pasa del límite elegido, suena la alarma y llega el aviso al celular.</p>
+  <h3>5 · Alerta manual y equipo vigilado</h3>
+  <p>Si algo falla (un sensor dañado, el Arduino sin energía o el Bluetooth caído), cualquiera con la página puede activar la <b>alerta manual</b>: suena en el Arduino si está conectado y siempre suena y vibra en el celular. El Arduino envía una señal dos veces por segundo; si se corta, la página muestra <b>EQUIPO SIN RESPUESTA</b>.</p>
+  <h3>6 · Matriz de la placa</h3>
+  <p>La matriz de luces del UNO R4 WiFi muestra el estado: una cruz (normal), ? (esperando tarjeta), ✓ (acceso), X (tarjeta negada) y ! (alarma).</p>
 </section>
 
-<footer>Infinity Tec · Sistema Inteligente de Seguridad Hospitalaria · Proyecto escolar</footer>
+<footer>Infinity Tec · Hospital Inteligente · Proyecto escolar</footer>
 </main>
 </div>
 <button class="panico flotante" id="bPanico2">🚨 ALERTA MANUAL</button>
@@ -341,7 +393,7 @@ footer{margin-top:24px;color:var(--mut);font-size:12px}
   <div class="box">
     <div class="sir">🚨</div>
     <h3 id="alTit">¡ALERTA!</h3>
-    <p id="alTxt">Movimiento en zona restringida</p>
+    <p id="alTxt">Alerta activada</p>
     <button class="btn ver" id="bSilenciar">Silenciar alerta</button>
     <button class="btn" id="bOcultar">Ver el plano (la alerta sigue activa)</button>
   </div>
@@ -354,23 +406,26 @@ const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
 
-/* ---------- Estado ---------- */
+/* ---------- Estado que muestra la página (llega del Arduino real o del simulado) ---------- */
 const S = {
   modo: 'sim',            // sim | real
   sistema: true, alerta: false, origen: 0,
-  pir1: false, pir2: false,
-  falla: {F:false, Q:false, E:false},
+  dist: 300, persona: false, espera: 0, acceso: false,
+  luz: 85, noche: false, temp: 23, tempOk: true,
+  distPuerta: 30, luzNoche: 30, tempMax: 30, nTarj: 1, registrando: false,
+  ultTj: null, tTj: 0,
+  falla: {R:false, U:false, T:false, E:false},
   alertasHoy: 0, sonido: true, ocultaAlarma: false,
-  ultimoLatido: 0, equipoVivo: true
+  ultimoLatido: Date.now()
 };
-const ORIGEN = {0:'',1:'Movimiento en FARMACIA (zona restringida)',2:'Movimiento en QUIRÓFANO (zona restringida)',3:'Alerta MANUAL activada desde la app',4:'Botón de pánico presionado'};
+const ORIGEN = {0:'',1:'Persona SIN TARJETA en la puerta de Farmacia',2:'Temperatura ALTA en el quirófano',3:'Alerta MANUAL activada desde la app',4:'Tarjeta NO autorizada (3 intentos)'};
 
 function hora(){ return new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
 function log(msg, rojo){
   const li = document.createElement('li');
   li.innerHTML = '<b>'+hora()+'</b> '+(rojo?'<span class="r">'+msg+'</span>':msg);
   const ul = $('log'); ul.prepend(li);
-  while (ul.children.length > 80) ul.lastChild.remove();
+  while (ul.children.length > 100) ul.lastChild.remove();
 }
 
 /* ---------- Sonido y vibración ---------- */
@@ -386,160 +441,309 @@ function sirena(on){
       lfo.connect(lg); lg.connect(osc.frequency); osc.connect(gan); gan.connect(ctx.destination); gan.gain.value = 0.08;
       osc.start(); lfo.start();
     } catch {}
-  } else if (osc) { try{ osc.stop(); lfo.stop(); }catch{} osc = lfo = null; }
+  } else if (!on || !S.sonido) { if (osc) { try{ osc.stop(); lfo.stop(); }catch{} osc = lfo = null; } }
 }
-let vibra = null;
+function pitido(f, ms){
+  if (!S.sonido) return;
+  try { ctx = ctx || new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = f; g.gain.value = .06; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + ms/1000); } catch {}
+}
+let vibra = null, vibrando = false;
 function vibrar(on){
-  if (!navigator.vibrate) return;
-  clearInterval(vibra);
+  if (!navigator.vibrate || on === vibrando) return;
+  vibrando = on; clearInterval(vibra);
   if (on) { navigator.vibrate([400,200,400]); vibra = setInterval(()=>navigator.vibrate([400,200,400]), 1200); } else navigator.vibrate(0);
 }
 
-/* ---------- Personas en el plano ---------- */
+/* ---------- Mundo simulado: personas, luz y temperatura ---------- */
+const mundo = { luz: 85, luzMeta: 85, temp: 23, tempMeta: 23 };
+const TARJ_ENF = 'E1A4339C', TARJ_FALSA = '13F0A2B7';
 const gP = $('personas');
-const ENTRADA = [-20,310], RECEP = [70,310];
-const RUTAS = {
-  visita:   {color:'#33d6f0', icono:'🧑', camino:[[150,310],[145,195],[285,195],[285,110]], zona:null, nombre:'Visitante'},
-  enfermera:{color:'#2ef2a0', icono:'🩺', camino:[[150,310],[145,195],[105,195],[105,110]], zona:null, nombre:'Enfermera'},
-  intrusoF: {color:'#ff3d5a', icono:'🕵', camino:[[150,310],[145,195],[465,195],[465,140],[560,100]], zona:'F', nombre:'Intruso'},
-  intrusoQ: {color:'#ff3d5a', icono:'🕵', camino:[[150,310],[145,195],[485,195],[485,250],[600,320]], zona:'Q', nombre:'Intruso'}
+const ENTRADA = [-20,310], RECEP = [70,310], PUERTA = [465,196];
+const PERS = {
+  visita:    {color:'#33d6f0', icono:'🧑', nombre:'Visitante', camino:[[150,310],[145,195],[285,195],[285,110]]},
+  enfermera: {color:'#2ef2a0', icono:'🩺', nombre:'Enfermera', camino:[[150,310],[145,195],PUERTA], tarjeta: TARJ_ENF},
+  intruso:   {color:'#ff3d5a', icono:'🕵', nombre:'Intruso',   camino:[[150,310],[145,195],PUERTA]},
+  falsa:     {color:'#ff3d5a', icono:'🕵', nombre:'Intruso',   camino:[[150,310],[145,195],PUERTA], tarjeta: TARJ_FALSA, intentos: 3}
 };
 const gente = [];
 function mover(g,[x,y]){ g.style.transform = `translate(${x}px,${y}px)`; }
-function caminar(g, puntos, fin){
+function caminar(p, puntos, fin){
   let i = 0;
-  const sig = () => { if (!g.isConnected) return; if (i >= puntos.length) { fin && fin(); return; } mover(g, puntos[i++]); setTimeout(sig, 850); };
+  const sig = () => { if (!p.g.isConnected || p.cancelado) return; if (i >= puntos.length) { fin && fin(); return; } mover(p.g, puntos[i++]); setTimeout(sig, 850); };
   sig();
 }
 function agregar(tipo){
-  const r = RUTAS[tipo];
+  const r = PERS[tipo];
   const g = el('g',{class:'persona'},gP);
   el('circle',{r:13,fill:'#05060c',stroke:r.color,'stroke-width':3},g);
   const t = el('text',{y:5,'font-size':14,'text-anchor':'middle'},g); t.textContent = r.icono;
   mover(g, ENTRADA); g.getBoundingClientRect();
-  const p = {g, tipo, zona:null};
+  const p = {g, tipo, enPuerta:false, dentro:false};
   gente.push(p);
   log(r.nombre+' entra al hospital');
-  requestAnimationFrame(()=>caminar(g, [RECEP, ...r.camino], ()=>{ p.zona = r.zona; if (r.zona) log(r.nombre+' llegó a '+(r.zona==='F'?'Farmacia':'Quirófano'), true); }));
+  requestAnimationFrame(()=>caminar(p, [RECEP, ...r.camino], ()=>{
+    if (r.camino[r.camino.length-1] !== PUERTA) return;
+    p.enPuerta = true;
+    if (tipo === 'enfermera') setTimeout(()=>intentarEntrar(p), 1500);
+    if (tipo === 'falsa') { let n = 0; const otra = () => { if (!p.enPuerta || !p.g.isConnected) return; if (n++ < r.intentos) { log('El intruso pasa una tarjeta falsa por el lector'); VA.tarjeta(TARJ_FALSA); setTimeout(otra, 2500); } }; setTimeout(otra, 1200); }
+  }));
 }
-function todosSalen(){
-  if (!gente.length) return;
-  gente.splice(0).forEach(p => { p.zona = null; caminar(p.g, [[145,195],[150,310],RECEP,ENTRADA], ()=>p.g.remove()); });
-  log('Todas las personas salen');
+function intentarEntrar(p){
+  if (!p.enPuerta) return;
+  log('La enfermera pasa su tarjeta por el lector');
+  VA.tarjeta(TARJ_ENF);
+  setTimeout(()=>{
+    if (!p.enPuerta) return;
+    if (VA.d.accesoHasta > Date.now()) { p.enPuerta = false; p.dentro = true; caminar(p, [[465,140],[560,95]]); log('La enfermera entra a Farmacia'); }
+    else { log('La enfermera no pudo entrar a Farmacia', true); setTimeout(()=>salir(p), 3500); }
+  }, 900);
 }
+function salir(p){
+  const i = gente.indexOf(p); if (i < 0) return; gente.splice(i,1);
+  p.enPuerta = false;
+  const camino = p.dentro ? [[465,140],PUERTA,[145,195],[150,310],RECEP,ENTRADA] : p.tipo==='visita' ? [[285,195],[145,195],[150,310],RECEP,ENTRADA] : [[145,195],[150,310],RECEP,ENTRADA];
+  if (p.dentro) { VA.orden('ABRIR', true); }
+  caminar(p, camino, ()=>p.g.remove());
+}
+function todosSalen(){ if (!gente.length) return; log('Todas las personas salen'); [...gente].forEach(salir); }
+mundo.dist = () => gente.some(p=>p.enPuerta) ? 18 + Math.round(Math.random()*2) : 150 + Math.round(Math.random()*4);
 
-/* ---------- Lógica del "Arduino" simulado ---------- */
-function tickSim(){
-  if (S.modo !== 'sim') return;
-  const vivo = !S.falla.E;
-  // lo que el sensor ve (si no está dañado)
-  const enF = gente.some(p=>p.zona==='F'), enQ = gente.some(p=>p.zona==='Q');
-  S.pir1 = enF && !S.falla.F; S.pir2 = enQ && !S.falla.Q;
-  if (vivo) {
-    S.ultimoLatido = Date.now();
-    if (S.sistema && !S.alerta) {
-      if (S.pir1) dispararAlerta(1); else if (S.pir2) dispararAlerta(2);
+/* ---------- Arduino simulado: mismas reglas que el programa real ---------- */
+const VA = (() => {
+  const d = { sis:1, alerta:0, origen:0, dist:150, persona:0, esperaFin:0, accesoHasta:0, tVista:0,
+    luz:85, noche:0, temp:23, tempOk:1, avisoCalor:false, distPuerta:30, luzNoche:30, tempMax:30,
+    tarjetas:[TARJ_ENF], registrando:0, regHasta:0, negados:0, tNegado:0, ultUid:'', tUlt:0 };
+  const ev = t => procesar('EV,'+t);
+  const vivo = () => !S.falla.E;
+  function alertar(o, t){ if (d.alerta) return; d.alerta = 1; d.origen = o; ev(t); st(); }
+  function silenciar(t){ if (!d.alerta) return; d.alerta = 0; d.origen = 0; ev(t); }
+  function tarjeta(uid){
+    if (!vivo() || S.modo !== 'sim') return;
+    if (S.falla.R) { log('El lector RFID no respondió (dañado)', true); return; }
+    const ahora = Date.now();
+    if (d.registrando) {
+      d.registrando = 0;
+      if (d.tarjetas.includes(uid)) ev('La tarjeta '+uid+' ya estaba registrada');
+      else if (d.tarjetas.length >= 10) ev('Memoria llena: ya hay 10 tarjetas');
+      else { d.tarjetas.push(uid); ev('Tarjeta '+uid+' registrada'); }
+      procesar('TJ,'+uid+',1'); st(); return;
+    }
+    const ok = d.tarjetas.includes(uid);
+    procesar('TJ,'+uid+','+(ok?1:0));
+    if (ok) {
+      d.accesoHasta = ahora + 8000; d.esperaFin = 0; d.negados = 0;
+      ev('Acceso permitido a Farmacia: tarjeta '+uid);
+      if (d.alerta && (d.origen === 1 || d.origen === 4)) silenciar('Alarma desactivada con una tarjeta autorizada');
+    } else {
+      if (ahora - d.tNegado > 60000) d.negados = 0;
+      d.tNegado = ahora; d.negados++;
+      ev('Tarjeta NO autorizada: '+uid+' (intento '+d.negados+')');
+      if (d.negados >= 3 && d.sis) alertar(4, 'ALARMA: 3 intentos con tarjeta no autorizada');
+    }
+    st();
+  }
+  function tick(){
+    if (!vivo() || S.modo !== 'sim') return;
+    const ahora = Date.now();
+    d.dist = S.falla.U ? 300 : mundo.dist();
+    d.persona = d.dist < d.distPuerta ? 1 : 0;
+    if (d.persona) d.tVista = ahora;
+    if (!d.sis) d.esperaFin = 0;
+    else if (d.persona && ahora > d.accesoHasta && !d.alerta && !d.esperaFin) { d.esperaFin = ahora + 8000; ev('Persona en la puerta de Farmacia: acerque su tarjeta'); }
+    if (d.esperaFin && ahora - d.tVista > 2000) { d.esperaFin = 0; ev('La persona se alejó de la puerta'); }
+    if (d.esperaFin && ahora >= d.esperaFin) { d.esperaFin = 0; alertar(1, 'ALARMA: persona sin tarjeta en la puerta de Farmacia'); }
+    if (d.registrando && ahora > d.regHasta) { d.registrando = 0; ev('Registro de tarjeta cancelado (tiempo agotado)'); }
+    d.luz = Math.round(mundo.luz);
+    if (!d.noche && d.luz < d.luzNoche) { d.noche = 1; ev('Anochece: luz del pasillo encendida'); }
+    else if (d.noche && d.luz > d.luzNoche + 5) { d.noche = 0; ev('Hay luz: luz del pasillo apagada'); }
+    d.temp = S.falla.T ? -48.8 : mundo.temp; d.tempOk = d.temp > 1 && d.temp < 110 ? 1 : 0;
+    if (d.tempOk) {
+      if (d.temp >= d.tempMax && !d.avisoCalor) { d.avisoCalor = true; if (d.sis) alertar(2, 'ALARMA: temperatura alta ('+d.temp.toFixed(1)+' C)'); else ev('Temperatura alta ('+d.temp.toFixed(1)+' C), pero el sistema está apagado'); }
+      else if (d.temp < d.tempMax - 1) d.avisoCalor = false;
     }
   }
-  // aviso de narrador: alguien entró y el equipo no avisó
-  let aviso = '';
-  if (!S.alerta && (enF || enQ)) {
-    const z = enF ? 'Farmacia' : 'Quirófano';
-    if (!vivo) aviso = '⚠ Hay un intruso en '+z+', pero el Arduino no responde. Pulsa <b>ALERTA MANUAL</b>.';
-    else if (!S.sistema) aviso = '⚠ Hay un intruso en '+z+', pero el sistema está <b>apagado</b>. Enciéndelo o usa la <b>alerta manual</b>.';
-    else if ((enF && S.falla.F) || (enQ && S.falla.Q)) aviso = '⚠ El sensor de '+z+' está dañado y no detectó al intruso. Un guardia lo vio: pulsa <b>ALERTA MANUAL</b>.';
+  function st(){
+    if (!vivo() || S.modo !== 'sim') return;
+    const a = Date.now();
+    procesar(['ST',d.sis,d.alerta,d.origen,d.dist,d.persona,d.esperaFin?Math.ceil((d.esperaFin-a)/1000):0,a<d.accesoHasta?1:0,d.luz,d.noche,Math.round(d.temp*10),d.tempOk,d.distPuerta,d.luzNoche,d.tempMax,d.tarjetas.length,d.registrando].join(','));
   }
-  $('banner').innerHTML = aviso; $('banner').classList.toggle('ver', !!aviso);
-}
-function dispararAlerta(origen){
-  if (S.alerta) return;
-  S.alerta = true; S.origen = origen; S.alertasHoy++; S.ocultaAlarma = false;
-  log('🚨 '+ORIGEN[origen], true);
-  pintar();
-}
+  function orden(o, callado){
+    if (!vivo()) return;
+    o = o.trim().toUpperCase(); const [c, v0] = o.split(':'); const v = v0 === undefined ? -1 : parseInt(v0);
+    const lim = (x,a,b) => Math.max(a, Math.min(b, x));
+    if (c === 'ON') { d.sis = 1; ev('Sistema encendido'); }
+    else if (c === 'OFF') { d.sis = 0; d.esperaFin = 0; silenciar('Alerta silenciada'); ev('Sistema apagado'); }
+    else if (c === 'ALERTA') alertar(3, 'ALERTA MANUAL desde la app');
+    else if (c === 'SILENCIAR') { silenciar('Alerta silenciada desde la app'); d.negados = 0; }
+    else if (c === 'ABRIR') { d.accesoHasta = Date.now() + 8000; d.esperaFin = 0; if (!callado) ev('Puerta de Farmacia abierta desde la app'); }
+    else if (c === 'REGISTRAR') { d.registrando = 1; d.regHasta = Date.now() + 15000; ev('Acerque la tarjeta nueva al lector (15 s)'); }
+    else if (c === 'CANCELAR') { if (d.registrando) { d.registrando = 0; ev('Registro de tarjeta cancelado'); } }
+    else if (c === 'BORRAR') { d.tarjetas = []; ev('Se borraron todas las tarjetas'); }
+    else if (c === 'DIST' && v >= 0) { d.distPuerta = lim(v,5,150); ev('Distancia de la puerta = '+d.distPuerta+' cm'); }
+    else if (c === 'LUZ' && v >= 0) { d.luzNoche = lim(v,5,90); ev('Noche con menos de '+d.luzNoche+' % de luz'); }
+    else if (c === 'TMAX' && v >= 0) { d.tempMax = lim(v,20,60); d.avisoCalor = false; ev('Temperatura maxima = '+d.tempMax+' C'); }
+    else if (c === 'ESTADO') {}
+    else { ev('Orden desconocida: '+o); return; }
+    st();
+  }
+  setInterval(tick, 100); setInterval(st, 500);
+  return { d, orden, tarjeta };
+})();
 
 /* ---------- Pintar ---------- */
+function equipoVivo(){ return Date.now() - S.ultimoLatido < 3000; }
 function pintar(){
   const vivo = equipoVivo();
-  // plano
-  $('zF').setAttribute('fill', S.alerta && S.origen===1 ? '#5a0f24' : '#2a1450');
-  $('zQ').setAttribute('fill', S.alerta && S.origen===2 ? '#5a0f24' : '#2a1450');
-  $('pF').setAttribute('stroke', S.pir1 ? '#ff3d5a' : '#9b4dff');
-  $('pQ').setAttribute('stroke', S.pir2 ? '#ff3d5a' : '#9b4dff');
-  $('conoF').setAttribute('opacity', S.pir1 && vivo ? '.18' : '0');
-  $('conoQ').setAttribute('opacity', S.pir2 && vivo ? '.18' : '0');
-  $('pir1led').setAttribute('fill', S.pir1 && vivo ? '#ff3d5a' : '#444');
-  $('pir2led').setAttribute('fill', S.pir2 && vivo ? '#ff3d5a' : '#444');
-  $('fallaF').setAttribute('opacity', S.modo==='sim' && S.falla.F ? '1':'0');
-  $('fallaQ').setAttribute('opacity', S.modo==='sim' && S.falla.Q ? '1':'0');
+  const a = Date.now();
+  // puerta y sensores
+  let colPuerta = '#9b4dff';
+  if (S.alerta && (S.origen === 1 || S.origen === 4)) colPuerta = '#ff3d5a';
+  else if (S.acceso) colPuerta = '#2ef2a0';
+  else if (S.espera || S.persona) colPuerta = '#ffbf3d';
+  $('pF').setAttribute('stroke', colPuerta);
+  $('pF').setAttribute('stroke-dasharray', S.acceso ? '0' : '5 4');
+  $('zF').setAttribute('fill', S.alerta && (S.origen===1||S.origen===4) ? '#5a0f24' : '#2a1450');
+  $('cono').setAttribute('opacity', vivo && S.persona ? '.22' : '0');
+  const tjReciente = a - S.tTj < 1500 && S.ultTj;
+  $('rfidLed').setAttribute('fill', tjReciente ? (S.ultTj.ok ? '#2ef2a0' : '#ff3d5a') : (S.registrando ? '#ffbf3d' : '#444'));
+  $('espTxt').textContent = S.espera ? 'Tarjeta: '+S.espera+' s' : S.acceso ? 'ACCESO' : '';
+  $('espTxt').setAttribute('fill', S.acceso ? '#2ef2a0' : '#ffbf3d');
+  // temperatura
+  const caliente = S.tempOk && S.temp >= S.tempMax;
+  const colT = !S.tempOk ? '#ffbf3d' : caliente ? '#ff3d5a' : S.temp >= S.tempMax - 3 ? '#ffbf3d' : '#2ef2a0';
+  $('tempTxt').textContent = !vivo ? '— °C' : S.tempOk ? S.temp.toFixed(1)+' °C' : 'SIN SENSOR';
+  $('tempTxt').setAttribute('fill', colT);
+  const niv = S.tempOk ? Math.max(4, Math.min(40, (S.temp - 10) / 40 * 40)) : 4;
+  $('termoNivel').setAttribute('y', 292 - niv); $('termoNivel').setAttribute('height', niv);
+  $('termoNivel').setAttribute('fill', colT); $('termoBulbo').setAttribute('fill', colT);
+  $('zQ').setAttribute('fill', S.alerta && S.origen===2 ? '#5a0f24' : '#101a3a');
+  // luz
+  $('oscuro').setAttribute('opacity', vivo ? (Math.max(0, 70 - S.luz) / 70 * .55).toFixed(2) : 0);
+  $('focos').setAttribute('opacity', vivo && S.noche ? 1 : 0);
+  $('lamparas').setAttribute('fill', vivo && S.noche ? '#ffe23d' : '#2a2a40');
   $('sirena').classList.toggle('alarmando', S.alerta);
-  // banco de electrónica
-  const ledOn = vivo;
-  $('ledV').classList.toggle('on', ledOn && S.sistema);
-  $('ledR').classList.toggle('on', ledOn && S.alerta);
-  $('ledB').classList.toggle('on', ledOn && S.alerta);
+  // LEDs del banco
+  const parp = Math.floor(a / 250) % 2 === 0;
+  $('ledV').classList.toggle('on', vivo && S.acceso);
+  $('ledR').classList.toggle('on', vivo && (S.alerta ? parp : (tjReciente && !S.ultTj.ok) || (S.espera && Math.floor(a/500)%2===0)));
+  $('ledA').classList.toggle('on', vivo && S.noche);
+  $('ledB').classList.toggle('on', vivo && (S.alerta ? parp : S.espera ? a % 1000 < 120 : false));
   $('chipTxt').textContent = !vivo ? 'sin respuesta' : S.sistema ? 'vigilando' : 'en espera';
   $('btTxt').textContent = S.modo==='real' ? (vivo?'conectado':'sin señal') : (vivo ? 'enlazado' : 'caído');
   // interruptor
   $('sw').setAttribute('aria-checked', String(S.sistema));
   $('swTxt').textContent = S.sistema ? 'ENCENDIDO' : 'APAGADO';
   $('swTxt').className = S.sistema ? 'ok' : 'mal';
-  $('swSub').textContent = S.sistema ? 'Vigilando las zonas restringidas' : 'Sin vigilancia · la alerta manual sigue activa';
-  // tarjetas
+  $('swSub').textContent = S.sistema ? 'Vigilando el hospital' : 'Sin vigilancia · la alerta manual sigue activa';
+  // barra de estado
   const kE = $('kEstado');
-  if (S.alerta) { kE.textContent = '🚨 ALERTA'; kE.className = 'v mal'; }
-  else if (!S.sistema) { kE.textContent = 'APAGADO'; kE.className = 'v aviso'; }
-  else { kE.textContent = 'NORMAL'; kE.className = 'v ok'; }
+  if (S.alerta) { kE.textContent = '🚨 ALERTA'; kE.className = 'mal'; }
+  else if (!S.sistema) { kE.textContent = 'APAGADO'; kE.className = 'aviso'; }
+  else { kE.textContent = 'NORMAL'; kE.className = 'ok'; }
   const kQ = $('kEquipo');
-  if (!vivo) { kQ.textContent = 'SIN RESPUESTA'; kQ.className = 'v mal'; }
-  else if (S.modo==='real') { kQ.textContent = 'EN LÍNEA'; kQ.className = 'v ok'; }
-  else { kQ.textContent = 'SIMULACIÓN'; kQ.className = 'v neutro'; }
-  const zona = (id, on, dan) => { const k=$(id); if (!vivo) { k.textContent='Sin datos'; k.className='v aviso'; } else if (dan) { k.textContent='Sensor dañado'; k.className='v aviso'; } else { k.textContent = on ? 'MOVIMIENTO' : 'Sin movimiento'; k.className = 'v '+(on?'mal':'ok'); } };
-  zona('kF', S.pir1, S.modo==='sim' && S.falla.F);
-  zona('kQ', S.pir2, S.modo==='sim' && S.falla.Q);
+  if (!vivo) { kQ.textContent = 'SIN RESPUESTA'; kQ.className = 'mal'; }
+  else if (S.modo==='real') { kQ.textContent = 'EN LÍNEA'; kQ.className = 'ok'; }
+  else { kQ.textContent = 'SIMULACIÓN'; kQ.className = 'neutro'; }
+  const kP = $('kPuerta');
+  if (!vivo) { kP.textContent = 'Sin datos'; kP.className = 'aviso'; }
+  else if (S.alerta && (S.origen===1||S.origen===4)) { kP.textContent = 'ALARMA'; kP.className = 'mal'; }
+  else if (S.acceso) { kP.textContent = 'Acceso permitido'; kP.className = 'ok'; }
+  else if (S.espera) { kP.textContent = 'Persona · '+S.espera+' s'; kP.className = 'aviso'; }
+  else if (S.dist >= 300) { kP.textContent = 'Libre · sin eco'; kP.className = 'ok'; }
+  else { kP.textContent = 'Libre · '+S.dist+' cm'; kP.className = 'ok'; }
+  const kT = $('kTemp');
+  if (!vivo) { kT.textContent = 'Sin datos'; kT.className = 'aviso'; }
+  else if (!S.tempOk) { kT.textContent = 'Sensor desconectado'; kT.className = 'aviso'; }
+  else { kT.textContent = S.temp.toFixed(1)+' °C'; kT.className = caliente ? 'mal' : 'ok'; }
+  const kL = $('kLuz');
+  if (!vivo) { kL.textContent = 'Sin datos'; kL.className = 'aviso'; }
+  else { kL.textContent = (S.noche ? '🌙 Noche · luz encendida' : '☀ Día') + ' (' + S.luz + ' %)'; kL.className = S.noche ? 'aviso' : 'ok'; }
   $('kAlertas').textContent = S.alertasHoy;
-  $('kTurno').textContent = S.sistema ? 'Vigilancia 24 h' : 'Sin vigilancia'; $('kTurno').className = S.sistema ? '' : 'aviso';
+  // ajustes
+  if (a - tocado.rDist > 1500) { $('rDist').value = S.distPuerta; $('vDist').textContent = S.distPuerta+' cm'; }
+  if (a - tocado.rTmax > 1500) { $('rTmax').value = S.tempMax; $('vTmax').textContent = S.tempMax+' °C'; }
+  if (a - tocado.rLuz > 1500) { $('rLuz').value = S.luzNoche; $('vLuz').textContent = S.luzNoche+' %'; }
+  $('vDistAhora').textContent = !vivo ? '—' : S.dist >= 300 ? 'sin eco (nadie cerca)' : S.dist+' cm';
+  $('vLuzAhora').textContent = vivo ? S.luz+' %' : '—';
+  $('nTarj').textContent = S.nTarj;
+  $('bReg').textContent = S.registrando ? '⏳ Pase la tarjeta… (cancelar)' : '➕ Registrar tarjeta';
+  $('bReg').classList.toggle('esperando', S.registrando);
+  if (S.ultTj) $('ultTarj').textContent = 'Última leída: '+S.ultTj.uid+(S.ultTj.ok?' ✔':' ✖');
+  // simulador
+  $('bNoche').querySelector('b').textContent = mundo.luzMeta < 50 ? 'Amanecer' : 'Anochecer';
+  $('bNoche').querySelector('span').textContent = mundo.luzMeta < 50 ? '☀' : '🌙';
+  $('bCalor').querySelector('b').textContent = mundo.tempMeta > 30 ? 'Arreglar el aire' : 'Falla el aire';
+  $('bCalor').querySelector('span').textContent = mundo.tempMeta > 30 ? '❄' : '🔥';
+  if (document.activeElement !== $('rTempSim')) $('rTempSim').value = mundo.tempMeta;
+  $('vTempSim').textContent = mundo.temp.toFixed(1)+' °C';
   // conexión
   const c = $('conn');
-  if (S.modo==='sim') { c.className='conn sim'; $('connTxt').textContent='Simulación'; }
-  else if (vivo) { c.className='conn ok'; $('connTxt').textContent='Arduino conectado'; }
-  else { c.className='conn err'; $('connTxt').textContent='Equipo sin respuesta'; }
+  if (S.modo==='sim') { c.className = 'conn sim'; $('connTxt').textContent = 'Simulación'; }
+  else if (vivo) { c.className = 'conn ok'; $('connTxt').textContent = 'Arduino conectado'; }
+  else { c.className = 'conn err'; $('connTxt').textContent = 'Equipo sin respuesta'; }
   // alarma
   $('alTxt').textContent = ORIGEN[S.origen] || 'Alerta activada';
   $('alarma').classList.toggle('on', S.alerta && !S.ocultaAlarma);
   sirena(S.alerta); vibrar(S.alerta);
   $('hora').textContent = hora();
 }
-function equipoVivo(){
-  if (S.modo === 'sim') return !S.falla.E;
-  return Date.now() - S.ultimoLatido < 4000;
+
+/* ---------- Mensajes del Arduino (real o simulado) ---------- */
+function procesar(l){
+  const p = l.split(',');
+  if (p[0] === 'ST' && p.length >= 17) {
+    S.ultimoLatido = Date.now();
+    const n = p.slice(1).map(Number);
+    S.sistema = !!n[0];
+    const alerta = !!n[1], origen = n[2];
+    S.dist = n[3]; S.persona = !!n[4]; S.espera = n[5]; S.acceso = !!n[6];
+    S.luz = n[7]; S.noche = !!n[8]; S.temp = n[9] / 10; S.tempOk = !!n[10];
+    S.distPuerta = n[11]; S.luzNoche = n[12]; S.tempMax = n[13]; S.nTarj = n[14]; S.registrando = !!n[15];
+    if (alerta && !S.alerta) dispararAlerta(origen);
+    else if (alerta) S.origen = origen;
+    else if (!alerta && S.alerta && S.origen !== 3) { S.alerta = false; S.origen = 0; quitarIntrusos(); }
+    else if (!alerta && S.alerta && S.origen === 3 && equipoVivo()) { /* la manual sigue hasta silenciar */ }
+    pintar();
+  } else if (p[0] === 'EV') {
+    const t = p.slice(1).join(',').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'})[c]);
+    log((S.modo==='real' ? 'Arduino: ' : '') + t, /ALARMA|ALERTA|NO autorizada|no se encuentra|no da una/i.test(t));
+  } else if (p[0] === 'TJ' && p.length >= 3) {
+    S.ultTj = { uid: p[1], ok: p[2] === '1' }; S.tTj = Date.now();
+    pitido(S.ultTj.ok ? 1400 : 300, S.ultTj.ok ? 150 : 400);
+    pintar();
+  }
+}
+function dispararAlerta(origen){
+  if (S.alerta) return;
+  S.alerta = true; S.origen = origen; S.alertasHoy++; S.ocultaAlarma = false;
+  log('🚨 '+ORIGEN[origen], true);
+}
+function quitarIntrusos(){
+  if (S.modo !== 'sim') return;
+  const intrusos = gente.filter(p=>p.tipo==='intruso'||p.tipo==='falsa');
+  if (!intrusos.length) return;
+  log('Seguridad atiende la alerta y retira '+(intrusos.length===1?'al intruso':'a los intrusos'));
+  intrusos.forEach(salir);
 }
 
-/* ---------- Acciones del usuario ---------- */
-function setSistema(on){
-  if (S.modo==='real') { enviar(on?'ON':'OFF'); log('Orden enviada al Arduino: <b>'+(on?'ON':'OFF')+'</b>'); if (!equipoVivo()) log('El Arduino no responde: la orden puede no llegar', true); }
-  if (S.modo==='sim' && S.falla.E) { log('El Arduino no responde: no se puede '+(on?'encender':'apagar'), true); return; }
-  S.sistema = on;
-  if (!on && S.alerta) { S.alerta = false; S.origen = 0; }
-  log('Sistema <b>'+(on?'ENCENDIDO':'APAGADO')+'</b>');
-  pintar();
+/* ---------- Acciones ---------- */
+function enviar(txt){
+  if (S.modo === 'sim') { if (S.falla.E) log('El Arduino no responde: la orden no llegó', true); VA.orden(txt); return; }
+  enviarReal(txt);
+  if (!equipoVivo()) log('El Arduino no responde: la orden puede no llegar', true);
 }
+function setSistema(on){ enviar(on ? 'ON' : 'OFF'); if (S.modo==='real' || !S.falla.E) { S.sistema = on; if (!on && S.alerta && S.origen !== 3) { S.alerta = false; S.origen = 0; } } pintar(); }
 function alertaManual(){
   if (ctx) ctx.resume();
-  if (S.modo==='real') { enviar('ALERTA'); if (!equipoVivo()) log('El Arduino no responde: la alerta suena solo en este dispositivo', true); }
-  else if (S.falla.E) log('El Arduino no responde: la alerta suena solo en este dispositivo', true);
-  S.alerta = false; dispararAlerta(3);
+  enviar('ALERTA');
+  if (!equipoVivo()) log('El Arduino no responde: la alerta suena solo en este dispositivo', true);
+  dispararAlerta(3); S.origen = S.origen || 3; pintar();
 }
 function silenciar(){
-  if (S.modo==='real') enviar('SILENCIAR');
+  enviar('SILENCIAR');
+  if (S.alerta) log('Alerta silenciada');
   S.alerta = false; S.origen = 0;
-  log('Alerta silenciada');
-  if (S.modo==='sim') {
-    // el personal de seguridad atiende la alerta y saca a los intrusos
-    const intrusos = gente.filter(p=>p.tipo.startsWith('intruso'));
-    if (intrusos.length) log('Seguridad atiende la alerta y retira '+(intrusos.length===1?'al intruso':'a los intrusos'));
-    intrusos.forEach(p => { gente.splice(gente.indexOf(p),1); p.zona=null; const r=RUTAS[p.tipo].camino; caminar(p.g, [...r.slice(0,-1).reverse(), RECEP, ENTRADA], ()=>p.g.remove()); });
-  }
+  quitarIntrusos();
   pintar();
 }
 $('sw').onclick = ()=>{ if (ctx) ctx.resume(); setSistema(!S.sistema); };
@@ -552,11 +756,32 @@ $('bLimpiar').onclick = ()=>{ $('log').innerHTML=''; };
 document.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => { if (ctx) ctx.resume(); b.dataset.acc==='salir' ? todosSalen() : agregar(b.dataset.acc); });
 document.querySelectorAll('[data-falla]').forEach(b => b.onclick = () => {
   const k = b.dataset.falla; S.falla[k] = !S.falla[k]; b.setAttribute('aria-pressed', String(S.falla[k]));
-  const n = {F:'Sensor PIR de Farmacia',Q:'Sensor PIR del Quirófano',E:'Arduino / Bluetooth'}[k];
+  const n = {R:'Lector RFID',U:'Sensor ultrasónico',T:'Sensor de temperatura',E:'Arduino / Bluetooth'}[k];
   log(S.falla[k] ? '⚠ Falla simulada: '+n : n+' reparado', S.falla[k]);
-  if (k==='E' && S.falla.E && S.alerta && S.origen !== 3) { /* el buzzer del equipo se calla al quedarse sin energía */ S.alerta=false; S.origen=0; }
-  tickSim(); pintar();
+  if (k === 'E' && S.falla.E && S.alerta && S.origen !== 3) { S.alerta = false; S.origen = 0; VA.d.alerta = 0; VA.d.origen = 0; }
+  pintar();
 });
+$('bNoche').onclick = () => { mundo.luzMeta = mundo.luzMeta < 50 ? 85 : 10; log(mundo.luzMeta < 50 ? '🌙 Está anocheciendo' : '☀ Está amaneciendo'); };
+$('bCalor').onclick = () => { mundo.tempMeta = mundo.tempMeta > 30 ? 23 : 36; log(mundo.tempMeta > 30 ? '🔥 Falla el aire acondicionado del quirófano' : '❄ Se arregló el aire acondicionado'); };
+$('rTempSim').oninput = e => { mundo.tempMeta = +e.target.value; };
+$('bNueva').onclick = () => { const uid = [...crypto.getRandomValues(new Uint8Array(4))].map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase(); log('Se pasa una tarjeta nueva ('+uid+') por el lector'); VA.tarjeta(uid); };
+
+// ajustes: se envían al soltar la barra
+const tocado = { rDist:0, rTmax:0, rLuz:0 };
+const ajuste = (id, txt, suf, cmd) => {
+  $(id).oninput = e => { tocado[id] = Date.now(); $(txt).textContent = e.target.value + suf; };
+  $(id).onchange = e => { tocado[id] = Date.now(); enviar(cmd + ':' + e.target.value); };
+};
+ajuste('rDist', 'vDist', ' cm', 'DIST');
+ajuste('rTmax', 'vTmax', ' °C', 'TMAX');
+ajuste('rLuz', 'vLuz', ' %', 'LUZ');
+$('bReg').onclick = () => enviar(S.registrando ? 'CANCELAR' : 'REGISTRAR');
+$('bAbrir').onclick = () => enviar('ABRIR');
+let borrarArmado = 0;
+$('bBorrar').onclick = () => {
+  if (Date.now() - borrarArmado > 3000) { borrarArmado = Date.now(); $('bBorrar').textContent = '¿Seguro? Toca otra vez'; setTimeout(()=>$('bBorrar').textContent='Borrar todas', 3000); return; }
+  borrarArmado = 0; $('bBorrar').textContent = 'Borrar todas'; enviar('BORRAR');
+};
 
 /* ---------- Pestañas ---------- */
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
@@ -569,64 +794,49 @@ let codigo = '';
 fetch('hospital_seguro.ino').then(r=>r.ok?r.text():Promise.reject()).then(t=>{ codigo=t; $('codigo').textContent=t; }).catch(()=>{ $('codigo').textContent='No se pudo cargar. Usa el botón Descargar.'; });
 $('bCopiar').onclick = async ()=>{ try{ await navigator.clipboard.writeText(codigo); $('bCopiar').textContent='¡Copiado!'; }catch{ $('bCopiar').textContent='Selecciona y copia'; } setTimeout(()=>$('bCopiar').textContent='Copiar código',1800); };
 
-/* ---------- Bluetooth ---------- */
+/* ---------- Bluetooth / USB ---------- */
 const SPP = '00001101-0000-1000-8000-00805f9b34fb';
-const hayserial = 'serial' in navigator, hayBle = 'bluetooth' in navigator;
-$('soporte').className = 'soporte ' + (hayserial||hayBle ? 'bien' : 'malo');
-$('soporte').innerHTML = hayserial ? '✔ Este navegador puede conectarse al HC-05.' : hayBle ? 'Este navegador solo admite módulos BLE (HM-10). Para el HC-05 usa Google Chrome actualizado en Android o en la computadora.' : '✖ Este navegador no permite Bluetooth. Abre este enlace en <b>Google Chrome</b> en Android o en la computadora (el iPhone no lo permite). La simulación sí funciona aquí.';
-$('bSerial').disabled = !hayserial; $('bBle').disabled = !hayBle;
+const hayserial = 'serial' in navigator;
+$('soporte').className = 'soporte ' + (hayserial ? 'bien' : 'malo');
+$('soporte').innerHTML = hayserial ? '✔ Este navegador puede conectarse al HC-05.' : '✖ Este navegador no permite Bluetooth. Abre este enlace en <b>Google Chrome</b> en Android o en la computadora (el iPhone no lo permite). La simulación sí funciona aquí.';
+$('bSerial').disabled = !hayserial; $('bUsb').disabled = !hayserial;
 
-let puerto = null, lector = null, escritor = null, bleChar = null, bleDev = null, buffer = '';
+let puerto = null, lector = null, escritor = null, buffer = '';
 const enc = new TextEncoder();
-async function enviar(txt){
-  const datos = enc.encode(txt+'\n');
-  try {
-    if (escritor) await escritor.write(datos);
-    else if (bleChar) { if (bleChar.writeValueWithoutResponse) await bleChar.writeValueWithoutResponse(datos); else await bleChar.writeValue(datos); }
-  } catch (e) { log('No se pudo enviar "'+txt+'"', true); }
+async function enviarReal(txt){
+  try { if (escritor) await escritor.write(enc.encode(txt+'\n')); }
+  catch (e) { log('No se pudo enviar "'+txt+'"', true); }
 }
 function recibirTexto(t){
   buffer += t;
   let i;
   while ((i = buffer.search(/[\r\n]/)) >= 0) { const linea = buffer.slice(0,i).trim(); buffer = buffer.slice(i+1); if (linea) procesar(linea); }
-  if (buffer.length > 200) buffer = '';
-}
-function procesar(l){
-  const p = l.split(',');
-  if (p[0] === 'ST' && p.length >= 6) {
-    const antesVivo = equipoVivo();
-    S.ultimoLatido = Date.now();
-    if (!antesVivo) log('El Arduino responde de nuevo');
-    S.sistema = p[1]==='1'; S.pir1 = p[3]==='1'; S.pir2 = p[4]==='1';
-    const alerta = p[2]==='1', origen = +p[5]||0;
-    if (alerta && !S.alerta) dispararAlerta(origen);
-    else if (!alerta && S.alerta && S.origen !== 3) { S.alerta = false; S.origen = 0; }
-    pintar();
-  } else if (p[0] === 'EV') {
-    log('Arduino: '+p.slice(1).join(','));
-  }
+  if (buffer.length > 300) buffer = '';
 }
 function pasarAReal(nombre){
-  S.modo = 'real'; S.ultimoLatido = Date.now(); S.alerta = false; S.origen = 0; S.pir1 = S.pir2 = false;
-  gente.splice(0).forEach(p=>p.g.remove());
+  S.modo = 'real'; S.ultimoLatido = Date.now(); S.alerta = false; S.origen = 0;
+  [...gente].forEach(p=>{ p.cancelado = true; p.g.remove(); }); gente.length = 0;
   $('banner').classList.remove('ver');
-  document.querySelectorAll('#ctrlSim button').forEach(b=>b.disabled=true);
+  $('ctrlSim').hidden = true;
   $('bDesc').disabled = false;
   log('Conectado a <b>'+nombre+'</b>');
-  setTimeout(()=>enviar('ESTADO'), 600);
+  setTimeout(()=>enviarReal('ESTADO'), 1500);
+  setTimeout(()=>enviarReal('ESTADO'), 2500);
   pintar();
 }
-async function conectarSerial(){
+async function conectar(bt){
   try {
     let pt;
-    try { pt = await navigator.serial.requestPort({ allowedBluetoothServiceClassIds:[SPP], filters:[{ bluetoothServiceClassId: SPP }] }); }
-    catch (e) { if (e.name === 'NotFoundError') throw e; pt = await navigator.serial.requestPort(); }
+    if (bt) {
+      try { pt = await navigator.serial.requestPort({ allowedBluetoothServiceClassIds:[SPP], filters:[{ bluetoothServiceClassId: SPP }] }); }
+      catch (e) { if (e.name === 'NotFoundError') throw e; pt = await navigator.serial.requestPort(); }
+    } else pt = await navigator.serial.requestPort();
     await pt.open({ baudRate: 9600 });
     puerto = pt; escritor = pt.writable.getWriter();
-    pasarAReal('HC-05');
+    pasarAReal(bt ? 'HC-05' : 'Arduino por USB');
     leerSerial();
   } catch (e) {
-    if (e.name === 'NotFoundError') log('No se eligió ningún módulo. ¿Está emparejado el HC-05?', true);
+    if (e.name === 'NotFoundError') log('No se eligió ningún equipo. ¿Está emparejado el HC-05?', true);
     else log('No se pudo conectar: '+(e.message||e), true);
   }
 }
@@ -635,47 +845,46 @@ async function leerSerial(){
   while (puerto && puerto.readable) {
     lector = puerto.readable.getReader();
     try { for (;;) { const {value, done} = await lector.read(); if (done) break; recibirTexto(dec.decode(value, {stream:true})); } }
-    catch (e) { log('Se perdió la conexión Bluetooth', true); break; }
+    catch (e) { log('Se perdió la conexión', true); break; }
     finally { try{ lector.releaseLock(); }catch{} }
   }
 }
-async function conectarBle(){
-  try {
-    bleDev = await navigator.bluetooth.requestDevice({ filters:[{services:[0xFFE0]}], optionalServices:[0xFFE0] });
-    const srv = await (await bleDev.gatt.connect()).getPrimaryService(0xFFE0);
-    bleChar = await srv.getCharacteristic(0xFFE1);
-    await bleChar.startNotifications();
-    const dec = new TextDecoder();
-    bleChar.addEventListener('characteristicvaluechanged', e => recibirTexto(dec.decode(e.target.value)));
-    bleDev.addEventListener('gattserverdisconnected', () => log('Se perdió la conexión Bluetooth', true));
-    pasarAReal(bleDev.name || 'módulo BLE');
-  } catch (e) { if (e.name !== 'NotFoundError') log('No se pudo conectar: '+(e.message||e), true); }
-}
 async function desconectar(){
   try { if (lector) await lector.cancel(); } catch {}
-  try { if (escritor) { escritor.releaseLock(); } } catch {}
+  try { if (escritor) escritor.releaseLock(); } catch {}
   try { if (puerto) await puerto.close(); } catch {}
-  try { if (bleDev && bleDev.gatt.connected) bleDev.gatt.disconnect(); } catch {}
-  puerto = lector = escritor = bleChar = bleDev = null;
-  S.modo = 'sim'; S.alerta = false; S.origen = 0; S.pir1 = S.pir2 = false; S.sistema = true;
-  document.querySelectorAll('#ctrlSim button').forEach(b=>b.disabled=false);
+  puerto = lector = escritor = null;
+  S.modo = 'sim'; S.alerta = false; S.origen = 0; S.ultimoLatido = Date.now();
+  $('ctrlSim').hidden = false;
   $('bDesc').disabled = true;
   log('Desconectado. De vuelta a la simulación');
   pintar();
 }
-$('bSerial').onclick = conectarSerial;
-$('bBle').onclick = conectarBle;
+$('bSerial').onclick = () => conectar(true);
+$('bUsb').onclick = () => conectar(false);
 $('bDesc').onclick = desconectar;
 
 /* ---------- Bucle ---------- */
 let antesVivo = true;
 setInterval(() => {
-  tickSim();
+  // el mundo cambia poco a poco
+  mundo.luz += Math.sign(mundo.luzMeta - mundo.luz) * Math.min(3, Math.abs(mundo.luzMeta - mundo.luz));
+  mundo.temp += Math.sign(mundo.tempMeta - mundo.temp) * Math.min(.08, Math.abs(mundo.tempMeta - mundo.temp));
   const v = equipoVivo();
   if (v !== antesVivo) { log(v ? 'El equipo vuelve a responder' : '⚠ EQUIPO SIN RESPUESTA: usa la alerta manual si hace falta', !v); antesVivo = v; }
+  // narrador: cuando el equipo no puede avisar solo
+  let aviso = '';
+  if (S.modo === 'sim' && !S.alerta) {
+    const enPuerta = gente.some(p=>p.enPuerta && p.tipo !== 'enfermera');
+    if (enPuerta && !v) aviso = '⚠ Hay un intruso en la puerta de Farmacia, pero el Arduino no responde. Pulsa <b>ALERTA MANUAL</b>.';
+    else if (enPuerta && !S.sistema) aviso = '⚠ Hay un intruso en la puerta de Farmacia, pero el sistema está <b>apagado</b>. Enciéndelo o usa la <b>alerta manual</b>.';
+    else if (enPuerta && S.falla.U) aviso = '⚠ El sensor ultrasónico está dañado y no ve al intruso. Un guardia lo vio: pulsa <b>ALERTA MANUAL</b>.';
+    else if (S.falla.T) aviso = '⚠ El sensor de temperatura está desconectado: el quirófano no se está vigilando.';
+  }
+  $('banner').innerHTML = aviso; $('banner').classList.toggle('ver', !!aviso);
   pintar();
-}, 300);
-log('Sistema listo. Prueba “Intruso entra a Farmacia”.');
+}, 250);
+log('Sistema listo. Prueba “Enfermera con tarjeta” e “Intruso sin tarjeta”.');
 pintar();
 })();
 </script>
