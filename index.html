@@ -7,91 +7,124 @@
 <meta name="description" content="Simulador del Sistema Inteligente de Seguridad Hospitalaria de Infinity Tec, con conexión Bluetooth al Arduino y alerta manual.">
 <meta name="theme-color" content="#05060c">
 <link rel="icon" href="icono.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,700;0,800;1,700;1,800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#05060c; --panel:#0c0f1c; --panel2:#121629; --line:#1f2542; --txt:#eef1ff; --mut:#8d94b8;
+  --bg:#04050b; --panel:#0a0c18; --panel2:#10132a; --line:#1c2142; --txt:#eef1ff; --mut:#8a90b8;
   --mor:#9b4dff; --verde:#2ef2a0; --cian:#33d6f0; --rojo:#ff3d5a; --ambar:#ffbf3d;
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  --tech: "Exo 2", "Segoe UI", system-ui, sans-serif;
+  --corte: polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
-body{background:radial-gradient(900px 500px at 10% -10%,#1d0f3a55,transparent),radial-gradient(800px 500px at 100% 0,#0b3a2c44,transparent),var(--bg)}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 var(--tech);-webkit-tap-highlight-color:transparent}
+body{background-image:linear-gradient(#ffffff06 1px,transparent 1px),linear-gradient(90deg,#ffffff06 1px,transparent 1px),radial-gradient(900px 600px at 0 0,#2a0f5a40,transparent),radial-gradient(900px 600px at 100% 100%,#0b4a3640,transparent);background-size:32px 32px,32px 32px,auto,auto}
 button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
-.wrap{max-width:1280px;margin:0 auto;padding:14px 16px 40px}
-header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:4px 0 14px}
-header img{width:58px;height:58px;border-radius:14px;border:1px solid #2a2f55}
-h1{margin:0;font-size:21px;letter-spacing:.08em;font-weight:800;background:linear-gradient(90deg,#fff,#cfd5ff);-webkit-background-clip:text;background-clip:text;color:transparent}
-h1 span{background:linear-gradient(90deg,var(--mor),var(--verde));-webkit-background-clip:text;background-clip:text}
-.sub{color:var(--mut);font-size:13px}
-.conn{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;border:1px solid var(--line);padding:7px 12px;border-radius:999px;background:var(--panel)}
+.app{display:grid;grid-template-columns:270px minmax(0,1fr);min-height:100dvh}
+@media (max-width:900px){.app{grid-template-columns:1fr}}
+
+/* barra lateral */
+.side{position:sticky;top:0;height:100dvh;overflow:auto;padding:18px 16px;display:flex;flex-direction:column;gap:16px;border-right:1px solid var(--line);background:linear-gradient(180deg,#0b0820f2,#05070ff2)}
+@media (max-width:900px){.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}}
+.marca{display:flex;align-items:center;gap:12px}
+.marca img{width:56px;height:56px;border-radius:14px;box-shadow:0 0 22px #9b4dff40}
+.marca b{display:block;font-size:19px;font-weight:800;font-style:italic;letter-spacing:.06em}
+.marca b span{background:linear-gradient(90deg,var(--mor),var(--verde));-webkit-background-clip:text;background-clip:text;color:transparent}
+.marca small{color:var(--mut);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.tabs{display:flex;flex-direction:column;gap:4px}
+@media (max-width:900px){.tabs{flex-direction:row;flex-wrap:wrap}}
+.tab{display:flex;align-items:center;gap:10px;text-align:left;background:transparent;border:0;border-left:3px solid transparent;padding:10px 12px;color:var(--mut);border-radius:0 10px 10px 0;font-weight:600;letter-spacing:.02em}
+.tab[aria-selected=true]{color:var(--txt);border-left-color:var(--verde);background:linear-gradient(90deg,#2ef2a01a,transparent)}
+@media (hover:hover){.tab:hover{color:var(--txt)}}
+.conn{display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#070914}
 .conn i{width:9px;height:9px;border-radius:50%;background:#555}
 .conn.sim i{background:var(--cian)} .conn.ok i{background:var(--verde);box-shadow:0 0 8px var(--verde)} .conn.err i{background:var(--rojo);box-shadow:0 0 8px var(--rojo)}
-.tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
-.tab{background:var(--panel);border:1px solid var(--line);padding:8px 14px;border-radius:10px;color:var(--mut)}
-.tab[aria-selected=true]{background:var(--panel2);color:var(--txt);border-color:#3a3f7a}
-.grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px;align-items:start}
-@media (max-width:980px){.grid{grid-template-columns:1fr}}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
-.card h2{font-size:12.5px;margin:0 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.12em;font-weight:600;display:flex;align-items:center;gap:8px}
-.card h2 .der{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500}
+.mando{display:grid;gap:12px;margin-top:auto;padding-top:6px}
+.poder{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);background:#080a17;clip-path:var(--corte)}
+.switch{position:relative;width:76px;height:40px;border-radius:999px;border:1px solid #2b3163;background:#1a1d33;flex:none;transition:background .2s}
+.switch::after{content:"";position:absolute;top:4px;left:4px;width:30px;height:30px;border-radius:50%;background:#7a809f;transition:transform .25s cubic-bezier(.3,.7,.3,1),background .2s}
+.switch[aria-checked=true]{background:#0f3d2f;border-color:#1f7a5c}
+.switch[aria-checked=true]::after{transform:translateX(36px);background:var(--verde);box-shadow:0 0 12px var(--verde)}
+.poder b{font-size:17px;display:block;font-weight:800;letter-spacing:.06em}
+.poder small{color:var(--mut);font-size:12px}
+.panico{width:100%;padding:16px 10px;border:0;background:linear-gradient(135deg,#ff3d5a,#b80d33);color:#fff;font-weight:800;font-size:17px;letter-spacing:.06em;clip-path:var(--corte);box-shadow:0 0 30px #ff2a5040}
+.panico small{display:block;font-weight:500;font-size:12px;letter-spacing:0;opacity:.92;margin-top:2px}
+.panico:active{transform:scale(.98)}
+.sonido{background:transparent;border:1px solid var(--line);border-radius:10px;padding:7px;color:var(--mut);font-size:13px}
+.flotante{display:none}
+@media (max-width:900px){
+  .mando .panico{display:none}
+  .flotante{display:block;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:40;width:auto}
+  main{padding-bottom:110px!important}
+}
+
+/* contenido */
+main{padding:18px 20px 40px;min-width:0}
+.barra{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border:1px solid var(--line);background:#080a17;clip-path:var(--corte)}
+@media (max-width:1100px){.barra{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.st{padding:10px 14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.st .l{display:block;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.14em}
+.st b{display:block;font:700 15px/1.3 var(--mono);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ok{color:var(--verde)} .mal{color:var(--rojo)} .aviso{color:var(--ambar)} .neutro{color:var(--cian)}
+.banner{display:none;margin-top:12px;border-left:4px solid var(--ambar);background:#2a1f08;color:#ffe4ad;padding:10px 14px;font-size:14px}
+.banner.ver{display:block}
+.monitor{margin-top:14px;border:1px solid #2a2460;background:#05060d;clip-path:var(--corte)}
+.monitor .cab{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid #1c1a40;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.monitor .cab .rec{display:inline-flex;align-items:center;gap:6px;color:#ff8a9c}
+.monitor .cab .rec i{width:8px;height:8px;border-radius:50%;background:var(--rojo);animation:parpadeo 1.2s steps(1) infinite}
+.monitor .cab #hora{margin-left:auto;font-family:var(--mono);letter-spacing:.05em;color:var(--txt)}
 svg{display:block;width:100%;height:auto}
-.plano{border-radius:12px;background:#080b16}
 .persona{transition:transform .85s cubic-bezier(.45,.05,.3,1)}
 .zonaR{transition:fill .3s}
 @keyframes parpadeo{50%{opacity:.25}}
 .alarmando{animation:parpadeo .5s steps(1) infinite}
-
-.bench{display:grid;grid-template-columns:auto auto 1fr;gap:12px;align-items:center;margin-top:12px;background:#080b16;border:1px dashed #2a3060;border-radius:12px;padding:10px 12px}
-@media (max-width:640px){.bench{grid-template-columns:1fr 1fr}}
-.chip{background:#0b5a63;border:2px solid #0e7480;border-radius:6px;padding:6px 8px;font:600 11px var(--mono);color:#d4f5f8}
-.chip.bt{background:#1d2c6b;border-color:#3349a8}
-.chip small{display:block;font-weight:400;opacity:.8}
-.leds{display:flex;gap:14px;justify-content:flex-end;flex-wrap:wrap}
-.led{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut)}
-.led i{width:12px;height:12px;border-radius:50%;background:#262a3d;box-shadow:inset 0 -2px 3px #0008}
+.hw{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:10px 14px;border-top:1px solid #1c1a40;font-size:12px;color:var(--mut)}
+.hw .pieza{display:flex;align-items:center;gap:8px}
+.hw .pieza b{font:700 11px var(--mono);color:var(--txt);padding:3px 7px;border:1px solid #2b3163;border-radius:4px;background:#0d1030}
+.leds{display:flex;gap:14px;margin-left:auto;flex-wrap:wrap}
+.led{display:flex;align-items:center;gap:6px}
+.led i{width:11px;height:11px;border-radius:50%;background:#262a3d;box-shadow:inset 0 -2px 3px #0008}
 .led.on.v i{background:var(--verde);box-shadow:0 0 10px var(--verde)}
 .led.on.r i{background:var(--rojo);box-shadow:0 0 12px var(--rojo)}
 .led.on.b i{background:var(--ambar);box-shadow:0 0 10px var(--ambar)}
-
-.btn{background:var(--panel2);border:1px solid #2b3163;border-radius:11px;padding:9px 13px;transition:transform .12s,background .15s}
-.btn:active{transform:scale(.97)}
-.btn[disabled]{opacity:.38;cursor:not-allowed}
-.btn.mor{background:#24124a;border-color:#5b2fb0;color:#e6d9ff}
-.btn.ver{background:#0d3328;border-color:#1f7a5c;color:#c8ffe9}
-.btn.amb{background:#3a2a0a;border-color:#7a5a1c;color:#ffe4ad}
-.btn[aria-pressed=true]{outline:2px solid var(--ambar);outline-offset:1px}
-@media (hover:hover){.btn:hover:not([disabled]){filter:brightness(1.25)}}
-.ctrls{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.ctrls .t{width:100%;font-size:11.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
-
-.poder{display:flex;align-items:center;gap:14px}
-.switch{position:relative;width:86px;height:44px;border-radius:999px;border:1px solid #2b3163;background:#1a1d33;flex:none;transition:background .2s}
-.switch::after{content:"";position:absolute;top:4px;left:4px;width:34px;height:34px;border-radius:50%;background:#7a809f;transition:transform .25s cubic-bezier(.3,.7,.3,1),background .2s}
-.switch[aria-checked=true]{background:#0f3d2f;border-color:#1f7a5c}
-.switch[aria-checked=true]::after{transform:translateX(42px);background:var(--verde);box-shadow:0 0 12px var(--verde)}
-.poder b{font-size:20px;display:block}
-.poder small{color:var(--mut)}
-
-.panico{width:100%;margin-top:12px;padding:18px 12px;border-radius:16px;border:2px solid #ff6b81;background:linear-gradient(180deg,#d4143a,#9a0c28);color:#fff;font-weight:800;font-size:19px;letter-spacing:.06em;box-shadow:0 8px 30px #ff2a5040}
-.panico small{display:block;font-weight:500;font-size:12.5px;letter-spacing:0;opacity:.9;margin-top:2px}
-.panico:active{transform:scale(.98)}
-.estados{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
-.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-.kpi .l{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
-.kpi .v{font:700 17px/1.25 var(--mono);margin-top:4px}
-.ok{color:var(--verde)} .mal{color:var(--rojo)} .aviso{color:var(--ambar)} .neutro{color:var(--cian)}
-.banner{display:none;margin-top:12px;border:1px solid #7a5a1c;background:#2a1f08;color:#ffe4ad;border-radius:12px;padding:10px 12px;font-size:14px}
-.banner.ver{display:block}
-.log{font:12px/1.5 var(--mono);color:var(--mut);max-height:190px;overflow:auto;margin:0;padding:0;list-style:none}
-.log li{padding:3px 0;border-bottom:1px solid #161a33}
+.abajo{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
+@media (max-width:1100px){.abajo{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);padding:14px 16px;clip-path:var(--corte)}
+.card h2{font-size:12.5px;margin:0 0 12px;color:var(--mut);text-transform:uppercase;letter-spacing:.16em;font-weight:700;display:flex;align-items:center;gap:8px}
+.card h2 .der{margin-left:auto;text-transform:none;letter-spacing:0}
+.escenas{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.esc{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;background:var(--panel2);border:1px solid #232856;border-radius:4px;transition:transform .12s,border-color .15s}
+.esc span{font-size:20px}
+.esc b{font-size:13.5px;font-weight:700}
+.esc small{font-size:11.5px;color:var(--mut)}
+.esc.peligro{border-color:#4a2a8a;background:#170d33}
+.esc.falla{border-color:#5a4416;background:#1d1608}
+.esc[aria-pressed=true]{border-color:var(--ambar);box-shadow:inset 0 0 0 1px var(--ambar)}
+.esc:active{transform:scale(.97)}
+.esc[disabled]{opacity:.35;cursor:not-allowed}
+@media (hover:hover){.esc:hover:not([disabled]){border-color:#5b62b0}}
+.sub{margin:14px 0 8px;font-size:11px;color:var(--mut);letter-spacing:.14em;text-transform:uppercase}
+.log{font:12px/1.5 var(--mono);color:var(--mut);max-height:300px;overflow:auto;margin:0;padding:0 0 0 14px;list-style:none;border-left:2px solid #232856}
+.log li{position:relative;padding:4px 0 4px 6px}
+.log li::before{content:"";position:absolute;left:-19px;top:10px;width:8px;height:8px;border-radius:50%;background:#3a4180}
+.log li:has(.r)::before{background:var(--rojo);box-shadow:0 0 6px var(--rojo)}
 .log b{color:var(--txt);font-weight:500}
 .log .r{color:#ff8a9c}
+.btn{background:var(--panel2);border:1px solid #2b3163;border-radius:6px;padding:9px 13px;transition:transform .12s,filter .15s}
+a.btn{display:inline-block;color:var(--txt);text-decoration:none}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.38;cursor:not-allowed}
+.btn.ver{background:#0d3328;border-color:#1f7a5c;color:#c8ffe9}
+@media (hover:hover){.btn:hover:not([disabled]){filter:brightness(1.25)}}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 
-/* alarma a pantalla completa */
+/* alarma */
 #alarma{position:fixed;inset:0;z-index:50;display:none;place-items:center;background:#3a0010e6;padding:20px}
 #alarma.on{display:grid}
-#alarma .box{max-width:460px;width:100%;text-align:center;border:2px solid var(--rojo);border-radius:20px;padding:24px 20px;background:#14040b;box-shadow:0 0 60px #ff2a5066}
-#alarma h3{margin:6px 0 4px;font-size:28px;letter-spacing:.08em;color:#fff}
+#alarma .box{max-width:460px;width:100%;text-align:center;border:2px solid var(--rojo);padding:24px 20px;background:#14040b;box-shadow:0 0 60px #ff2a5066;clip-path:var(--corte)}
+#alarma h3{margin:6px 0 4px;font-size:30px;font-style:italic;letter-spacing:.08em;color:#fff}
 #alarma p{margin:0 0 18px;color:#ffc2cc}
 #alarma .sir{font-size:52px}
 #alarma.on .sir{animation:parpadeo .5s steps(1) infinite}
@@ -99,150 +132,147 @@ svg{display:block;width:100%;height:auto}
 
 .vista[hidden]{display:none!important}
 .txt p,.txt li{color:#c8cdea;max-width:75ch}
-.txt h3{margin:18px 0 6px}
+.txt h3{margin:18px 0 6px;font-style:italic}
 table{border-collapse:collapse;width:100%;font-size:13px}
 td,th{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
 th{color:var(--mut);font-weight:500}
 code{font-family:var(--mono);color:#cfe0ff}
-pre.codigo{background:#03040a;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;max-height:520px;font:12.5px/1.5 var(--mono);color:#cfe0ff}
+pre.codigo{background:#03040a;border:1px solid var(--line);padding:12px;overflow:auto;max-height:520px;font:12.5px/1.5 var(--mono);color:#cfe0ff}
 .nota{font-size:13px;color:var(--mut)}
-.soporte{border-radius:10px;padding:10px 12px;font-size:13.5px;margin:10px 0;border:1px solid var(--line)}
-.soporte.bien{border-color:#1f7a5c;background:#0b2a21;color:#c8ffe9}
-.soporte.malo{border-color:#7a2b3a;background:#2a0b12;color:#ffd0d8}
+.soporte{padding:10px 12px;font-size:13.5px;margin:10px 0;border-left:4px solid var(--line)}
+.soporte.bien{border-color:var(--verde);background:#0b2a21;color:#c8ffe9}
+.soporte.malo{border-color:var(--rojo);background:#2a0b12;color:#ffd0d8}
 .logoGrande{display:block;max-width:420px;width:100%;margin:0 auto 10px;border-radius:16px}
-footer{margin-top:24px;color:var(--mut);font-size:12px;text-align:center}
-@media (prefers-reduced-motion:reduce){.persona{transition:none}.alarmando,#alarma.on .sir{animation:none}}
+footer{margin-top:24px;color:var(--mut);font-size:12px}
+@media (prefers-reduced-motion:reduce){.persona{transition:none}.alarmando,#alarma.on .sir,.monitor .cab .rec i{animation:none}}
 </style>
 </head>
 <body>
-<div class="wrap">
-<header>
-  <img src="icono.png" alt="Logo de Infinity Tec">
-  <div>
-    <h1>INFINITY <span>TEC</span></h1>
-    <div class="sub">Sistema Inteligente de Seguridad Hospitalaria</div>
+<div class="app">
+<aside class="side">
+  <div class="marca">
+    <img src="icono.png" alt="Logo de Infinity Tec">
+    <div><b>INFINITY <span>TEC</span></b><small>Seguridad hospitalaria</small></div>
   </div>
+  <nav class="tabs" role="tablist" aria-orientation="vertical">
+    <button class="tab" role="tab" aria-selected="true" data-vista="sim">▣ Central de monitoreo</button>
+    <button class="tab" role="tab" aria-selected="false" data-vista="bt">ᛒ Conexión Bluetooth</button>
+    <button class="tab" role="tab" aria-selected="false" data-vista="como">ⓘ Cómo funciona</button>
+  </nav>
   <div class="conn sim" id="conn"><i></i><span id="connTxt">Simulación</span></div>
-</header>
+  <div class="mando">
+    <div class="poder">
+      <button class="switch" id="sw" role="switch" aria-checked="true" aria-label="Encender o apagar el sistema"></button>
+      <div><b id="swTxt">ENCENDIDO</b><small id="swSub">Vigilando las zonas restringidas</small></div>
+    </div>
+    <button class="panico" id="bPanico">🚨 ALERTA MANUAL<small>Si ves algo sospechoso o el equipo falla</small></button>
+    <button class="sonido" id="bSonido">🔊 Sonido activado</button>
+  </div>
+</aside>
 
-<nav class="tabs" role="tablist">
-  <button class="tab" role="tab" aria-selected="true" data-vista="sim">Simulador</button>
-  <button class="tab" role="tab" aria-selected="false" data-vista="bt">Conectar Arduino (Bluetooth)</button>
-  <button class="tab" role="tab" aria-selected="false" data-vista="como">Cómo funciona</button>
-</nav>
-
+<main>
 <section class="vista" id="v-sim">
-<div class="grid">
-  <div class="card">
-    <h2>Plano del hospital <span class="der nota" id="hora"></span></h2>
+  <div class="barra" aria-live="polite">
+    <div class="st"><span class="l">Estado</span><b id="kEstado" class="ok">NORMAL</b></div>
+    <div class="st"><span class="l">Equipo</span><b id="kEquipo" class="neutro">SIMULACIÓN</b></div>
+    <div class="st"><span class="l">Farmacia</span><b id="kF" class="ok">Sin movimiento</b></div>
+    <div class="st"><span class="l">Quirófano</span><b id="kQ" class="ok">Sin movimiento</b></div>
+    <div class="st"><span class="l">Alertas hoy</span><b id="kAlertas">0</b></div>
+    <div class="st"><span class="l">Turno</span><b id="kTurno">Vigilancia 24 h</b></div>
+  </div>
+  <div class="banner" id="banner"></div>
+
+  <div class="monitor">
+    <div class="cab"><span class="rec"><i></i>EN VIVO</span> Planta 1 · Monitoreo de zonas <span id="hora"></span></div>
     <svg class="plano" viewBox="0 0 700 420" role="img" aria-label="Plano del hospital con zonas restringidas">
       <defs>
-        <pattern id="rayas" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="transparent"/><path d="M0 0v10" stroke="#9b4dff" stroke-width="2" opacity=".25"/></pattern>
+        <filter id="neon" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <pattern id="rayas" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0v10" stroke="#9b4dff" stroke-width="1.5" opacity=".22"/></pattern>
+        <pattern id="malla" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#33d6f0" stroke-width=".5" opacity=".08"/></pattern>
       </defs>
-      <!-- pisos -->
-      <rect x="20" y="20" width="660" height="380" fill="#10142a"/>
-      <rect x="20" y="170" width="660" height="50" fill="#141936"/>
+      <rect x="20" y="20" width="660" height="380" fill="#060812"/>
+      <rect x="20" y="20" width="660" height="380" fill="url(#malla)"/>
       <!-- zonas restringidas -->
-      <rect id="zF" class="zonaR" x="380" y="20" width="300" height="150" fill="#2a1450"/>
+      <rect id="zF" class="zonaR" x="380" y="20" width="300" height="150" fill="#1a0d3a"/>
       <rect x="380" y="20" width="300" height="150" fill="url(#rayas)"/>
-      <rect id="zQ" class="zonaR" x="400" y="220" width="280" height="180" fill="#2a1450"/>
+      <rect id="zQ" class="zonaR" x="400" y="220" width="280" height="180" fill="#1a0d3a"/>
       <rect x="400" y="220" width="280" height="180" fill="url(#rayas)"/>
-      <!-- muebles -->
-      <g fill="#2a3060">
+      <!-- muebles (contorno) -->
+      <g fill="none" stroke="#5b62b0" stroke-width="1.5" opacity=".8">
         <rect x="40" y="40" width="70" height="40" rx="6"/><rect x="120" y="40" width="70" height="40" rx="6"/>
         <rect x="220" y="40" width="70" height="40" rx="6"/><rect x="300" y="40" width="70" height="40" rx="6"/>
         <rect x="60" y="250" width="120" height="26" rx="4"/>
         <rect x="280" y="250" width="100" height="14" rx="4"/><rect x="280" y="300" width="100" height="14" rx="4"/><rect x="280" y="350" width="100" height="14" rx="4"/>
         <rect x="400" y="34" width="14" height="120"/><rect x="460" y="34" width="14" height="80"/><rect x="520" y="34" width="14" height="80"/><rect x="580" y="34" width="14" height="80"/><rect x="640" y="34" width="14" height="80"/>
-        <rect x="500" y="275" width="90" height="44" rx="8" fill="#3a4180"/><circle cx="545" cy="262" r="16" fill="#3a4180"/>
+        <rect x="500" y="275" width="90" height="44" rx="8"/><circle cx="545" cy="262" r="16"/>
       </g>
-      <!-- camas: cruz -->
-      <g fill="#c8cdea" opacity=".5"><path d="M72 52h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/><path d="M252 52h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/></g>
-      <!-- paredes (con huecos de puertas) -->
-      <g stroke="#cfd5ff" stroke-width="5" stroke-linecap="square" fill="none" opacity=".9">
+      <g fill="#2ef2a0" opacity=".7"><path d="M72 52h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/><path d="M252 52h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/></g>
+      <!-- paredes de neón -->
+      <g stroke="#33d6f0" stroke-width="3" stroke-linecap="round" fill="none" filter="url(#neon)">
         <path d="M20 20H680V400H20V340 M20 280V20"/>
         <path d="M200 20V170 M380 20V170"/>
         <path d="M20 170H80 M130 170H260 M310 170H440 M490 170H680"/>
         <path d="M20 220H120 M170 220H300 M350 220H460 M510 220H680"/>
         <path d="M260 220V400 M400 220V400"/>
       </g>
-      <!-- puertas restringidas (se ponen rojas con alerta) -->
-      <line id="pF" x1="440" y1="170" x2="490" y2="170" stroke="#9b4dff" stroke-width="5" stroke-dasharray="6 5"/>
-      <line id="pQ" x1="460" y1="220" x2="510" y2="220" stroke="#9b4dff" stroke-width="5" stroke-dasharray="6 5"/>
-      <!-- textos -->
-      <g fill="#cfd5ff" font-size="12" font-weight="600" text-anchor="middle">
-        <text x="110" y="150">Habitación 101</text>
-        <text x="290" y="150">Habitación 102</text>
-        <text x="530" y="140">FARMACIA</text>
-        <text x="140" y="390">Recepción</text>
-        <text x="330" y="390">Sala de espera</text>
-        <text x="540" y="380">QUIRÓFANO</text>
-        <text x="350" y="200" fill="#8d94b8" font-weight="400">Pasillo</text>
+      <line id="pF" x1="440" y1="170" x2="490" y2="170" stroke="#9b4dff" stroke-width="4" stroke-dasharray="5 4" filter="url(#neon)"/>
+      <line id="pQ" x1="460" y1="220" x2="510" y2="220" stroke="#9b4dff" stroke-width="4" stroke-dasharray="5 4" filter="url(#neon)"/>
+      <g fill="#cfe9ff" font-family="Exo 2, Segoe UI, sans-serif" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1.5">
+        <text x="110" y="150">HAB. 101</text>
+        <text x="290" y="150">HAB. 102</text>
+        <text x="530" y="140" fill="#d9c2ff">FARMACIA</text>
+        <text x="140" y="390">RECEPCIÓN</text>
+        <text x="330" y="390">ESPERA</text>
+        <text x="540" y="380" fill="#d9c2ff">QUIRÓFANO</text>
+        <text x="350" y="200" fill="#5b62b0" font-weight="600">PASILLO</text>
       </g>
-      <g fill="#c49bff" font-size="9.5" text-anchor="middle" letter-spacing="1">
-        <text x="530" y="156">ZONA RESTRINGIDA</text><text x="540" y="394">ZONA RESTRINGIDA</text>
+      <g fill="#b98cff" font-family="Exo 2, Segoe UI, sans-serif" font-size="9" text-anchor="middle" letter-spacing="2">
+        <text x="530" y="156">ACCESO RESTRINGIDO</text><text x="540" y="394">ACCESO RESTRINGIDO</text>
       </g>
-      <text x="6" y="312" fill="#8d94b8" font-size="10" text-anchor="middle" transform="rotate(-90 8 312)">ENTRADA</text>
-      <!-- sensores PIR con cono -->
-      <path id="conoF" d="M668 30 L470 165 L668 165 Z" fill="#2ef2a0" opacity="0" style="transition:opacity .2s"/>
-      <path id="conoQ" d="M668 390 L430 228 L668 228 Z" fill="#2ef2a0" opacity="0" style="transition:opacity .2s"/>
-      <g id="pir1"><circle cx="668" cy="30" r="8" fill="#eef1ff"/><circle id="pir1led" cx="668" cy="30" r="3" fill="#444"/><text x="652" y="34" fill="#eef1ff" font-size="9.5" text-anchor="end">PIR 1</text></g>
-      <g id="pir2"><circle cx="668" cy="390" r="8" fill="#eef1ff"/><circle id="pir2led" cx="668" cy="390" r="3" fill="#444"/><text x="652" y="394" fill="#eef1ff" font-size="9.5" text-anchor="end">PIR 2</text></g>
+      <text x="6" y="312" fill="#5b62b0" font-size="10" text-anchor="middle" transform="rotate(-90 8 312)">ENTRADA</text>
+      <path id="conoF" d="M668 30 L470 165 L668 165 Z" fill="#ff3d5a" opacity="0" style="transition:opacity .2s"/>
+      <path id="conoQ" d="M668 390 L430 228 L668 228 Z" fill="#ff3d5a" opacity="0" style="transition:opacity .2s"/>
+      <g id="pir1"><circle cx="668" cy="30" r="8" fill="#0a0c18" stroke="#2ef2a0" stroke-width="2"/><circle id="pir1led" cx="668" cy="30" r="3" fill="#444"/><text x="652" y="34" fill="#2ef2a0" font-size="9.5" text-anchor="end">PIR 1</text></g>
+      <g id="pir2"><circle cx="668" cy="390" r="8" fill="#0a0c18" stroke="#2ef2a0" stroke-width="2"/><circle id="pir2led" cx="668" cy="390" r="3" fill="#444"/><text x="652" y="394" fill="#2ef2a0" font-size="9.5" text-anchor="end">PIR 2</text></g>
       <g id="fallaF" opacity="0"><circle cx="668" cy="30" r="12" fill="none" stroke="#ffbf3d" stroke-width="2"/><text x="668" y="58" fill="#ffbf3d" font-size="9" text-anchor="middle">DAÑADO</text></g>
       <g id="fallaQ" opacity="0"><circle cx="668" cy="390" r="12" fill="none" stroke="#ffbf3d" stroke-width="2"/><text x="640" y="374" fill="#ffbf3d" font-size="9" text-anchor="middle">DAÑADO</text></g>
-      <!-- sirena en recepción -->
       <g id="sirena"><circle cx="230" cy="245" r="10" fill="#3a1020" stroke="#ff3d5a"/><text x="230" y="249" font-size="11" text-anchor="middle">🔔</text></g>
       <g id="personas"></g>
     </svg>
-
-    <div class="bench" aria-label="Electrónica del sistema">
-      <div class="chip">ARDUINO UNO<small id="chipTxt">vigilando</small></div>
-      <div class="chip bt">HC-05<small id="btTxt">Bluetooth</small></div>
+    <div class="hw" aria-label="Electrónica del sistema">
+      <span class="pieza"><b>ARDUINO</b><small id="chipTxt">vigilando</small></span>
+      <span class="pieza"><b>HC-05</b><small id="btTxt">Bluetooth</small></span>
       <div class="leds">
         <span class="led v" id="ledV"><i></i>Sistema</span>
         <span class="led r" id="ledR"><i></i>Alerta</span>
         <span class="led b" id="ledB"><i></i>Buzzer</span>
       </div>
     </div>
-
-    <div class="ctrls" id="ctrlSim">
-      <span class="t">Personas</span>
-      <button class="btn" data-acc="visita">🧑 Visitante a Habitación 102</button>
-      <button class="btn" data-acc="enfermera">🩺 Enfermera a Habitación 101</button>
-      <button class="btn mor" data-acc="intrusoF">🕵 Intruso entra a Farmacia</button>
-      <button class="btn mor" data-acc="intrusoQ">🕵 Intruso entra a Quirófano</button>
-      <button class="btn" data-acc="salir">Todos salen</button>
-      <span class="t">Simular fallas del equipo</span>
-      <button class="btn amb" data-falla="F" aria-pressed="false">PIR de Farmacia dañado</button>
-      <button class="btn amb" data-falla="Q" aria-pressed="false">PIR del Quirófano dañado</button>
-      <button class="btn amb" data-falla="E" aria-pressed="false">Arduino sin energía / Bluetooth caído</button>
-    </div>
   </div>
 
-  <div style="display:grid;gap:14px">
-    <div class="card">
-      <h2>Control del sistema</h2>
-      <div class="poder">
-        <button class="switch" id="sw" role="switch" aria-checked="true" aria-label="Encender o apagar el sistema"></button>
-        <div><b id="swTxt">ENCENDIDO</b><small id="swSub">Vigilando las zonas restringidas</small></div>
+  <div class="abajo">
+    <div class="card" id="ctrlSim">
+      <h2>Escenarios de prueba</h2>
+      <div class="sub" style="margin-top:0">Personas</div>
+      <div class="escenas">
+        <button class="esc" data-acc="visita"><span>🧑</span><b>Visitante</b><small>Va a la Habitación 102</small></button>
+        <button class="esc" data-acc="enfermera"><span>🩺</span><b>Enfermera</b><small>Va a la Habitación 101</small></button>
+        <button class="esc peligro" data-acc="intrusoF"><span>🕵</span><b>Intruso → Farmacia</b><small>Zona restringida</small></button>
+        <button class="esc peligro" data-acc="intrusoQ"><span>🕵</span><b>Intruso → Quirófano</b><small>Zona restringida</small></button>
+        <button class="esc" data-acc="salir"><span>🚪</span><b>Todos salen</b><small>Vaciar el hospital</small></button>
       </div>
-      <button class="panico" id="bPanico">🚨 ACTIVAR ALERTA MANUAL<small>Úsala si ves algo sospechoso o si el equipo falla</small></button>
-      <div class="banner" id="banner"></div>
-      <div class="estados">
-        <div class="kpi"><div class="l">Estado</div><div class="v ok" id="kEstado">NORMAL</div></div>
-        <div class="kpi"><div class="l">Equipo</div><div class="v neutro" id="kEquipo">SIMULACIÓN</div></div>
-        <div class="kpi"><div class="l">Farmacia</div><div class="v ok" id="kF">Sin movimiento</div></div>
-        <div class="kpi"><div class="l">Quirófano</div><div class="v ok" id="kQ">Sin movimiento</div></div>
-        <div class="kpi"><div class="l">Alertas hoy</div><div class="v" id="kAlertas">0</div></div>
-        <div class="kpi"><div class="l">Sonido</div><div class="v"><button class="btn" id="bSonido" style="padding:2px 10px">🔊 Activado</button></div></div>
+      <div class="sub">Fallas del equipo</div>
+      <div class="escenas">
+        <button class="esc falla" data-falla="F" aria-pressed="false"><span>⚠</span><b>PIR Farmacia</b><small>Sensor dañado</small></button>
+        <button class="esc falla" data-falla="Q" aria-pressed="false"><span>⚠</span><b>PIR Quirófano</b><small>Sensor dañado</small></button>
+        <button class="esc falla" data-falla="E" aria-pressed="false"><span>🔌</span><b>Arduino caído</b><small>Sin energía o sin Bluetooth</small></button>
       </div>
     </div>
     <div class="card">
-      <h2>Registro de eventos <span class="der"><button class="btn" id="bLimpiar" style="padding:3px 10px;font-size:12px">Limpiar</button></span></h2>
+      <h2>Bitácora <span class="der"><button class="btn" id="bLimpiar" style="padding:3px 10px;font-size:12px">Limpiar</button></span></h2>
       <ul class="log" id="log"></ul>
     </div>
   </div>
-</div>
 </section>
 
 <section class="vista card txt" id="v-bt" hidden>
@@ -303,7 +333,9 @@ footer{margin-top:24px;color:var(--mut);font-size:12px;text-align:center}
 </section>
 
 <footer>Infinity Tec · Sistema Inteligente de Seguridad Hospitalaria · Proyecto escolar</footer>
+</main>
 </div>
+<button class="panico flotante" id="bPanico2">🚨 ALERTA MANUAL</button>
 
 <div id="alarma" role="alertdialog" aria-modal="true" aria-labelledby="alTit">
   <div class="box">
@@ -413,9 +445,9 @@ function tickSim(){
   let aviso = '';
   if (!S.alerta && (enF || enQ)) {
     const z = enF ? 'Farmacia' : 'Quirófano';
-    if (!vivo) aviso = '⚠ Hay un intruso en '+z+', pero el Arduino no responde. Pulsa <b>ACTIVAR ALERTA MANUAL</b>.';
+    if (!vivo) aviso = '⚠ Hay un intruso en '+z+', pero el Arduino no responde. Pulsa <b>ALERTA MANUAL</b>.';
     else if (!S.sistema) aviso = '⚠ Hay un intruso en '+z+', pero el sistema está <b>apagado</b>. Enciéndelo o usa la <b>alerta manual</b>.';
-    else if ((enF && S.falla.F) || (enQ && S.falla.Q)) aviso = '⚠ El sensor de '+z+' está dañado y no detectó al intruso. Un guardia lo vio: pulsa <b>ACTIVAR ALERTA MANUAL</b>.';
+    else if ((enF && S.falla.F) || (enQ && S.falla.Q)) aviso = '⚠ El sensor de '+z+' está dañado y no detectó al intruso. Un guardia lo vio: pulsa <b>ALERTA MANUAL</b>.';
   }
   $('banner').innerHTML = aviso; $('banner').classList.toggle('ver', !!aviso);
 }
@@ -466,6 +498,7 @@ function pintar(){
   zona('kF', S.pir1, S.modo==='sim' && S.falla.F);
   zona('kQ', S.pir2, S.modo==='sim' && S.falla.Q);
   $('kAlertas').textContent = S.alertasHoy;
+  $('kTurno').textContent = S.sistema ? 'Vigilancia 24 h' : 'Sin vigilancia'; $('kTurno').className = S.sistema ? '' : 'aviso';
   // conexión
   const c = $('conn');
   if (S.modo==='sim') { c.className='conn sim'; $('connTxt').textContent='Simulación'; }
@@ -511,9 +544,10 @@ function silenciar(){
 }
 $('sw').onclick = ()=>{ if (ctx) ctx.resume(); setSistema(!S.sistema); };
 $('bPanico').onclick = alertaManual;
+$('bPanico2').onclick = alertaManual;
 $('bSilenciar').onclick = silenciar;
 $('bOcultar').onclick = ()=>{ S.ocultaAlarma = true; pintar(); };
-$('bSonido').onclick = ()=>{ S.sonido = !S.sonido; $('bSonido').textContent = S.sonido ? '🔊 Activado' : '🔇 Silencio'; sirena(false); pintar(); };
+$('bSonido').onclick = ()=>{ S.sonido = !S.sonido; $('bSonido').textContent = S.sonido ? '🔊 Sonido activado' : '🔇 Sonido apagado'; sirena(false); pintar(); };
 $('bLimpiar').onclick = ()=>{ $('log').innerHTML=''; };
 document.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => { if (ctx) ctx.resume(); b.dataset.acc==='salir' ? todosSalen() : agregar(b.dataset.acc); });
 document.querySelectorAll('[data-falla]').forEach(b => b.onclick = () => {
