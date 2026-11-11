@@ -556,7 +556,7 @@ const VA = (() => {
     d.luz = Math.round(mundo.luz);
     if (!d.noche && d.luz < d.luzNoche) { d.noche = 1; ev('Anochece: luz del pasillo encendida'); }
     else if (d.noche && d.luz > d.luzNoche + 5) { d.noche = 0; ev('Hay luz: luz del pasillo apagada'); }
-    d.temp = S.falla.T ? -48.8 : mundo.temp; d.tempOk = d.temp > 1 && d.temp < 110 ? 1 : 0;
+    d.temp = S.falla.T ? -48.8 : mundo.temp; d.tempOk = d.temp > 1 && d.temp < 70 ? 1 : 0;
     if (d.tempOk) {
       if (d.temp >= d.tempMax && !d.avisoCalor) { d.avisoCalor = true; if (d.sis) alertar(2, 'ALARMA: temperatura alta ('+d.temp.toFixed(1)+' C)'); else ev('Temperatura alta ('+d.temp.toFixed(1)+' C), pero el sistema está apagado'); }
       else if (d.temp < d.tempMax - 1) d.avisoCalor = false;

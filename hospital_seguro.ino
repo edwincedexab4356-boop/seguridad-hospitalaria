@@ -224,7 +224,7 @@ void leerTemp() {
   for (byte i = 0; i < 16; i++) suma += analogRead(P_TEMP);
   float mv = (suma / 16.0) * 5000.0 / 16383.0;   // 14 bits, 5 V
   float t = mv / 10.0;                           // LM35: 10 mV por grado
-  tempOk = t > 1 && t < 110;                     // sin sensor o mal conectado da valores raros
+  tempOk = t > 1 && t < 70;                      // sin sensor (pata al aire) o mal conectado da valores raros
   temp = tempOk ? (temp == 0 ? t : temp * 0.7 + t * 0.3) : t;
 }
 
