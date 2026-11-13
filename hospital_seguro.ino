@@ -248,7 +248,17 @@ void orden(String s) {
   else if (cmd == "LUZ" && val >= 0)  { luzNoche = constrain(val, 5, 90); guardar(); evento("Noche con menos de " + String(luzNoche) + " % de luz"); }
   else if (cmd == "TMAX" && val >= 0) { tempMax = constrain(val, 20, 60); avisoCalor = false; guardar(); evento("Temperatura maxima = " + String(tempMax) + " C"); }
   else if (cmd == "ESTADO") { }
-  else { enviar("EV,Orden desconocida: " + s); return; }
+  else {
+    // Solo se contesta a algo que parezca una orden (corta, letras/numeros/:). Asi el ruido o un
+    // cable que devuelve lo que la placa envia no arma un bucle de "Orden desconocida".
+    bool pareceOrden = s.length() <= 12 && !s.startsWith("EV,") && !s.startsWith("ST,") && !s.startsWith("TJ,");
+    for (unsigned int i = 0; pareceOrden && i < s.length(); i++) {
+      char c = s[i];
+      if (!((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == ':')) pareceOrden = false;
+    }
+    if (pareceOrden) enviar("EV,Orden desconocida: " + s);
+    return;
+  }
   enviarEstado();
 }
 void leer(Stream &p, String &lin) {
