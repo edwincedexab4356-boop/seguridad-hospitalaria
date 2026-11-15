@@ -14,9 +14,6 @@
     Ultrasonico HC-SR04 (puerta de Farmacia y pasillo)   VCC 5V, GND, TRIG D6, ECHO D7
     Pantalla LCD 16x2 I2C   VCC 5V, GND, SDA -> SDA (A4), SCL -> SCL (A5)   (direccion 0x27 o 0x3F, se busca sola)
     Servo SG90 (puerta de Farmacia)   naranja -> A2, rojo 5V, cafe GND
-    Ventilador 5V del quirofano   A3 -> 1k -> base de transistor 2N2222; emisor a GND;
-                      colector -> cable negro del ventilador; cable rojo a 5V;
-                      diodo 1N4007 entre los cables del ventilador (raya hacia 5V)
     Boton de llamada (Habitacion 1)   una pata a D9, la otra a GND
     Luces de los 8 cuartos: modulo PCF8574 (direccion 0x20) en los MISMOS cables SDA/SCL que la LCD, VCC 5V, GND.
                       Cada LED: 5V -> 1k -> pata larga del LED; pata corta -> P0..P7 del PCF8574
@@ -36,7 +33,7 @@
     - Ultrasonico: si alguien se queda frente a la puerta de Farmacia sin tarjeta 8 s = ALARMA.
             De noche, si alguien camina por el pasillo (< 100 cm), las luces blancas se prenden 10 s.
     - Pasillo: de dia 2 LEDs blancos; de noche 2 amarillos suaves. Con alarma, blancos siempre.
-    - Temperatura: el ventilador se prende solo 2 grados antes del limite; si pasa del limite = ALARMA.
+    - Temperatura: si pasa del limite = ALARMA (vuelve a avisar solo si baja y sube otra vez).
     - Boton de la Habitacion 1: llamada a la enfermera (pitido suave y aviso en la app). Se atiende
             desde la app o apretando otra vez el boton.
     - Luces de cuartos: se prenden y apagan desde la app. De noche se apagan solas las de las
@@ -53,7 +50,7 @@
     TARJ:UID:jefe(0/1):NOMBRE   (pone nombre y rango a una tarjeta registrada; nombre hasta 10 letras)
   ENVIA cada 0,5 s:
     ST,sistema,alerta,origen,distancia,persona,espera_s,acceso,luz%,noche,temp*10,temp_ok,
-       dist_puerta,luz_noche,temp_max,tarjetas,registrando,luces_blancas,ventilador,llamada,solo_jefes,cuartos(bits: 1 Hab1, 2 Hab2, 4 Hab3, 8 Farmacia,
+       dist_puerta,luz_noche,temp_max,tarjetas,registrando,luces_blancas,llamada,solo_jefes,cuartos(bits: 1 Hab1, 2 Hab2, 4 Hab3, 8 Farmacia,
        16 Quirofano, 32 Consultorio, 64 Deposito, 128 Recepcion)
     origen: 0 ninguno, 1 persona sin tarjeta, 2 temperatura alta, 3 manual (app), 4 tarjeta no autorizada
   Y ademas:  EV,texto    TJ,uid,ok,motivo (0 desconocida, 1 permitida, 2 cerrada de noche, 3 registrada)
@@ -72,7 +69,7 @@
 
 const byte P_BUZ = 2, P_VERDE = 3, P_ROJO = 4, P_AMAR = 5, P_TRIG = 6, P_ECHO = 7, P_BLANCA = 8;
 const byte P_BOTON = 9, P_SS = 10;
-const byte P_LDR = A0, P_TEMP = A1, P_SERVO = A2, P_VENT = A3;
+const byte P_LDR = A0, P_TEMP = A1, P_SERVO = A2;
 const int PASILLO_CM = 100;             // de noche, alguien a menos de esto = movimiento en el pasillo
 const unsigned long BLANCA_MS = 10000;  // tiempo con luz blanca al detectar movimiento de noche
 const byte SERVO_CERRADA = 0, SERVO_ABIERTA = 90;
@@ -112,7 +109,7 @@ int luz = 100;
 bool noche = false;
 unsigned long blancaHasta = 0;
 float temp = 0;
-bool tempOk = false, avisoCalor = false, vent = false;
+bool tempOk = false, avisoCalor = false;
 bool llamada = false;
 byte cuartos = 0xFF, cuartosDia = 0xFF;   // luces de los cuartos (1 bit cada uno)
 byte pcf = 0;                            // direccion del PCF8574 (0 = no esta)
@@ -156,7 +153,7 @@ void enviarEstado() {
   s += (int)round(temp * 10); s += ','; s += tempOk; s += ',';
   s += distPuerta; s += ','; s += luzNoche; s += ','; s += tempMax; s += ',';
   s += nTarj; s += ','; s += registrando; s += ',';
-  s += lucesBlancas(ahora); s += ','; s += vent; s += ','; s += llamada; s += ','; s += soloJefes; s += ','; s += cuartos;
+  s += lucesBlancas(ahora); s += ','; s += llamada; s += ','; s += soloJefes; s += ','; s += cuartos;
   enviar(s);
 }
 
@@ -324,7 +321,7 @@ void pantalla(unsigned long ahora) {
   else if (esperaFin)   { l1 = "Acerque tarjeta"; l2 = "Quedan " + String((long)(esperaFin - ahora + 999) / 1000) + " s"; }
   else {
     l1 = tempOk ? "Quirof. " + String(temp, 1) + " C" : "Temp: sin sensor";
-    l2 = String(noche ? "Noche" : "Dia") + (vent ? " Vent ON" : "") + (sistema ? "" : " APAGADO");
+    l2 = String(noche ? "Noche" : "Dia") + (sistema ? "" : " APAGADO");
   }
   l1 = a16(l1); l2 = a16(l2);
   if (l1 == lcd1 && l2 == lcd2) return;
@@ -409,7 +406,7 @@ void setup() {
   Serial.begin(9600);
   BT.begin(9600);
   pinMode(P_BUZ, OUTPUT); pinMode(P_VERDE, OUTPUT); pinMode(P_ROJO, OUTPUT);
-  pinMode(P_AMAR, OUTPUT); pinMode(P_BLANCA, OUTPUT); pinMode(P_VENT, OUTPUT);
+  pinMode(P_AMAR, OUTPUT); pinMode(P_BLANCA, OUTPUT);
   pinMode(P_BOTON, INPUT_PULLUP);
   pinMode(P_TRIG, OUTPUT); pinMode(P_ECHO, INPUT);
   digitalWrite(P_TRIG, LOW);
@@ -494,7 +491,7 @@ void loop() {
     if (esperaFin && ahora >= esperaFin) { esperaFin = 0; alertar(1, "ALARMA: persona sin tarjeta en la puerta de Farmacia"); }
   }
 
-  // ---- luz, temperatura y ventilador ----
+  // ---- luz y temperatura ----
   static unsigned long tLuz = 0;
   if (ahora - tLuz >= 250) {
     tLuz = ahora;
@@ -513,8 +510,6 @@ void loop() {
   if (ahora - tTemp >= 500) {
     tTemp = ahora;
     leerTemp();
-    bool v = tempOk && (vent ? temp > tempMax - 3 : temp >= tempMax - 2);
-    if (v != vent) { vent = v; evento(vent ? "Quirofano: se calienta, ventilador encendido" : "Quirofano: temperatura normal, ventilador apagado"); }
     if (tempOk) {
       if (temp >= tempMax && !avisoCalor) {
         avisoCalor = true;
@@ -524,7 +519,7 @@ void loop() {
     }
   }
 
-  // ---- luces, buzzer, servo, ventilador, matriz y LCD ----
+  // ---- luces, buzzer, servo, matriz y LCD ----
   bool parpadeo = (ahora / 250) % 2;
   bool acceso = ahora < accesoHasta;
   bool negado = ahora < negadoHasta;
@@ -532,7 +527,6 @@ void loop() {
   digitalWrite(P_ROJO, alerta ? parpadeo : negado || (esperaFin && (ahora / 500) % 2));
   digitalWrite(P_AMAR, noche);
   digitalWrite(P_BLANCA, lucesBlancas(ahora));
-  digitalWrite(P_VENT, vent);
   // luces de cuartos
   byte ef = cuartos;
   if (acceso) ef |= 8;                         // Farmacia se ilumina al abrir la puerta

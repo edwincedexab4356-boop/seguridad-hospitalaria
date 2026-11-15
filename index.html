@@ -176,12 +176,8 @@ input[type=range]{width:100%;accent-color:var(--verde)}
 .chk input{accent-color:var(--verde);width:16px;height:16px}
 .grafica{display:block;width:100%;height:190px}
 .histo{max-height:260px;overflow:auto}
-#aspas{transform-box:fill-box;transform-origin:center}
-.gira{animation:girar .45s linear infinite}
-@keyframes girar{to{transform:rotate(360deg)}}
 .zonaLuz{cursor:pointer}
 #botonLl{cursor:pointer}
-@media (prefers-reduced-motion:reduce){.gira{animation:none}}
 </style>
 </head>
 <body>
@@ -351,9 +347,6 @@ input[type=range]{width:100%;accent-color:var(--verde)}
       <!-- botón de llamada de la Habitación 1 -->
       <circle id="ringLl" cx="32" cy="298" r="12" fill="none" stroke="#ff7ab0" stroke-width="3" opacity="0"/>
       <g id="botonLl"><title>Botón de llamada a la enfermera</title><circle cx="32" cy="298" r="6.5" fill="#d6283c" stroke="#ffffff" stroke-width="2"/></g>
-      <!-- ventilador del quirófano -->
-      <g id="vent"><title>Ventilador del quirófano</title><circle cx="528" cy="122" r="13" fill="#e9ecee" stroke="#8d989f"/>
-        <g id="aspas" fill="#9aa1a6"><ellipse cx="528" cy="115" rx="3.5" ry="7"/><ellipse cx="528" cy="115" rx="3.5" ry="7" transform="rotate(120 528 122)"/><ellipse cx="528" cy="115" rx="3.5" ry="7" transform="rotate(240 528 122)"/><circle cx="528" cy="122" r="2.5" fill="#5e646b"/></g></g>
       <g id="personas"></g>
       <!-- frente de la maqueta -->
       <rect x="20" y="406" width="660" height="32" rx="2" fill="#f6f5f1" filter="url(#sombraS)"/>
@@ -375,7 +368,6 @@ input[type=range]{width:100%;accent-color:var(--verde)}
         <span class="led w" id="ledW"><i></i>Pasillo día ×2</span>
         <span class="led a" id="ledA"><i></i>Pasillo noche ×2</span>
         <span class="led v" id="ledServo"><i></i>Puerta (servo)</span>
-        <span class="led w" id="ledVent"><i></i>Ventilador</span>
         <span class="led b" id="ledB"><i></i>Buzzer</span>
       </div>
     </div>
@@ -473,7 +465,6 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>Pantalla LCD 16×2 con I2C</td><td>SDA → <b>SDA</b> (A4) · SCL → <b>SCL</b> (A5) · VCC 5V · GND</td><td>Si no se ve el texto, gira el tornillito azul de atrás (contraste)</td></tr>
     <tr><td>Módulo PCF8574 (luces de los cuartos)</td><td>SDA → <b>SDA</b> · SCL → <b>SCL</b> · VCC 5V · GND (los mismos cables que la LCD)</td><td>Cada LED: 5V → 1 kΩ → pata larga; pata corta → P0…P7. P0 Hab 1 · P1 Hab 2 · P2 Hab 3 · P3 Farmacia · P4 Quirófano · P5 Consultorio · P6 Depósito · P7 Recepción</td></tr>
     <tr><td>Servo SG90 (puerta de Farmacia)</td><td>Cable naranja → <b>A2</b> · rojo 5V · café GND</td><td>Pega un palito de paleta al brazo del servo como puerta</td></tr>
-    <tr><td>Ventilador 5V (quirófano)</td><td><b>A3</b> → 1 kΩ → base del transistor 2N2222 · emisor → GND · colector → cable negro del ventilador · cable rojo → 5V</td><td>Pon un diodo 1N4007 entre los dos cables del ventilador, con la raya hacia el 5V</td></tr>
     <tr><td>Botón de llamada (Habitación 1)</td><td>Una pata → <b>D9</b> · la otra → GND</td><td>No necesita resistencia (se usa la interna)</td></tr>
     <tr><td>Sensor de temperatura LM35</td><td>Con la cara plana hacia ti: izquierda <b>5V</b> · centro <b>A1</b> · derecha <b>GND</b></td><td>Dentro del quirófano. Si se calienta solo, está al revés: desconéctalo y gíralo</td></tr>
     <tr><td>Fotoresistencia</td><td>Una pata a 5V, la otra a <b>A0</b> · resistencia 10 kΩ de A0 a GND</td><td>Ponla lejos de los LEDs (arriba en la pared del fondo, mirando hacia afuera), si no el pasillo parpadea de noche</td></tr>
@@ -522,8 +513,6 @@ input[type=range]{width:100%;accent-color:var(--verde)}
   <p>Con una tarjeta válida, el servo abre la puerta de la Farmacia 8 segundos y se cierra sola. Cada tarjeta tiene nombre: la pantalla LCD dice “Hola, Ana” y el celular lo dice en voz alta. Todo queda en el <b>historial de Farmacia</b>: quién intentó entrar, a qué hora y si pudo.</p>
   <h3>Farmacia cerrada de noche</h3>
   <p>De noche solo entran las tarjetas marcadas como <b>jefe</b> (por ejemplo, el doctor de guardia). Las demás son rechazadas aunque estén registradas.</p>
-  <h3>Ventilador automático</h3>
-  <p>El quirófano no solo avisa: si la temperatura llega a 2 °C del límite, se prende el ventilador para enfriarlo. Si aun así pasa del límite, suena la alarma. La gráfica muestra los últimos 10 minutos.</p>
   <h3>Llamada a la enfermera</h3>
   <p>El paciente de la Habitación 1 aprieta su botón: suena un “ding-dong”, parpadea la luz de su habitación, la LCD lo muestra y el celular avisa en voz alta hasta que alguien pulse <b>Atender</b>.</p>
   <h3>Luces de cada cuarto</h3>
@@ -565,7 +554,7 @@ const S = {
   dist: 300, persona: false, espera: 0, acceso: false,
   luz: 85, noche: false, blanca: true, temp: 23, tempOk: true,
   distPuerta: 30, luzNoche: 30, tempMax: 30, nTarj: 2, registrando: false,
-  vent: false, llamada: false, soloJefes: true, cuartos: 255, lcd: ['', ''], lista: [],
+  llamada: false, soloJefes: true, cuartos: 255, lcd: ['', ''], lista: [],
   ultTj: null, tTj: 0,
   falla: {R:false, U:false, T:false, E:false},
   alertasHoy: 0, sonido: true, ocultaAlarma: false,
@@ -687,7 +676,7 @@ mundo.dist = () => gente.some(p=>p.enPuerta) ? 18 + Math.round(Math.random()*2) 
 /* ---------- Arduino simulado: mismas reglas que el programa real ---------- */
 const VA = (() => {
   const d = { sis:1, alerta:0, origen:0, dist:150, persona:0, esperaFin:0, accesoHasta:0, tVista:0,
-    luz:85, noche:0, temp:23, tempOk:1, avisoCalor:false, vent:0, distPuerta:30, luzNoche:30, tempMax:30, soloJefes:1,
+    luz:85, noche:0, temp:23, tempOk:1, avisoCalor:false, distPuerta:30, luzNoche:30, tempMax:30, soloJefes:1,
     tarjetas:[{uid:TARJ_ENF, j:0, n:'ENF. ANA'}, {uid:TARJ_DOC, j:1, n:'DR. LUIS'}],
     registrando:0, regHasta:0, negados:0, tNegado:0, negadoHasta:0, blancaHasta:0,
     llamada:0, cuartos:255, cuartosDia:255, lcdM:0, lcdN:'', lcdHasta:0, lcd1:null, lcd2:null };
@@ -746,7 +735,7 @@ const VA = (() => {
     else if (d.llamada) { l1 = 'LLAMADA ENFERM.'; l2 = 'Habitacion 1'; }
     else if (d.registrando) { l1 = 'Pase la tarjeta'; l2 = 'nueva por lector'; }
     else if (d.esperaFin) { l1 = 'Acerque tarjeta'; l2 = 'Quedan '+Math.ceil((d.esperaFin-a)/1000)+' s'; }
-    else { l1 = d.tempOk ? 'Quirof. '+d.temp.toFixed(1)+' C' : 'Temp: sin sensor'; l2 = (d.noche?'Noche':'Dia')+(d.vent?' Vent ON':'')+(d.sis?'':' APAGADO'); }
+    else { l1 = d.tempOk ? 'Quirof. '+d.temp.toFixed(1)+' C' : 'Temp: sin sensor'; l2 = (d.noche?'Noche':'Dia')+(d.sis?'':' APAGADO'); }
     l1 = l1.slice(0,16).replace(/,/g,' '); l2 = l2.slice(0,16).replace(/,/g,' ');
     if (l1 === d.lcd1 && l2 === d.lcd2) return;
     d.lcd1 = l1; d.lcd2 = l2; procesar('LC,'+l1+','+l2);
@@ -772,8 +761,6 @@ const VA = (() => {
       d.cuartos = d.cuartosDia; ev('Día: las luces de los cuartos vuelven como estaban');
     }
     d.temp = S.falla.T ? -48.8 : mundo.temp; d.tempOk = d.temp > 1 && d.temp < 70 ? 1 : 0;
-    const v = d.tempOk && (d.vent ? d.temp > d.tempMax - 3 : d.temp >= d.tempMax - 2);
-    if (v !== !!d.vent) { d.vent = v ? 1 : 0; ev(v ? 'Quirófano: se calienta, ventilador encendido' : 'Quirófano: temperatura normal, ventilador apagado'); }
     if (d.tempOk) {
       if (d.temp >= d.tempMax && !d.avisoCalor) { d.avisoCalor = true; if (d.sis) alertar(2, 'ALARMA: temperatura alta ('+d.temp.toFixed(1)+' C)'); else ev('Temperatura alta ('+d.temp.toFixed(1)+' C), pero el sistema está apagado'); }
       else if (d.temp < d.tempMax - 1) d.avisoCalor = false;
@@ -784,7 +771,7 @@ const VA = (() => {
     if (!vivo() || S.modo !== 'sim') return;
     const a = Date.now();
     procesar(['ST',d.sis,d.alerta,d.origen,d.dist,d.persona,d.esperaFin?Math.ceil((d.esperaFin-a)/1000):0,a<d.accesoHasta?1:0,d.luz,d.noche,Math.round(d.temp*10),d.tempOk,d.distPuerta,d.luzNoche,d.tempMax,d.tarjetas.length,d.registrando,
-      (!d.noche||a<d.blancaHasta||d.alerta)?1:0, d.vent, d.llamada, d.soloJefes, d.cuartos].join(','));
+      (!d.noche||a<d.blancaHasta||d.alerta)?1:0, d.llamada, d.soloJefes, d.cuartos].join(','));
   }
   function orden(o, callado){
     if (!vivo()) return;
@@ -854,7 +841,7 @@ function pintar(){
   $('rfidLed').setAttribute('fill', tjReciente ? (S.ultTj.ok ? '#2ef2a0' : '#ff3d5a') : (S.registrando ? '#ffbf3d' : '#555'));
   $('espTxt').textContent = S.espera ? 'Tarjeta: '+S.espera+' s' : S.acceso ? 'ACCESO' : '';
   $('espTxt').setAttribute('fill', S.acceso ? '#2ef2a0' : '#ffbf3d');
-  // temperatura y ventilador
+  // temperatura
   const caliente = S.tempOk && S.temp >= S.tempMax;
   const colT = !S.tempOk ? '#ffbf3d' : caliente ? '#ff3d5a' : S.temp >= S.tempMax - 3 ? '#ffbf3d' : '#2ef2a0';
   $('tempTxt').textContent = !vivo ? '— °C' : S.tempOk ? S.temp.toFixed(1)+' °C' : 'SIN SENSOR';
@@ -863,8 +850,6 @@ function pintar(){
   $('termoNivel').setAttribute('y', 82 - niv); $('termoNivel').setAttribute('height', niv);
   $('termoNivel').setAttribute('fill', colT); $('termoBulbo').setAttribute('fill', colT);
   $('zQ').setAttribute('fill', S.alerta && S.origen===2 ? '#b03045' : '#3f8a5c');
-  $('aspas').classList.toggle('gira', vivo && S.vent);
-  $('aspas').setAttribute('fill', vivo && S.vent ? '#33d6f0' : '#9aa1a6');
   // luz: noche, pasillo y cuartos
   const oscF = vivo ? Math.max(0, 70 - S.luz) / 70 : 0;
   $('oscuro').setAttribute('opacity', (oscF * .78).toFixed(2));
@@ -896,7 +881,6 @@ function pintar(){
   $('ledW').classList.toggle('on', blanca);
   $('ledB').classList.toggle('on', vivo && (S.alerta ? parp : S.espera ? a % 1000 < 120 : S.llamada ? a % 3000 < 300 : false));
   $('ledServo').classList.toggle('on', vivo && S.acceso);
-  $('ledVent').classList.toggle('on', vivo && S.vent);
   $('chipTxt').textContent = !vivo ? 'sin respuesta' : S.sistema ? 'vigilando' : 'en espera';
   $('btTxt').textContent = S.modo==='real' ? (vivo?'conectado':'sin señal') : (vivo ? 'enlazado' : 'caído');
   // interruptor
@@ -924,7 +908,7 @@ function pintar(){
   const kT = $('kTemp');
   if (!vivo) { kT.textContent = 'Sin datos'; kT.className = 'aviso'; }
   else if (!S.tempOk) { kT.textContent = 'Sensor desconectado'; kT.className = 'aviso'; }
-  else { kT.textContent = S.temp.toFixed(1)+' °C'+(S.vent ? ' · 🌀' : ''); kT.className = caliente ? 'mal' : S.vent ? 'aviso' : 'ok'; }
+  else { kT.textContent = S.temp.toFixed(1)+' °C'; kT.className = caliente ? 'mal' : 'ok'; }
   const kL = $('kLuz');
   if (!vivo) { kL.textContent = 'Sin datos'; kL.className = 'aviso'; }
   else { kL.textContent = S.noche ? (S.blanca ? '🌙 Blancas 10 s' : '🌙 Amarillas') : '☀ Blancas'; kL.className = S.noche ? 'aviso' : 'ok'; }
@@ -1023,10 +1007,9 @@ function procesar(l){
     S.luz = n[7]; S.noche = !!n[8]; S.temp = n[9] / 10; S.tempOk = !!n[10];
     S.distPuerta = n[11]; S.luzNoche = n[12]; S.tempMax = n[13]; S.nTarj = n[14]; S.registrando = !!n[15];
     S.blanca = p.length >= 18 ? !!n[16] : !S.noche;   // programas viejos no envían estos datos
-    S.vent = p.length >= 19 && !!n[17];
-    const llamada = p.length >= 20 && !!n[18];
-    S.soloJefes = p.length >= 21 ? !!n[19] : false;
-    S.cuartos = p.length >= 22 ? n[20] : 255;
+    const llamada = p.length >= 19 && !!n[17];
+    S.soloJefes = p.length >= 20 ? !!n[18] : false;
+    S.cuartos = p.length >= 21 ? n[19] : 255;
     if (llamada && !S.llamada) { log('📞 La Habitación 1 pide una enfermera', true); hablar('Atención. La habitación uno pide una enfermera.'); }
     S.llamada = llamada;
     if (S.nTarj !== S.lista.length && Date.now() - tListaPedida > 3000) { tListaPedida = Date.now(); setTimeout(()=>enviar('LISTA', true), 0); }
@@ -1222,9 +1205,9 @@ $('bDesc').onclick = desconectar;
 /* ---------- Bucle ---------- */
 let antesVivo = true, tDing = 0;
 setInterval(() => {
-  // el mundo cambia poco a poco (con el ventilador encendido el quirófano se enfría 5 °C)
+  // el mundo cambia poco a poco
   mundo.luz += Math.sign(mundo.luzMeta - mundo.luz) * Math.min(3, Math.abs(mundo.luzMeta - mundo.luz));
-  const metaT = mundo.tempMeta - (S.modo === 'sim' && VA.d.vent ? 5 : 0);
+  const metaT = mundo.tempMeta;
   mundo.temp += Math.sign(metaT - mundo.temp) * Math.min(.08, Math.abs(metaT - mundo.temp));
   const v = equipoVivo();
   if (v !== antesVivo) { log(v ? 'El equipo vuelve a responder' : '⚠ EQUIPO SIN RESPUESTA: usa la alerta manual si hace falta', !v); antesVivo = v; }
@@ -1237,7 +1220,7 @@ setInterval(() => {
     if (enPuerta && !v) aviso = '⚠ Hay un intruso en la puerta de Farmacia, pero el Arduino no responde. Pulsa <b>ALERTA MANUAL</b>.';
     else if (enPuerta && !S.sistema) aviso = '⚠ Hay un intruso en la puerta de Farmacia, pero el sistema está <b>apagado</b>. Enciéndelo o usa la <b>alerta manual</b>.';
     else if (enPuerta && S.falla.U) aviso = '⚠ El sensor ultrasónico está dañado y no ve al intruso. Un guardia lo vio: pulsa <b>ALERTA MANUAL</b>.';
-    else if (S.falla.T) aviso = '⚠ El sensor de temperatura está desconectado: el quirófano no se está vigilando y el ventilador no puede prenderse solo.';
+    else if (S.falla.T) aviso = '⚠ El sensor de temperatura está desconectado: el quirófano no se está vigilando.';
   }
   $('banner').innerHTML = aviso; $('banner').classList.toggle('ver', !!aviso);
   pintar();
