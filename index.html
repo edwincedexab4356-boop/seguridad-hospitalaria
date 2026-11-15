@@ -160,6 +160,28 @@ input[type=range]{width:100%;accent-color:var(--verde)}
 .btn.esperando{border-color:var(--ambar);color:var(--ambar);animation:parpadeo 1s steps(1) infinite}
 .solo-sim[hidden]{display:none!important}
 .izq{display:grid;gap:14px}
+.llam{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;border-left:4px solid #ff7ab0;background:#2a0b20;color:#ffd0e6;padding:10px 14px;font-size:14px}
+.llam[hidden]{display:none}
+.llam .btn{margin-left:auto}
+.cuartos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.cto{display:flex;align-items:center;gap:8px;text-align:left;padding:9px 11px;background:var(--panel2);border:1px solid #232856;border-radius:4px;font-size:13px;color:var(--mut);transition:transform .12s}
+.cto span{filter:grayscale(1) opacity(.5)}
+.cto[aria-pressed=true]{border-color:#8a7a2a;background:#231f0a;color:#fff3c4}
+.cto[aria-pressed=true] span{filter:none}
+.cto:active{transform:scale(.97)}
+.tfila{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.tfila code{font-size:12px}
+.tfila input[type=text]{min-width:0;background:#070914;border:1px solid #2b3163;border-radius:6px;color:var(--txt);padding:7px 9px;font:inherit;font-size:13.5px}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;color:#c8cdea;cursor:pointer}
+.chk input{accent-color:var(--verde);width:16px;height:16px}
+.grafica{display:block;width:100%;height:190px}
+.histo{max-height:260px;overflow:auto}
+#aspas{transform-box:fill-box;transform-origin:center}
+.gira{animation:girar .45s linear infinite}
+@keyframes girar{to{transform:rotate(360deg)}}
+.zonaLuz{cursor:pointer}
+#botonLl{cursor:pointer}
+@media (prefers-reduced-motion:reduce){.gira{animation:none}}
 </style>
 </head>
 <body>
@@ -181,7 +203,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
       <div><b id="swTxt">ENCENDIDO</b><small id="swSub">Vigilando el hospital</small></div>
     </div>
     <button class="panico" id="bPanico">🚨 ALERTA MANUAL<small>Si ves algo sospechoso o el equipo falla</small></button>
-    <button class="sonido" id="bSonido">🔊 Sonido activado</button>
+    <button class="sonido" id="bSonido">🔊 Sonido y voz activados</button>
   </div>
 </aside>
 
@@ -196,6 +218,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <div class="st"><span class="l">Alertas hoy</span><b id="kAlertas">0</b></div>
   </div>
   <div class="banner" id="banner"></div>
+  <div class="llam" id="llam" hidden>📞 <b>La Habitación 1 pide una enfermera</b> <button class="btn ver" id="bAtender">✔ Atender llamada</button></div>
 
   <div class="monitor">
     <div class="cab"><span class="rec"><i></i>EN VIVO</span> Planta 1 · Hospital inteligente <span id="hora"></span></div>
@@ -264,6 +287,17 @@ input[type=range]{width:100%;accent-color:var(--verde)}
       </g>
       <!-- noche -->
       <rect id="oscuro" x="6" y="6" width="688" height="438" rx="6" fill="#05070f" opacity="0" style="transition:opacity .6s"/>
+      <!-- luz de cada cuarto (toca un cuarto para prenderla o apagarla) -->
+      <g class="zonaLuz">
+        <rect id="lz0" x="20" y="160" width="220" height="240" opacity="0"><title>Luz de la Habitación 1</title></rect>
+        <rect id="lz1" x="20" y="20" width="220" height="140" opacity="0"><title>Luz de la Habitación 2</title></rect>
+        <rect id="lz2" x="560" y="180" width="120" height="100" opacity="0"><title>Luz de la Habitación 3</title></rect>
+        <rect id="lz3" x="310" y="20" width="170" height="110" opacity="0"><title>Luz de la Farmacia</title></rect>
+        <rect id="lz4" x="480" y="20" width="200" height="160" opacity="0"><title>Luz del Quirófano</title></rect>
+        <rect id="lz5" x="440" y="280" width="120" height="120" opacity="0"><title>Luz del Consultorio</title></rect>
+        <rect id="lz6" x="560" y="280" width="120" height="120" opacity="0"><title>Luz del Depósito</title></rect>
+        <path id="lz7" d="M240 200H310V130H480V200H560V280H440V400H240Z" opacity="0"><title>Luz de la Recepción</title></path>
+      </g>
       <!-- luces del pasillo: 2 blancas (día) y 2 amarillas (noche) -->
       <g id="focosB" opacity="0" style="transition:opacity .5s"><circle cx="275" cy="68" r="46" fill="url(#focoB)"/><circle cx="275" cy="130" r="46" fill="url(#focoB)"/></g>
       <g id="focos" opacity="0" style="transition:opacity .6s"><circle cx="275" cy="99" r="42" fill="url(#foco)"/><circle cx="275" cy="165" r="42" fill="url(#foco)"/></g>
@@ -276,7 +310,8 @@ input[type=range]{width:100%;accent-color:var(--verde)}
       </g>
       <!-- puertas de madera de las habitaciones (abiertas) -->
       <g stroke="#a87b4f" stroke-width="3" stroke-linecap="round"><path d="M240 100L214 92 M240 200L214 192 M560 210L586 202 M460 280L452 254 M500 180L508 206"/></g>
-      <line id="pF" x1="310" y1="60" x2="310" y2="100" stroke="#8a5a32" stroke-width="6"/>
+      <line id="pF" x1="310" y1="60" x2="310" y2="100" stroke="#8a5a32" stroke-width="6" stroke-linecap="round" style="transform-origin:310px 60px;transition:transform .5s"/>
+      <g><rect x="313" y="49" width="12" height="8" rx="1.5" fill="#2f6fb0"/><text x="319" y="46" fill="#1d4f80" font-size="6" font-weight="700" text-anchor="middle">SERVO</text></g>
       <!-- lámparas del pasillo -->
       <g id="lampB" fill="#8d939a" stroke="#5e646b"><rect x="263" y="65" width="24" height="6" rx="2"/><rect x="263" y="127" width="24" height="6" rx="2"/></g>
       <g id="lamparas" fill="#7d7560" stroke="#5e5640"><circle cx="275" cy="99" r="4.5"/><circle cx="275" cy="165" r="4.5"/></g>
@@ -308,6 +343,17 @@ input[type=range]{width:100%;accent-color:var(--verde)}
       <g id="termo"><rect x="655" y="38" width="10" height="44" rx="5" fill="#f4f6f7" stroke="#5e646b"/><rect id="termoNivel" x="657" y="58" width="6" height="22" rx="3" fill="#2ef2a0"/><circle cx="660" cy="86" r="7" fill="#2ef2a0" id="termoBulbo"/></g>
       <!-- baliza roja del pasillo -->
       <g id="sirena"><circle cx="275" cy="30" r="8" fill="#7a1020" stroke="#ff3d5a" stroke-width="2"/><circle cx="275" cy="30" r="3.5" fill="#ff6b80"/></g>
+      <!-- focos de los cuartos -->
+      <g pointer-events="none" stroke="#4a4536" stroke-width="1.2">
+        <circle id="bb0" cx="226" cy="176" r="5"/><circle id="bb1" cx="172" cy="40" r="5"/><circle id="bb2" cx="662" cy="270" r="5"/><circle id="bb3" cx="470" cy="114" r="5"/>
+        <circle id="bb4" cx="500" cy="162" r="5"/><circle id="bb5" cx="545" cy="318" r="5"/><circle id="bb6" cx="662" cy="322" r="5"/><circle id="bb7" cx="428" cy="214" r="5"/>
+      </g>
+      <!-- botón de llamada de la Habitación 1 -->
+      <circle id="ringLl" cx="32" cy="298" r="12" fill="none" stroke="#ff7ab0" stroke-width="3" opacity="0"/>
+      <g id="botonLl"><title>Botón de llamada a la enfermera</title><circle cx="32" cy="298" r="6.5" fill="#d6283c" stroke="#ffffff" stroke-width="2"/></g>
+      <!-- ventilador del quirófano -->
+      <g id="vent"><title>Ventilador del quirófano</title><circle cx="528" cy="122" r="13" fill="#e9ecee" stroke="#8d989f"/>
+        <g id="aspas" fill="#9aa1a6"><ellipse cx="528" cy="115" rx="3.5" ry="7"/><ellipse cx="528" cy="115" rx="3.5" ry="7" transform="rotate(120 528 122)"/><ellipse cx="528" cy="115" rx="3.5" ry="7" transform="rotate(240 528 122)"/><circle cx="528" cy="122" r="2.5" fill="#5e646b"/></g></g>
       <g id="personas"></g>
       <!-- frente de la maqueta -->
       <rect x="20" y="406" width="660" height="32" rx="2" fill="#f6f5f1" filter="url(#sombraS)"/>
@@ -315,6 +361,10 @@ input[type=range]{width:100%;accent-color:var(--verde)}
       <text x="200" y="428" fill="#6a6558" font-family="Exo 2, Segoe UI, sans-serif" font-size="15" font-weight="700" letter-spacing="3" text-anchor="middle">INFINITY TEC</text>
       <text x="340" y="418" fill="#6a6558" font-family="Exo 2, Segoe UI, sans-serif" font-size="8" font-weight="700" letter-spacing="2" text-anchor="middle">▲ ENTRADA</text>
       <g transform="translate(534 413)"><rect width="136" height="18" rx="2" fill="none" stroke="#9a958a"/><text x="68" y="12.5" fill="#6a6558" font-family="Exo 2, Segoe UI, sans-serif" font-size="8.5" font-weight="700" letter-spacing="1" text-anchor="middle">CONEXIÓN Y ESTADO</text></g>
+      <!-- pantalla LCD 16x2 -->
+      <rect x="414" y="408" width="114" height="29" rx="3" fill="#1d1f22"/>
+      <rect id="lcdFondo" x="418" y="411" width="106" height="23" rx="1.5" fill="#2f5fd0"/>
+      <g fill="#eaf2ff" font-family="ui-monospace, Consolas, monospace" font-size="8.8" font-weight="700"><text id="lcdL1" x="421" y="421"></text><text id="lcdL2" x="421" y="431"></text></g>
     </svg>
     <div class="hw" aria-label="Electrónica del sistema">
       <span class="pieza"><b>UNO R4 WiFi</b><small id="chipTxt">vigilando</small></span>
@@ -324,6 +374,8 @@ input[type=range]{width:100%;accent-color:var(--verde)}
         <span class="led r" id="ledR"><i></i>Alarma</span>
         <span class="led w" id="ledW"><i></i>Pasillo día ×2</span>
         <span class="led a" id="ledA"><i></i>Pasillo noche ×2</span>
+        <span class="led v" id="ledServo"><i></i>Puerta (servo)</span>
+        <span class="led w" id="ledVent"><i></i>Ventilador</span>
         <span class="led b" id="ledB"><i></i>Buzzer</span>
       </div>
     </div>
@@ -337,6 +389,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
         <div class="escenas">
           <button class="esc" data-acc="visita"><span>🧑</span><b>Visitante</b><small>Va a la Habitación 2</small></button>
           <button class="esc" data-acc="enfermera"><span>🩺</span><b>Enfermera con tarjeta</b><small>Entra a Farmacia</small></button>
+          <button class="esc" data-acc="doctor"><span>🥼</span><b>Doctor (jefe)</b><small>Entra a Farmacia, también de noche</small></button>
           <button class="esc peligro" data-acc="intruso"><span>🕵</span><b>Intruso sin tarjeta</b><small>Se queda en la puerta</small></button>
           <button class="esc peligro" data-acc="falsa"><span>💳</span><b>Intruso con tarjeta falsa</b><small>La pasa 3 veces</small></button>
           <button class="esc" data-acc="salir"><span>🚪</span><b>Todos salen</b><small>Vaciar el hospital</small></button>
@@ -345,6 +398,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
         <div class="escenas">
           <button class="esc" id="bNoche"><span>🌙</span><b>Anochecer</b><small>La fotoresistencia ve poca luz</small></button>
           <button class="esc" id="bCalor"><span>🔥</span><b>Falla el aire</b><small>Sube la temperatura</small></button>
+          <button class="esc" id="bLlamar"><span>📞</span><b>Paciente llama</b><small>Botón de la Habitación 1</small></button>
           <button class="esc" id="bNueva"><span>🆕</span><b>Tarjeta nueva</b><small>Pasarla por el lector</small></button>
         </div>
         <div class="rango"><label for="rTempSim">Temperatura del quirófano <b id="vTempSim">23 °C</b></label><input type="range" id="rTempSim" min="15" max="45" step="0.5" value="23"></div>
@@ -361,6 +415,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
         <div class="rango"><label for="rDist">Distancia para detectar a alguien en la puerta <b id="vDist">30 cm</b></label><input type="range" id="rDist" min="5" max="150" value="30"><small>Ahora mide: <span id="vDistAhora">—</span></small></div>
         <div class="rango"><label for="rTmax">Temperatura máxima (alarma) <b id="vTmax">30 °C</b></label><input type="range" id="rTmax" min="20" max="60" value="30"></div>
         <div class="rango"><label for="rLuz">Es de noche con menos de <b id="vLuz">30 %</b></label><input type="range" id="rLuz" min="5" max="90" value="30"><small>Luz ahora: <span id="vLuzAhora">—</span></small></div>
+        <label class="chk" style="margin:12px 0 2px"><input type="checkbox" id="chkJefes" checked> De noche, la Farmacia es solo para jefes</label>
         <div class="sub">Tarjetas RFID</div>
         <div class="tarj"><b id="nTarj">0</b> tarjetas autorizadas <span class="ult" id="ultTarj">Última leída: —</span></div>
         <div class="ctrls">
@@ -368,11 +423,28 @@ input[type=range]{width:100%;accent-color:var(--verde)}
           <button class="btn" id="bAbrir">🔓 Abrir puerta</button>
           <button class="btn rojo" id="bBorrar">Borrar todas</button>
         </div>
+        <div class="sub">Nombre y rango de cada tarjeta</div>
+        <div id="listaTarj"><p class="nota">Cargando…</p></div>
+      </div>
+      <div class="card">
+        <h2>Luces de los cuartos <span class="der"><button class="btn" id="bTodas" style="padding:3px 10px;font-size:12px">Todas</button> <button class="btn" id="bNinguna" style="padding:3px 10px;font-size:12px">Ninguna</button></span></h2>
+        <div class="cuartos" id="cuartos"></div>
+        <p class="nota" style="margin-bottom:0">También puedes tocar un cuarto en el plano. De noche se apagan solas las de las habitaciones, consultorio, depósito y farmacia; con una alarma se prenden todas.</p>
       </div>
     </div>
     <div class="card">
       <h2>Bitácora <span class="der"><button class="btn" id="bLimpiar" style="padding:3px 10px;font-size:12px">Limpiar</button></span></h2>
       <ul class="log" id="log"></ul>
+    </div>
+  </div>
+  <div class="abajo">
+    <div class="card">
+      <h2>Temperatura del quirófano <span class="der nota">últimos 10 minutos</span></h2>
+      <canvas class="grafica" id="grafica" aria-label="Gráfica de la temperatura del quirófano"></canvas>
+    </div>
+    <div class="card">
+      <h2>Historial de Farmacia <span class="der"><button class="btn" id="bHistBorrar" style="padding:3px 10px;font-size:12px">Borrar</button></span></h2>
+      <div class="histo"><table><thead><tr><th>Hora</th><th>Quién</th><th>Resultado</th></tr></thead><tbody id="hist"></tbody></table></div>
     </div>
   </div>
 </section>
@@ -396,16 +468,22 @@ input[type=range]{width:100%;accent-color:var(--verde)}
   <table>
     <tr><th>Componente</th><th>Pata del componente → Arduino</th><th>Notas</th></tr>
     <tr><td>Bluetooth HC-05</td><td>TXD → <b>D0</b> · RXD ← <b>D1</b> · VCC 5V · GND</td><td>RXD con divisor: D1 → 1 kΩ → RXD, y 2 kΩ de RXD a GND</td></tr>
-    <tr><td>Lector RFID RC522</td><td>SDA → <b>D10</b> · SCK → <b>D13</b> · MOSI → <b>D11</b> · MISO → <b>D12</b> · RST → <b>D9</b> · <b>3.3V</b> · GND</td><td>¡A 3.3V, no a 5V! La pata IRQ no se usa</td></tr>
-    <tr><td>Sensor ultrasónico HC-SR04</td><td>TRIG → <b>D6</b> · ECHO → <b>D7</b> · VCC 5V · GND</td><td>Junto a la puerta de Farmacia, mirando hacia donde llega la persona</td></tr>
-    <tr><td>Sensor de temperatura LM35</td><td>Con la cara plana hacia ti: izquierda <b>5V</b> · centro <b>A1</b> · derecha <b>GND</b></td><td>Si se calienta solo, está al revés: desconéctalo y gíralo</td></tr>
-    <tr><td>Fotoresistencia</td><td>Una pata a 5V, la otra a <b>A0</b> · resistencia 10 kΩ de A0 a GND</td><td></td></tr>
-    <tr><td>LED verde (acceso)</td><td><b>D3</b> → 220 Ω → LED → GND</td><td>Pata larga del LED hacia el Arduino</td></tr>
-    <tr><td>LED rojo (alarma)</td><td><b>D4</b> → 220 Ω → LED → GND</td><td></td></tr>
-    <tr><td>2 LEDs amarillos (pasillo de noche)</td><td>Amarillo 1: <b>D5</b> → 330 Ω → LED → GND<br>Amarillo 2: <b>A2</b> → 330 Ω → LED → GND</td><td>Luz suave de noche para que los pacientes duerman</td></tr>
-    <tr><td>2 LEDs blancos (pasillo de día)</td><td>Blanco 1: <b>D8</b> → 330 Ω → LED → GND<br>Blanco 2: <b>A3</b> → 330 Ω → LED → GND</td><td>De noche se prenden 10 s si alguien camina por el pasillo, y siempre durante una alarma</td></tr>
+    <tr><td>Lector RFID RC522</td><td>SDA → <b>D10</b> · SCK → <b>D13</b> · MOSI → <b>D11</b> · MISO → <b>D12</b> · <b>RST → 3.3V</b> · <b>3.3V</b> · GND</td><td>¡A 3.3V, no a 5V! La pata RST ya no va al D9: va fija a 3.3V. IRQ no se usa</td></tr>
+    <tr><td>Sensor ultrasónico HC-SR04</td><td>TRIG → <b>D6</b> · ECHO → <b>D7</b> · VCC 5V · GND</td><td>En el pasillo, junto a la puerta de Farmacia, mirando hacia donde llega la persona</td></tr>
+    <tr><td>Pantalla LCD 16×2 con I2C</td><td>SDA → <b>SDA</b> (A4) · SCL → <b>SCL</b> (A5) · VCC 5V · GND</td><td>Si no se ve el texto, gira el tornillito azul de atrás (contraste)</td></tr>
+    <tr><td>Módulo PCF8574 (luces de los cuartos)</td><td>SDA → <b>SDA</b> · SCL → <b>SCL</b> · VCC 5V · GND (los mismos cables que la LCD)</td><td>Cada LED: 5V → 1 kΩ → pata larga; pata corta → P0…P7. P0 Hab 1 · P1 Hab 2 · P2 Hab 3 · P3 Farmacia · P4 Quirófano · P5 Consultorio · P6 Depósito · P7 Recepción</td></tr>
+    <tr><td>Servo SG90 (puerta de Farmacia)</td><td>Cable naranja → <b>A2</b> · rojo 5V · café GND</td><td>Pega un palito de paleta al brazo del servo como puerta</td></tr>
+    <tr><td>Ventilador 5V (quirófano)</td><td><b>A3</b> → 1 kΩ → base del transistor 2N2222 · emisor → GND · colector → cable negro del ventilador · cable rojo → 5V</td><td>Pon un diodo 1N4007 entre los dos cables del ventilador, con la raya hacia el 5V</td></tr>
+    <tr><td>Botón de llamada (Habitación 1)</td><td>Una pata → <b>D9</b> · la otra → GND</td><td>No necesita resistencia (se usa la interna)</td></tr>
+    <tr><td>Sensor de temperatura LM35</td><td>Con la cara plana hacia ti: izquierda <b>5V</b> · centro <b>A1</b> · derecha <b>GND</b></td><td>Dentro del quirófano. Si se calienta solo, está al revés: desconéctalo y gíralo</td></tr>
+    <tr><td>Fotoresistencia</td><td>Una pata a 5V, la otra a <b>A0</b> · resistencia 10 kΩ de A0 a GND</td><td>Ponla lejos de los LEDs (arriba en la pared del fondo, mirando hacia afuera), si no el pasillo parpadea de noche</td></tr>
+    <tr><td>LED verde (acceso)</td><td><b>D3</b> → 470 Ω → LED → GND</td><td>Pata larga del LED hacia el Arduino</td></tr>
+    <tr><td>LED rojo (alarma del pasillo)</td><td><b>D4</b> → 470 Ω → LED → GND</td><td></td></tr>
+    <tr><td>2 LEDs amarillos (pasillo de noche)</td><td><b>D5</b> → 1 kΩ → LED 1 → GND, y <b>D5</b> → 1 kΩ → LED 2 → GND</td><td>Los dos al mismo pin, cada uno con su resistencia</td></tr>
+    <tr><td>2 LEDs blancos (pasillo de día)</td><td><b>D8</b> → 1 kΩ → LED 1 → GND, y <b>D8</b> → 1 kΩ → LED 2 → GND</td><td>De noche se prenden 10 s si alguien camina por el pasillo, y siempre con alarma</td></tr>
     <tr><td>Buzzer activo</td><td>+ → <b>D2</b> · − → GND</td><td></td></tr>
   </table>
+  <p class="nota">Las resistencias de los LEDs son más grandes que antes (470 Ω y 1 kΩ) porque cada pin del UNO R4 aguanta poca corriente (unos 8 mA).</p>
 
   <h3>Qué hace cada botón con el Arduino</h3>
   <table>
@@ -415,11 +493,15 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>Registrar tarjeta</td><td><code>REGISTRAR</code></td><td>La próxima tarjeta que pases (15 s) queda autorizada</td></tr>
     <tr><td>Abrir puerta</td><td><code>ABRIR</code></td><td>Da acceso a Farmacia 8 segundos sin tarjeta</td></tr>
     <tr><td>Borrar todas</td><td><code>BORRAR</code></td><td>Quita todas las tarjetas autorizadas</td></tr>
+    <tr><td>Atender llamada</td><td><code>ATENDER</code></td><td>Apaga la llamada de la Habitación 1</td></tr>
+    <tr><td>Luces de los cuartos</td><td><code>CUARTO:n:1</code> / <code>CUARTO:n:0</code></td><td>Prende o apaga la luz del cuarto n (1 a 8; 0 = todos)</td></tr>
+    <tr><td>Nombre y rango de tarjeta</td><td><code>TARJ:UID:jefe:NOMBRE</code></td><td>Guarda el nombre (sale en la LCD) y si es jefe</td></tr>
+    <tr><td>Solo jefes de noche</td><td><code>JEFES:1</code> / <code>JEFES:0</code></td><td>De noche solo entran a Farmacia las tarjetas de jefe</td></tr>
     <tr><td>Barras de ajustes</td><td><code>DIST:n</code> · <code>TMAX:n</code> · <code>LUZ:n</code></td><td>Cambian la distancia de la puerta, la temperatura máxima y el nivel de noche (se guardan aunque lo apagues)</td></tr>
   </table>
   <p class="nota">El Arduino avisa dos veces por segundo que está vivo. Si deja de responder, la página marca <b>EQUIPO SIN RESPUESTA</b>, y la alerta manual igual suena y vibra en el celular.</p>
   <h3>Programa del Arduino</h3>
-  <p class="nota">En el Arduino IDE elige la placa <b>Arduino UNO R4 WiFi</b> e instala la librería <b>MFRC522</b> (Programa → Incluir librería → Gestionar librerías).</p>
+  <p class="nota">En el Arduino IDE elige la placa <b>Arduino UNO R4 WiFi</b> e instala las librerías <b>MFRC522</b>, <b>LiquidCrystal I2C</b> (de Frank de Brabander) y <b>Servo</b> (Programa → Incluir librería → Gestionar librerías).</p>
   <div class="ctrls"><a class="btn ver" href="hospital_seguro.ino" download>⬇ Descargar programa .ino</a><button class="btn" id="bCopiar">Copiar código</button></div>
   <pre class="codigo" id="codigo">Cargando…</pre>
 </section>
@@ -436,10 +518,20 @@ input[type=range]{width:100%;accent-color:var(--verde)}
   <p>Un hospital nunca cierra, así que el pasillo siempre tiene luz. De día están encendidas las 2 luces blancas. Cuando oscurece, la fotoresistencia lo detecta y el pasillo pasa a <b>modo noche</b>: se apagan las blancas y se prenden 2 luces amarillas suaves para no despertar a los pacientes. Si alguien camina por el pasillo de noche, el sensor ultrasónico lo nota y las blancas se prenden 10 segundos. Durante una alarma, las blancas se quedan encendidas para que seguridad vea bien.</p>
   <h3>4 · Temperatura (LM35)</h3>
   <p>El sensor de temperatura vigila el quirófano. Si pasa del límite elegido, suena la alarma y llega el aviso al celular.</p>
+  <h3>Puerta con servo y tarjetas con nombre</h3>
+  <p>Con una tarjeta válida, el servo abre la puerta de la Farmacia 8 segundos y se cierra sola. Cada tarjeta tiene nombre: la pantalla LCD dice “Hola, Ana” y el celular lo dice en voz alta. Todo queda en el <b>historial de Farmacia</b>: quién intentó entrar, a qué hora y si pudo.</p>
+  <h3>Farmacia cerrada de noche</h3>
+  <p>De noche solo entran las tarjetas marcadas como <b>jefe</b> (por ejemplo, el doctor de guardia). Las demás son rechazadas aunque estén registradas.</p>
+  <h3>Ventilador automático</h3>
+  <p>El quirófano no solo avisa: si la temperatura llega a 2 °C del límite, se prende el ventilador para enfriarlo. Si aun así pasa del límite, suena la alarma. La gráfica muestra los últimos 10 minutos.</p>
+  <h3>Llamada a la enfermera</h3>
+  <p>El paciente de la Habitación 1 aprieta su botón: suena un “ding-dong”, parpadea la luz de su habitación, la LCD lo muestra y el celular avisa en voz alta hasta que alguien pulse <b>Atender</b>.</p>
+  <h3>Luces de cada cuarto</h3>
+  <p>Cada cuarto tiene su luz y se controla desde la app. De noche se apagan solas las de las habitaciones para que los pacientes duerman; con una alarma se prenden todas y parpadea la del cuarto con el problema.</p>
   <h3>5 · Alerta manual y equipo vigilado</h3>
   <p>Si algo falla (un sensor dañado, el Arduino sin energía o el Bluetooth caído), cualquiera con la página puede activar la <b>alerta manual</b>: suena en el Arduino si está conectado y siempre suena y vibra en el celular. El Arduino envía una señal dos veces por segundo; si se corta, la página muestra <b>EQUIPO SIN RESPUESTA</b>.</p>
   <h3>6 · Matriz de la placa</h3>
-  <p>La matriz de luces del UNO R4 WiFi muestra el estado: una cruz (normal), ? (esperando tarjeta), ✓ (acceso), X (tarjeta negada) y ! (alarma).</p>
+  <p>La pantalla LCD muestra la temperatura, si es de día o de noche, la bienvenida y las alarmas. La matriz de luces del UNO R4 WiFi muestra el estado: una cruz (normal), ? (esperando tarjeta), ✓ (acceso), X (tarjeta negada) y ! (alarma).</p>
 </section>
 
 <footer>Infinity Tec · Hospital Inteligente · Proyecto escolar</footer>
@@ -463,14 +555,17 @@ input[type=range]{width:100%;accent-color:var(--verde)}
 const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const esc = t => String(t).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
 
 /* ---------- Estado que muestra la página (llega del Arduino real o del simulado) ---------- */
+const CUARTOS = ['Habitación 1','Habitación 2','Habitación 3','Farmacia','Quirófano 1','Consultorio','Depósito','Recepción'];
 const S = {
   modo: 'sim',            // sim | real
   sistema: true, alerta: false, origen: 0,
   dist: 300, persona: false, espera: 0, acceso: false,
   luz: 85, noche: false, blanca: true, temp: 23, tempOk: true,
-  distPuerta: 30, luzNoche: 30, tempMax: 30, nTarj: 1, registrando: false,
+  distPuerta: 30, luzNoche: 30, tempMax: 30, nTarj: 2, registrando: false,
+  vent: false, llamada: false, soloJefes: true, cuartos: 255, lcd: ['', ''], lista: [],
   ultTj: null, tTj: 0,
   falla: {R:false, U:false, T:false, E:false},
   alertasHoy: 0, sonido: true, ocultaAlarma: false,
@@ -478,7 +573,18 @@ const S = {
 };
 const ORIGEN = {0:'',1:'Persona SIN TARJETA en la puerta de Farmacia',2:'Temperatura ALTA en el quirófano',3:'Alerta MANUAL activada desde la app',4:'Tarjeta NO autorizada (3 intentos)'};
 
-function hora(){ return new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+/* ---------- Memoria del navegador: nombres de tarjetas e historial ---------- */
+const LS = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch { return d; } };
+const guardarLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const TARJ_ENF = 'E1A4339C', TARJ_DOC = '7B2C90D4', TARJ_FALSA = '13F0A2B7';
+const nombres = LS('it_nombres', {});
+if (!nombres[TARJ_ENF]) nombres[TARJ_ENF] = 'Enf. Ana';
+if (!nombres[TARJ_DOC]) nombres[TARJ_DOC] = 'Dr. Luis';
+const historial = LS('it_historial', []);
+function nombreDe(uid){ const t = S.lista.find(x => x.uid === uid); return nombres[uid] || (t && t.n) || uid; }
+const sinAcentos = t => t.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9 .\-]/g,'').trim().slice(0,10);
+
+function hora(t){ return (t ? new Date(t) : new Date()).toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
 function log(msg, rojo){
   const li = document.createElement('li');
   li.innerHTML = '<b>'+hora()+'</b> '+(rojo?'<span class="r">'+msg+'</span>':msg);
@@ -486,7 +592,7 @@ function log(msg, rojo){
   while (ul.children.length > 100) ul.lastChild.remove();
 }
 
-/* ---------- Sonido y vibración ---------- */
+/* ---------- Sonido, voz y vibración ---------- */
 let ctx = null, osc = null, gan = null, lfo = null;
 function sirena(on){
   if (on && S.sonido) {
@@ -496,14 +602,23 @@ function sirena(on){
       ctx.resume();
       osc = ctx.createOscillator(); gan = ctx.createGain(); lfo = ctx.createOscillator(); const lg = ctx.createGain();
       osc.type = 'sawtooth'; osc.frequency.value = 760; lfo.frequency.value = 2.2; lg.gain.value = 260;
-      lfo.connect(lg); lg.connect(osc.frequency); osc.connect(gan); gan.connect(ctx.destination); gan.gain.value = 0.08;
+      lfo.connect(lg); lg.connect(osc.frequency); osc.connect(gan); gan.connect(ctx.destination); gan.gain.value = 0.05;
       osc.start(); lfo.start();
     } catch {}
   } else if (!on || !S.sonido) { if (osc) { try{ osc.stop(); lfo.stop(); }catch{} osc = lfo = null; } }
 }
-function pitido(f, ms){
+function pitido(f, ms, cuando){
   if (!S.sonido) return;
-  try { ctx = ctx || new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = f; g.gain.value = .06; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + ms/1000); } catch {}
+  try { ctx = ctx || new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(), g = ctx.createGain(); const t0 = ctx.currentTime + (cuando||0); o.frequency.value = f; g.gain.value = .06; o.connect(g); g.connect(ctx.destination); o.start(t0); o.stop(t0 + ms/1000); } catch {}
+}
+function hablar(t){
+  if (!S.sonido || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(t); u.lang = 'es-ES'; u.rate = 1.02;
+    const v = speechSynthesis.getVoices().find(v => /^es/i.test(v.lang)); if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch {}
 }
 let vibra = null, vibrando = false;
 function vibrar(on){
@@ -514,14 +629,14 @@ function vibrar(on){
 
 /* ---------- Mundo simulado: personas, luz y temperatura ---------- */
 const mundo = { luz: 85, luzMeta: 85, temp: 23, tempMeta: 23 };
-const TARJ_ENF = 'E1A4339C', TARJ_FALSA = '13F0A2B7';
 const gP = $('personas');
 const ENTRADA = [340,470], RECEP = [340,384], A = [275,335], B = [275,205], PUERTA = [282,82];
 const PERS = {
-  visita:    {color:'#1f8fd6', icono:'🧑', nombre:'Visitante', camino:[A,B,[275,120],[205,120],[150,118]]},
-  enfermera: {color:'#12a058', icono:'🩺', nombre:'Enfermera', camino:[A,B,PUERTA], tarjeta: TARJ_ENF},
-  intruso:   {color:'#ff3d5a', icono:'🕵', nombre:'Intruso',   camino:[A,B,PUERTA]},
-  falsa:     {color:'#ff3d5a', icono:'🕵', nombre:'Intruso',   camino:[A,B,PUERTA], tarjeta: TARJ_FALSA, intentos: 3}
+  visita:    {color:'#1f8fd6', icono:'🧑', nombre:'El visitante', camino:[A,B,[275,120],[205,120],[150,118]]},
+  enfermera: {color:'#12a058', icono:'🩺', nombre:'La enfermera Ana', camino:[A,B,PUERTA], tarjeta: TARJ_ENF, dentro:[[335,80],[400,58]]},
+  doctor:    {color:'#7a4dd8', icono:'🥼', nombre:'El doctor Luis (jefe)', camino:[A,B,PUERTA], tarjeta: TARJ_DOC, dentro:[[335,80],[430,62]]},
+  intruso:   {color:'#ff3d5a', icono:'🕵', nombre:'Un intruso', camino:[A,B,PUERTA]},
+  falsa:     {color:'#ff3d5a', icono:'🕵', nombre:'Un intruso', camino:[A,B,PUERTA], tarjeta: TARJ_FALSA, intentos: 3}
 };
 const gente = [];
 function mover(g,[x,y]){ g.style.transform = `translate(${x}px,${y}px)`; g._pos = [x,y]; }
@@ -542,18 +657,19 @@ function agregar(tipo){
   requestAnimationFrame(()=>caminar(p, [RECEP, ...r.camino], ()=>{
     if (r.camino[r.camino.length-1] !== PUERTA) return;
     p.enPuerta = true;
-    if (tipo === 'enfermera') setTimeout(()=>intentarEntrar(p), 1500);
+    if (r.dentro) setTimeout(()=>intentarEntrar(p), 1500);
     if (tipo === 'falsa') { let n = 0; const otra = () => { if (!p.enPuerta || !p.g.isConnected) return; if (n++ < r.intentos) { log('El intruso pasa una tarjeta falsa por el lector'); VA.tarjeta(TARJ_FALSA); setTimeout(otra, 2500); } }; setTimeout(otra, 1200); }
   }));
 }
 function intentarEntrar(p){
   if (!p.enPuerta) return;
-  log('La enfermera pasa su tarjeta por el lector');
-  VA.tarjeta(TARJ_ENF);
+  const r = PERS[p.tipo];
+  log(r.nombre+' pasa su tarjeta por el lector');
+  VA.tarjeta(r.tarjeta);
   setTimeout(()=>{
     if (!p.enPuerta) return;
-    if (VA.d.accesoHasta > Date.now()) { p.enPuerta = false; p.dentro = true; caminar(p, [[335,80],[400,58]]); log('La enfermera entra a Farmacia'); }
-    else { log('La enfermera no pudo entrar a Farmacia', true); setTimeout(()=>salir(p), 3500); }
+    if (VA.d.accesoHasta > Date.now()) { p.enPuerta = false; p.dentro = true; caminar(p, r.dentro); log(r.nombre+' entra a Farmacia'); }
+    else { log(r.nombre+' no pudo entrar a Farmacia', true); setTimeout(()=>salir(p), 3500); }
   }, 900);
 }
 function salir(p){
@@ -571,36 +687,69 @@ mundo.dist = () => gente.some(p=>p.enPuerta) ? 18 + Math.round(Math.random()*2) 
 /* ---------- Arduino simulado: mismas reglas que el programa real ---------- */
 const VA = (() => {
   const d = { sis:1, alerta:0, origen:0, dist:150, persona:0, esperaFin:0, accesoHasta:0, tVista:0,
-    luz:85, noche:0, temp:23, tempOk:1, avisoCalor:false, distPuerta:30, luzNoche:30, tempMax:30,
-    tarjetas:[TARJ_ENF], registrando:0, regHasta:0, negados:0, tNegado:0, ultUid:'', tUlt:0, blancaHasta:0 };
+    luz:85, noche:0, temp:23, tempOk:1, avisoCalor:false, vent:0, distPuerta:30, luzNoche:30, tempMax:30, soloJefes:1,
+    tarjetas:[{uid:TARJ_ENF, j:0, n:'ENF. ANA'}, {uid:TARJ_DOC, j:1, n:'DR. LUIS'}],
+    registrando:0, regHasta:0, negados:0, tNegado:0, negadoHasta:0, blancaHasta:0,
+    llamada:0, cuartos:255, cuartosDia:255, lcdM:0, lcdN:'', lcdHasta:0, lcd1:null, lcd2:null };
   const ev = t => procesar('EV,'+t);
   const vivo = () => !S.falla.E;
+  const nom = t => t.n || t.uid;
   function alertar(o, t){ if (d.alerta) return; d.alerta = 1; d.origen = o; ev(t); st(); }
   function silenciar(t){ if (!d.alerta) return; d.alerta = 0; d.origen = 0; ev(t); }
+  function avisoLcd(m, n){ d.lcdM = m; d.lcdN = n; d.lcdHasta = Date.now() + 3000; }
+  function lista(){ d.tarjetas.forEach(t => procesar('TL,'+t.uid+','+t.j+','+t.n)); procesar('TL,FIN'); }
   function tarjeta(uid){
     if (!vivo() || S.modo !== 'sim') return;
     if (S.falla.R) { log('El lector RFID no respondió (dañado)', true); return; }
     const ahora = Date.now();
     if (d.registrando) {
       d.registrando = 0;
-      if (d.tarjetas.includes(uid)) ev('La tarjeta '+uid+' ya estaba registrada');
+      if (d.tarjetas.some(t=>t.uid===uid)) ev('La tarjeta '+uid+' ya estaba registrada');
       else if (d.tarjetas.length >= 10) ev('Memoria llena: ya hay 10 tarjetas');
-      else { d.tarjetas.push(uid); ev('Tarjeta '+uid+' registrada'); }
-      procesar('TJ,'+uid+',1'); st(); return;
+      else { d.tarjetas.push({uid, j:0, n:''}); ev('Tarjeta '+uid+' registrada'); }
+      avisoLcd(3, uid); procesar('TJ,'+uid+',1,3'); lista(); st(); return;
     }
-    const ok = d.tarjetas.includes(uid);
-    procesar('TJ,'+uid+','+(ok?1:0));
-    if (ok) {
-      d.accesoHasta = ahora + 8000; d.esperaFin = 0; d.negados = 0;
-      ev('Acceso permitido a Farmacia: tarjeta '+uid);
+    const t = d.tarjetas.find(x=>x.uid===uid);
+    if (t && d.noche && d.soloJefes && !t.j) {
+      d.negadoHasta = ahora + 1500; avisoLcd(2, nom(t));
+      procesar('TJ,'+uid+',0,2'); ev('Farmacia cerrada de noche: '+nom(t)+' no es jefe'); st(); return;
+    }
+    procesar('TJ,'+uid+','+(t?1:0)+','+(t?1:0));
+    if (t) {
+      d.accesoHasta = ahora + 8000; d.esperaFin = 0; d.negados = 0; avisoLcd(1, nom(t));
+      ev('Acceso permitido a Farmacia: '+nom(t));
       if (d.alerta && (d.origen === 1 || d.origen === 4)) silenciar('Alarma desactivada con una tarjeta autorizada');
     } else {
       if (ahora - d.tNegado > 60000) d.negados = 0;
-      d.tNegado = ahora; d.negados++;
+      d.tNegado = ahora; d.negados++; d.negadoHasta = ahora + 1500; avisoLcd(0, uid);
       ev('Tarjeta NO autorizada: '+uid+' (intento '+d.negados+')');
       if (d.negados >= 3 && d.sis) alertar(4, 'ALARMA: 3 intentos con tarjeta no autorizada');
     }
     st();
+  }
+  function boton(){
+    if (!vivo() || S.modo !== 'sim') return;
+    d.llamada = d.llamada ? 0 : 1;
+    ev(d.llamada ? 'LLAMADA: la Habitacion 1 pide una enfermera' : 'Llamada de la Habitacion 1 cancelada desde la habitacion');
+    st();
+  }
+  function pantalla(){
+    const a = Date.now(), ORI = ['', 'Intruso Farmacia', 'Quirofano calor', 'Alerta manual', 'Tarjeta falsa x3'];
+    let l1, l2;
+    if (d.alerta) { l1 = Math.floor(a/500)%2 ? '!!! ALARMA !!!' : ''; l2 = ORI[d.origen] || ''; }
+    else if (a < d.lcdHasta) {
+      if (d.lcdM === 1) { l1 = 'Acceso OK'; l2 = 'Hola, '+d.lcdN; }
+      else if (d.lcdM === 2) { l1 = 'FARMACIA CERRADA'; l2 = 'Noche: solo jefe'; }
+      else if (d.lcdM === 3) { l1 = 'Tarjeta nueva'; l2 = d.lcdN+' OK'; }
+      else { l1 = 'ACCESO NEGADO'; l2 = 'Tarjeta no reg.'; }
+    }
+    else if (d.llamada) { l1 = 'LLAMADA ENFERM.'; l2 = 'Habitacion 1'; }
+    else if (d.registrando) { l1 = 'Pase la tarjeta'; l2 = 'nueva por lector'; }
+    else if (d.esperaFin) { l1 = 'Acerque tarjeta'; l2 = 'Quedan '+Math.ceil((d.esperaFin-a)/1000)+' s'; }
+    else { l1 = d.tempOk ? 'Quirof. '+d.temp.toFixed(1)+' C' : 'Temp: sin sensor'; l2 = (d.noche?'Noche':'Dia')+(d.vent?' Vent ON':'')+(d.sis?'':' APAGADO'); }
+    l1 = l1.slice(0,16).replace(/,/g,' '); l2 = l2.slice(0,16).replace(/,/g,' ');
+    if (l1 === d.lcd1 && l2 === d.lcd2) return;
+    d.lcd1 = l1; d.lcd2 = l2; procesar('LC,'+l1+','+l2);
   }
   function tick(){
     if (!vivo() || S.modo !== 'sim') return;
@@ -615,22 +764,31 @@ const VA = (() => {
     if (d.esperaFin && ahora >= d.esperaFin) { d.esperaFin = 0; alertar(1, 'ALARMA: persona sin tarjeta en la puerta de Farmacia'); }
     if (d.registrando && ahora > d.regHasta) { d.registrando = 0; ev('Registro de tarjeta cancelado (tiempo agotado)'); }
     d.luz = Math.round(mundo.luz);
-    if (!d.noche && d.luz < d.luzNoche) { d.noche = 1; d.blancaHasta = 0; ev('Anochece: pasillo en modo noche (luces amarillas)'); }
-    else if (d.noche && d.luz > d.luzNoche + 5) { d.noche = 0; ev('Amanece: pasillo con luces blancas'); }
+    if (!d.noche && d.luz < d.luzNoche) {
+      d.noche = 1; d.blancaHasta = 0; ev('Anochece: pasillo en modo noche (luces amarillas)');
+      d.cuartosDia = d.cuartos; d.cuartos &= 0x90; ev('Noche: se apagan las luces de habitaciones, consultorio, depósito y farmacia');
+    } else if (d.noche && d.luz > d.luzNoche + 5) {
+      d.noche = 0; ev('Amanece: pasillo con luces blancas');
+      d.cuartos = d.cuartosDia; ev('Día: las luces de los cuartos vuelven como estaban');
+    }
     d.temp = S.falla.T ? -48.8 : mundo.temp; d.tempOk = d.temp > 1 && d.temp < 70 ? 1 : 0;
+    const v = d.tempOk && (d.vent ? d.temp > d.tempMax - 3 : d.temp >= d.tempMax - 2);
+    if (v !== !!d.vent) { d.vent = v ? 1 : 0; ev(v ? 'Quirófano: se calienta, ventilador encendido' : 'Quirófano: temperatura normal, ventilador apagado'); }
     if (d.tempOk) {
       if (d.temp >= d.tempMax && !d.avisoCalor) { d.avisoCalor = true; if (d.sis) alertar(2, 'ALARMA: temperatura alta ('+d.temp.toFixed(1)+' C)'); else ev('Temperatura alta ('+d.temp.toFixed(1)+' C), pero el sistema está apagado'); }
       else if (d.temp < d.tempMax - 1) d.avisoCalor = false;
     }
+    pantalla();
   }
   function st(){
     if (!vivo() || S.modo !== 'sim') return;
     const a = Date.now();
-    procesar(['ST',d.sis,d.alerta,d.origen,d.dist,d.persona,d.esperaFin?Math.ceil((d.esperaFin-a)/1000):0,a<d.accesoHasta?1:0,d.luz,d.noche,Math.round(d.temp*10),d.tempOk,d.distPuerta,d.luzNoche,d.tempMax,d.tarjetas.length,d.registrando,(!d.noche||a<d.blancaHasta||d.alerta)?1:0].join(','));
+    procesar(['ST',d.sis,d.alerta,d.origen,d.dist,d.persona,d.esperaFin?Math.ceil((d.esperaFin-a)/1000):0,a<d.accesoHasta?1:0,d.luz,d.noche,Math.round(d.temp*10),d.tempOk,d.distPuerta,d.luzNoche,d.tempMax,d.tarjetas.length,d.registrando,
+      (!d.noche||a<d.blancaHasta||d.alerta)?1:0, d.vent, d.llamada, d.soloJefes, d.cuartos].join(','));
   }
   function orden(o, callado){
     if (!vivo()) return;
-    o = o.trim().toUpperCase(); const [c, v0] = o.split(':'); const v = v0 === undefined ? -1 : parseInt(v0);
+    o = o.trim().toUpperCase(); const partes = o.split(':'); const c = partes[0]; const v = partes.length > 1 ? parseInt(partes[1]) : -1;
     const lim = (x,a,b) => Math.max(a, Math.min(b, x));
     if (c === 'ON') { d.sis = 1; ev('Sistema encendido'); }
     else if (c === 'OFF') { d.sis = 0; d.esperaFin = 0; silenciar('Alerta silenciada'); ev('Sistema apagado'); }
@@ -640,36 +798,63 @@ const VA = (() => {
     else if (c === 'REGISTRAR') { d.registrando = 1; d.regHasta = Date.now() + 15000; ev('Acerque la tarjeta nueva al lector (15 s)'); }
     else if (c === 'CANCELAR') { if (d.registrando) { d.registrando = 0; ev('Registro de tarjeta cancelado'); } }
     else if (c === 'BORRAR') { d.tarjetas = []; ev('Se borraron todas las tarjetas'); }
+    else if (c === 'ATENDER') { if (d.llamada) { d.llamada = 0; ev('Llamada de la Habitacion 1 atendida'); } }
+    else if (c === 'LISTA') { lista(); }
     else if (c === 'DIST' && v >= 0) { d.distPuerta = lim(v,5,150); ev('Distancia de la puerta = '+d.distPuerta+' cm'); }
     else if (c === 'LUZ' && v >= 0) { d.luzNoche = lim(v,5,90); ev('Noche con menos de '+d.luzNoche+' % de luz'); }
     else if (c === 'TMAX' && v >= 0) { d.tempMax = lim(v,20,60); d.avisoCalor = false; ev('Temperatura maxima = '+d.tempMax+' C'); }
-    else if (c === 'ESTADO') {}
+    else if (c === 'JEFES' && v >= 0) { d.soloJefes = v === 1 ? 1 : 0; ev(d.soloJefes ? 'De noche la Farmacia es solo para jefes' : 'De noche entran todas las tarjetas'); }
+    else if (c === 'CUARTO' && v >= 0 && v <= 8) {
+      const on = parseInt(partes[2]) === 1, m = v === 0 ? 255 : 1 << (v-1);
+      d.cuartos = on ? (d.cuartos | m) : (d.cuartos & ~m); if (!d.noche) d.cuartosDia = d.cuartos;
+      ev('Luz de '+(v === 0 ? 'todos los cuartos' : CUARTOS[v-1])+(on ? ' encendida' : ' apagada'));
+    }
+    else if (c === 'TARJ' && partes.length >= 3) {
+      const t = d.tarjetas.find(x=>x.uid===partes[1]);
+      if (!t) { ev('La tarjeta '+partes[1]+' no esta registrada'); return; }
+      t.j = parseInt(partes[2]) === 1 ? 1 : 0; t.n = partes.slice(3).join(':').trim().replace(/,/g,'').slice(0,10);
+      ev('Tarjeta '+t.uid+' = '+nom(t)+(t.j ? ' (jefe)' : ''));
+    }
+    else if (c === 'ESTADO') { d.lcd1 = null; }
     else { ev('Orden desconocida: '+o); return; }
     st();
   }
   setInterval(tick, 100); setInterval(st, 500);
-  return { d, orden, tarjeta };
+  return { d, orden, tarjeta, boton };
 })();
 
 /* ---------- Pintar ---------- */
 function equipoVivo(){ return Date.now() - S.ultimoLatido < 3000; }
+function lucesEfectivas(a){
+  let ef = S.cuartos;
+  if (S.acceso) ef |= 8;
+  if (S.llamada) ef = (ef & ~1) | (Math.floor(a/500) % 2);
+  if (S.alerta) { ef = 255; const b = (S.origen===1||S.origen===4) ? 3 : S.origen===2 ? 4 : -1; if (b >= 0 && Math.floor(a/250) % 2 === 0) ef &= ~(1 << b); }
+  return ef;
+}
+function pintarLcd(){
+  const vivo = equipoVivo();
+  $('lcdL1').textContent = vivo ? S.lcd[0] : '';
+  $('lcdL2').textContent = vivo ? S.lcd[1] : '';
+  $('lcdFondo').setAttribute('fill', vivo ? '#2f5fd0' : '#1a2440');
+}
 function pintar(){
   const vivo = equipoVivo();
   const a = Date.now();
-  // puerta y sensores
+  // puerta (servo) y sensores
   let colPuerta = '#8a5a32';
   if (S.alerta && (S.origen === 1 || S.origen === 4)) colPuerta = '#ff3d5a';
   else if (S.acceso) colPuerta = '#2ef2a0';
   else if (S.espera || S.persona) colPuerta = '#ffbf3d';
   $('pF').setAttribute('stroke', colPuerta);
-  $('pF').setAttribute('stroke-dasharray', S.acceso ? '4 5' : '0');
+  $('pF').style.transform = vivo && S.acceso ? 'rotate(-70deg)' : 'none';
   $('zF').setAttribute('fill', S.alerta && (S.origen===1||S.origen===4) ? '#b03045' : '#3f8a5c');
   $('cono').setAttribute('opacity', vivo && S.persona ? '.22' : '0');
   const tjReciente = a - S.tTj < 1500 && S.ultTj;
-  $('rfidLed').setAttribute('fill', tjReciente ? (S.ultTj.ok ? '#2ef2a0' : '#ff3d5a') : (S.registrando ? '#ffbf3d' : '#444'));
+  $('rfidLed').setAttribute('fill', tjReciente ? (S.ultTj.ok ? '#2ef2a0' : '#ff3d5a') : (S.registrando ? '#ffbf3d' : '#555'));
   $('espTxt').textContent = S.espera ? 'Tarjeta: '+S.espera+' s' : S.acceso ? 'ACCESO' : '';
   $('espTxt').setAttribute('fill', S.acceso ? '#2ef2a0' : '#ffbf3d');
-  // temperatura
+  // temperatura y ventilador
   const caliente = S.tempOk && S.temp >= S.tempMax;
   const colT = !S.tempOk ? '#ffbf3d' : caliente ? '#ff3d5a' : S.temp >= S.tempMax - 3 ? '#ffbf3d' : '#2ef2a0';
   $('tempTxt').textContent = !vivo ? '— °C' : S.tempOk ? S.temp.toFixed(1)+' °C' : 'SIN SENSOR';
@@ -678,21 +863,40 @@ function pintar(){
   $('termoNivel').setAttribute('y', 82 - niv); $('termoNivel').setAttribute('height', niv);
   $('termoNivel').setAttribute('fill', colT); $('termoBulbo').setAttribute('fill', colT);
   $('zQ').setAttribute('fill', S.alerta && S.origen===2 ? '#b03045' : '#3f8a5c');
-  // luz
-  $('oscuro').setAttribute('opacity', vivo ? (Math.max(0, 70 - S.luz) / 70 * .78).toFixed(2) : 0);
+  $('aspas').classList.toggle('gira', vivo && S.vent);
+  $('aspas').setAttribute('fill', vivo && S.vent ? '#33d6f0' : '#9aa1a6');
+  // luz: noche, pasillo y cuartos
+  const oscF = vivo ? Math.max(0, 70 - S.luz) / 70 : 0;
+  $('oscuro').setAttribute('opacity', (oscF * .78).toFixed(2));
   $('focos').setAttribute('opacity', vivo && S.noche ? 1 : 0);
   $('lamparas').setAttribute('fill', vivo && S.noche ? '#ffe23d' : '#7d7560');
   const blanca = vivo && S.blanca;
   $('focosB').setAttribute('opacity', blanca ? (S.noche ? 1 : .55) : 0);
   $('lampB').setAttribute('fill', blanca ? '#ffffff' : '#8d939a');
+  const ef = vivo ? lucesEfectivas(a) : 0;
+  for (let i = 0; i < 8; i++) {
+    const on = (ef >> i) & 1;
+    $('lz'+i).setAttribute('fill', on ? '#fff1c2' : '#000');
+    $('lz'+i).setAttribute('opacity', on ? (oscF * .45).toFixed(2) : ((1 - oscF) * .2).toFixed(2));
+    $('bb'+i).setAttribute('fill', on ? '#ffe23d' : '#6b6656');
+    const bt = document.querySelector('.cto[data-c="'+i+'"]');
+    if (bt) bt.setAttribute('aria-pressed', String(!!((S.cuartos >> i) & 1)));
+  }
   $('sirena').classList.toggle('alarmando', S.alerta);
+  // llamada de la habitación 1
+  $('ringLl').setAttribute('opacity', vivo && S.llamada && Math.floor(a/500)%2 ? 1 : 0);
+  $('llam').hidden = !(vivo && S.llamada);
+  $('bLlamar').querySelector('b').textContent = S.llamada ? 'Paciente cancela' : 'Paciente llama';
+  pintarLcd();
   // LEDs del banco
   const parp = Math.floor(a / 250) % 2 === 0;
   $('ledV').classList.toggle('on', vivo && S.acceso);
   $('ledR').classList.toggle('on', vivo && (S.alerta ? parp : (tjReciente && !S.ultTj.ok) || (S.espera && Math.floor(a/500)%2===0)));
   $('ledA').classList.toggle('on', vivo && S.noche);
   $('ledW').classList.toggle('on', blanca);
-  $('ledB').classList.toggle('on', vivo && (S.alerta ? parp : S.espera ? a % 1000 < 120 : false));
+  $('ledB').classList.toggle('on', vivo && (S.alerta ? parp : S.espera ? a % 1000 < 120 : S.llamada ? a % 3000 < 300 : false));
+  $('ledServo').classList.toggle('on', vivo && S.acceso);
+  $('ledVent').classList.toggle('on', vivo && S.vent);
   $('chipTxt').textContent = !vivo ? 'sin respuesta' : S.sistema ? 'vigilando' : 'en espera';
   $('btTxt').textContent = S.modo==='real' ? (vivo?'conectado':'sin señal') : (vivo ? 'enlazado' : 'caído');
   // interruptor
@@ -703,6 +907,7 @@ function pintar(){
   // barra de estado
   const kE = $('kEstado');
   if (S.alerta) { kE.textContent = '🚨 ALERTA'; kE.className = 'mal'; }
+  else if (S.llamada && vivo) { kE.textContent = '📞 LLAMADA HAB. 1'; kE.className = 'aviso'; }
   else if (!S.sistema) { kE.textContent = 'APAGADO'; kE.className = 'aviso'; }
   else { kE.textContent = 'NORMAL'; kE.className = 'ok'; }
   const kQ = $('kEquipo');
@@ -712,14 +917,14 @@ function pintar(){
   const kP = $('kPuerta');
   if (!vivo) { kP.textContent = 'Sin datos'; kP.className = 'aviso'; }
   else if (S.alerta && (S.origen===1||S.origen===4)) { kP.textContent = 'ALARMA'; kP.className = 'mal'; }
-  else if (S.acceso) { kP.textContent = 'Acceso permitido'; kP.className = 'ok'; }
+  else if (S.acceso) { kP.textContent = 'Abierta (servo)'; kP.className = 'ok'; }
   else if (S.espera) { kP.textContent = 'Persona · '+S.espera+' s'; kP.className = 'aviso'; }
-  else if (S.dist >= 300) { kP.textContent = 'Libre · sin eco'; kP.className = 'ok'; }
-  else { kP.textContent = 'Libre · '+S.dist+' cm'; kP.className = 'ok'; }
+  else if (S.noche && S.soloJefes) { kP.textContent = '🌙 Solo jefes'; kP.className = 'aviso'; }
+  else { kP.textContent = 'Cerrada'; kP.className = 'ok'; }
   const kT = $('kTemp');
   if (!vivo) { kT.textContent = 'Sin datos'; kT.className = 'aviso'; }
   else if (!S.tempOk) { kT.textContent = 'Sensor desconectado'; kT.className = 'aviso'; }
-  else { kT.textContent = S.temp.toFixed(1)+' °C'; kT.className = caliente ? 'mal' : 'ok'; }
+  else { kT.textContent = S.temp.toFixed(1)+' °C'+(S.vent ? ' · 🌀' : ''); kT.className = caliente ? 'mal' : S.vent ? 'aviso' : 'ok'; }
   const kL = $('kLuz');
   if (!vivo) { kL.textContent = 'Sin datos'; kL.className = 'aviso'; }
   else { kL.textContent = S.noche ? (S.blanca ? '🌙 Blancas 10 s' : '🌙 Amarillas') : '☀ Blancas'; kL.className = S.noche ? 'aviso' : 'ok'; }
@@ -728,12 +933,13 @@ function pintar(){
   if (a - tocado.rDist > 1500) { $('rDist').value = S.distPuerta; $('vDist').textContent = S.distPuerta+' cm'; }
   if (a - tocado.rTmax > 1500) { $('rTmax').value = S.tempMax; $('vTmax').textContent = S.tempMax+' °C'; }
   if (a - tocado.rLuz > 1500) { $('rLuz').value = S.luzNoche; $('vLuz').textContent = S.luzNoche+' %'; }
+  if (a - tocado.chkJefes > 1500) $('chkJefes').checked = S.soloJefes;
   $('vDistAhora').textContent = !vivo ? '—' : S.dist >= 300 ? 'sin eco (nadie cerca)' : S.dist+' cm';
   $('vLuzAhora').textContent = vivo ? S.luz+' %' : '—';
   $('nTarj').textContent = S.nTarj;
   $('bReg').textContent = S.registrando ? '⏳ Pase la tarjeta… (cancelar)' : '➕ Registrar tarjeta';
   $('bReg').classList.toggle('esperando', S.registrando);
-  if (S.ultTj) $('ultTarj').textContent = 'Última leída: '+S.ultTj.uid+(S.ultTj.ok?' ✔':' ✖');
+  if (S.ultTj) $('ultTarj').textContent = 'Última leída: '+nombreDe(S.ultTj.uid)+(S.ultTj.ok?' ✔':' ✖');
   // simulador
   $('bNoche').querySelector('b').textContent = mundo.luzMeta < 50 ? 'Amanecer' : 'Anochecer';
   $('bNoche').querySelector('span').textContent = mundo.luzMeta < 50 ? '☀' : '🌙';
@@ -753,7 +959,59 @@ function pintar(){
   $('hora').textContent = hora();
 }
 
+/* ---------- Tarjetas con nombre e historial ---------- */
+function pintarLista(){
+  const c = $('listaTarj');
+  if (!S.lista.length) { c.innerHTML = '<p class="nota">No hay tarjetas registradas. Pulsa “Registrar tarjeta” y pásala por el lector.</p>'; return; }
+  c.innerHTML = S.lista.map((t,i)=>`<div class="tfila"><code>${esc(t.uid)}</code><input type="text" maxlength="10" data-i="${i}" value="${esc(nombres[t.uid]||t.n||'')}" placeholder="Nombre (10 letras)" aria-label="Nombre de la tarjeta ${esc(t.uid)}"><label class="chk"><input type="checkbox" data-j="${i}" ${t.j?'checked':''}> Jefe</label><button class="btn" data-g="${i}">Guardar</button></div>`).join('');
+  c.querySelectorAll('[data-g]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.g, t = S.lista[i];
+    const nm = c.querySelector(`[data-i="${i}"]`).value.trim().slice(0,10), j = c.querySelector(`[data-j="${i}"]`).checked;
+    if (nm) nombres[t.uid] = nm; else delete nombres[t.uid];
+    guardarLS('it_nombres', nombres);
+    enviar(`TARJ:${t.uid}:${j?1:0}:${sinAcentos(nm)}`);
+    b.textContent = '✔ Guardado'; setTimeout(()=>{ enviar('LISTA'); }, 300);
+    pintarHistorial();
+  });
+}
+const MOTIVO = ['<span class="mal">✖ No registrada</span>','<span class="ok">✔ Entró</span>','<span class="aviso">🌙 Cerrada (noche)</span>'];
+function agregarHistorial(uid, m){ historial.unshift({t: Date.now(), uid, m}); if (historial.length > 60) historial.length = 60; guardarLS('it_historial', historial); pintarHistorial(); }
+function pintarHistorial(){
+  $('hist').innerHTML = historial.length
+    ? historial.slice(0,40).map(h => `<tr><td>${hora(h.t)}</td><td>${esc(nombreDe(h.uid))}${nombreDe(h.uid)!==h.uid?` <small class="nota">${esc(h.uid)}</small>`:''}</td><td>${MOTIVO[h.m]||''}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="nota">Todavía no hay intentos de entrar a Farmacia.</td></tr>';
+}
+
+/* ---------- Gráfica de temperatura (últimos 10 minutos) ---------- */
+const muestras = [];
+function muestrear(){
+  if (!equipoVivo() || !S.tempOk) muestras.push(null); else muestras.push(S.temp);
+  if (muestras.length > 300) muestras.shift();
+  graficar();
+}
+function graficar(){
+  const cv = $('grafica'), dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  if (!W) return;
+  if (cv.width !== Math.round(W*dpr)) { cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+  const vals = muestras.filter(v => v != null);
+  let lo = Math.min(S.tempMax - 8, ...vals) - 1, hi = Math.max(S.tempMax + 2, ...vals) + 1;
+  const iz = 34, de = 8, ar = 10, ab = 18, y = v => ar + (hi - v) / (hi - lo) * (H - ar - ab), x = i => iz + i / 299 * (W - iz - de);
+  g.font = '11px ui-monospace, Consolas, monospace'; g.fillStyle = '#8a90b8'; g.strokeStyle = '#1c2142'; g.lineWidth = 1;
+  for (let k = Math.ceil(lo/5)*5; k <= hi; k += 5) { g.beginPath(); g.moveTo(iz, y(k)); g.lineTo(W-de, y(k)); g.stroke(); g.fillText(k+'°', 4, y(k)+4); }
+  g.fillText('hace 10 min', iz, H-4); g.textAlign = 'right'; g.fillText('ahora', W-de, H-4); g.textAlign = 'left';
+  g.strokeStyle = '#ff3d5a'; g.setLineDash([5,4]); g.beginPath(); g.moveTo(iz, y(S.tempMax)); g.lineTo(W-de, y(S.tempMax)); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#ff8a9c'; g.fillText('máx '+S.tempMax+'°', iz+4, y(S.tempMax)-4);
+  const off = 300 - muestras.length;
+  g.strokeStyle = '#2ef2a0'; g.lineWidth = 2; g.beginPath(); let pen = false;
+  muestras.forEach((v,i) => { if (v == null) { pen = false; return; } const px = x(i+off), py = y(v); pen ? g.lineTo(px,py) : g.moveTo(px,py); pen = true; });
+  g.stroke();
+  const ult = muestras[muestras.length-1];
+  if (ult != null) { g.fillStyle = ult >= S.tempMax ? '#ff3d5a' : '#2ef2a0'; g.beginPath(); g.arc(x(299), y(ult), 4, 0, 7); g.fill(); }
+}
+
 /* ---------- Mensajes del Arduino (real o simulado) ---------- */
+let tlTemp = [], tListaPedida = 0;
 function procesar(l){
   const p = l.split(',');
   if (p[0] === 'ST' && p.length >= 17) {
@@ -764,25 +1022,41 @@ function procesar(l){
     S.dist = n[3]; S.persona = !!n[4]; S.espera = n[5]; S.acceso = !!n[6];
     S.luz = n[7]; S.noche = !!n[8]; S.temp = n[9] / 10; S.tempOk = !!n[10];
     S.distPuerta = n[11]; S.luzNoche = n[12]; S.tempMax = n[13]; S.nTarj = n[14]; S.registrando = !!n[15];
-    S.blanca = p.length >= 18 ? !!n[16] : !S.noche;   // programas viejos no envían este dato
+    S.blanca = p.length >= 18 ? !!n[16] : !S.noche;   // programas viejos no envían estos datos
+    S.vent = p.length >= 19 && !!n[17];
+    const llamada = p.length >= 20 && !!n[18];
+    S.soloJefes = p.length >= 21 ? !!n[19] : false;
+    S.cuartos = p.length >= 22 ? n[20] : 255;
+    if (llamada && !S.llamada) { log('📞 La Habitación 1 pide una enfermera', true); hablar('Atención. La habitación uno pide una enfermera.'); }
+    S.llamada = llamada;
+    if (S.nTarj !== S.lista.length && Date.now() - tListaPedida > 3000) { tListaPedida = Date.now(); setTimeout(()=>enviar('LISTA', true), 0); }
     if (alerta && !S.alerta) dispararAlerta(origen);
     else if (alerta) S.origen = origen;
     else if (!alerta && S.alerta && S.origen !== 3) { S.alerta = false; S.origen = 0; quitarIntrusos(); }
-    else if (!alerta && S.alerta && S.origen === 3 && equipoVivo()) { /* la manual sigue hasta silenciar */ }
     pintar();
   } else if (p[0] === 'EV') {
-    const t = p.slice(1).join(',').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'})[c]);
-    log((S.modo==='real' ? 'Arduino: ' : '') + t, /ALARMA|ALERTA|NO autorizada|no se encuentra|no da una/i.test(t));
+    const t = esc(p.slice(1).join(','));
+    log((S.modo==='real' ? 'Arduino: ' : '') + t, /ALARMA|ALERTA|NO autorizada|no se encuentra|no da una|cerrada de noche|LLAMADA/i.test(t));
   } else if (p[0] === 'TJ' && p.length >= 3) {
-    S.ultTj = { uid: p[1], ok: p[2] === '1' }; S.tTj = Date.now();
-    pitido(S.ultTj.ok ? 1400 : 300, S.ultTj.ok ? 150 : 400);
+    const uid = p[1], ok = p[2] === '1', m = p.length >= 4 ? +p[3] : (ok ? 1 : 0);
+    S.ultTj = { uid, ok }; S.tTj = Date.now();
+    pitido(ok ? 1400 : 300, ok ? 150 : 400);
+    if (m !== 3) agregarHistorial(uid, m);
+    if (m === 1) hablar('Acceso permitido. Hola, ' + nombreDe(uid) + '.');
+    else if (m === 2) hablar('Farmacia cerrada de noche. Solo pueden entrar los jefes.');
     pintar();
+  } else if (p[0] === 'LC') {
+    S.lcd = [p[1] || '', p.slice(2).join(',') || '']; pintarLcd();
+  } else if (p[0] === 'TL' && p.length >= 2) {
+    if (p[1] === 'FIN') { S.lista = tlTemp; tlTemp = []; pintarLista(); pintarHistorial(); }
+    else tlTemp.push({ uid: p[1], j: p[2] === '1', n: p.slice(3).join(',') });
   }
 }
 function dispararAlerta(origen){
   if (S.alerta) return;
   S.alerta = true; S.origen = origen; S.alertasHoy++; S.ocultaAlarma = false;
   log('🚨 '+ORIGEN[origen], true);
+  hablar('Alerta. ' + (ORIGEN[origen] || '').toLowerCase() + '.');
 }
 function quitarIntrusos(){
   if (S.modo !== 'sim') return;
@@ -793,10 +1067,10 @@ function quitarIntrusos(){
 }
 
 /* ---------- Acciones ---------- */
-function enviar(txt){
-  if (S.modo === 'sim') { if (S.falla.E) log('El Arduino no responde: la orden no llegó', true); VA.orden(txt); return; }
+function enviar(txt, callado){
+  if (S.modo === 'sim') { if (S.falla.E && !callado) log('El Arduino no responde: la orden no llegó', true); VA.orden(txt); return; }
   enviarReal(txt);
-  if (!equipoVivo()) log('El Arduino no responde: la orden puede no llegar', true);
+  if (!equipoVivo() && !callado) log('El Arduino no responde: la orden puede no llegar', true);
 }
 function setSistema(on){ enviar(on ? 'ON' : 'OFF'); if (S.modo==='real' || !S.falla.E) { S.sistema = on; if (!on && S.alerta && S.origen !== 3) { S.alerta = false; S.origen = 0; } } pintar(); }
 function alertaManual(){
@@ -809,16 +1083,20 @@ function silenciar(){
   enviar('SILENCIAR');
   if (S.alerta) log('Alerta silenciada');
   S.alerta = false; S.origen = 0;
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
   quitarIntrusos();
   pintar();
 }
+function cuarto(i){ if (ctx) ctx.resume(); const on = (S.cuartos >> i) & 1; enviar('CUARTO:'+(i+1)+':'+(on?0:1)); }
 $('sw').onclick = ()=>{ if (ctx) ctx.resume(); setSistema(!S.sistema); };
 $('bPanico').onclick = alertaManual;
 $('bPanico2').onclick = alertaManual;
 $('bSilenciar').onclick = silenciar;
 $('bOcultar').onclick = ()=>{ S.ocultaAlarma = true; pintar(); };
-$('bSonido').onclick = ()=>{ S.sonido = !S.sonido; $('bSonido').textContent = S.sonido ? '🔊 Sonido activado' : '🔇 Sonido apagado'; sirena(false); pintar(); };
+$('bSonido').onclick = ()=>{ S.sonido = !S.sonido; $('bSonido').textContent = S.sonido ? '🔊 Sonido y voz activados' : '🔇 Sonido apagado'; sirena(false); if (!S.sonido && 'speechSynthesis' in window) speechSynthesis.cancel(); pintar(); };
 $('bLimpiar').onclick = ()=>{ $('log').innerHTML=''; };
+$('bHistBorrar').onclick = ()=>{ historial.length = 0; guardarLS('it_historial', historial); pintarHistorial(); };
+$('bAtender').onclick = ()=>{ enviar('ATENDER'); };
 document.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => { if (ctx) ctx.resume(); b.dataset.acc==='salir' ? todosSalen() : agregar(b.dataset.acc); });
 document.querySelectorAll('[data-falla]').forEach(b => b.onclick = () => {
   const k = b.dataset.falla; S.falla[k] = !S.falla[k]; b.setAttribute('aria-pressed', String(S.falla[k]));
@@ -831,9 +1109,17 @@ $('bNoche').onclick = () => { mundo.luzMeta = mundo.luzMeta < 50 ? 85 : 10; log(
 $('bCalor').onclick = () => { mundo.tempMeta = mundo.tempMeta > 30 ? 23 : 36; log(mundo.tempMeta > 30 ? '🔥 Falla el aire acondicionado del quirófano' : '❄ Se arregló el aire acondicionado'); };
 $('rTempSim').oninput = e => { mundo.tempMeta = +e.target.value; };
 $('bNueva').onclick = () => { const uid = [...crypto.getRandomValues(new Uint8Array(4))].map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase(); log('Se pasa una tarjeta nueva ('+uid+') por el lector'); VA.tarjeta(uid); };
+const llamar = () => { if (ctx) ctx.resume(); if (S.modo === 'sim') { log(S.llamada ? 'El paciente vuelve a apretar el botón' : 'El paciente de la Habitación 1 aprieta el botón de llamada'); VA.boton(); } };
+$('bLlamar').onclick = llamar;
+$('botonLl').addEventListener('click', llamar);
+for (let i = 0; i < 8; i++) $('lz'+i).addEventListener('click', () => cuarto(i));
+$('cuartos').innerHTML = CUARTOS.map((n,i)=>`<button class="cto" data-c="${i}" aria-pressed="true"><span>💡</span> ${n}</button>`).join('');
+document.querySelectorAll('.cto').forEach(b => b.onclick = () => cuarto(+b.dataset.c));
+$('bTodas').onclick = () => enviar('CUARTO:0:1');
+$('bNinguna').onclick = () => enviar('CUARTO:0:0');
 
 // ajustes: se envían al soltar la barra
-const tocado = { rDist:0, rTmax:0, rLuz:0 };
+const tocado = { rDist:0, rTmax:0, rLuz:0, chkJefes:0 };
 const ajuste = (id, txt, suf, cmd) => {
   $(id).oninput = e => { tocado[id] = Date.now(); $(txt).textContent = e.target.value + suf; };
   $(id).onchange = e => { tocado[id] = Date.now(); enviar(cmd + ':' + e.target.value); };
@@ -841,6 +1127,7 @@ const ajuste = (id, txt, suf, cmd) => {
 ajuste('rDist', 'vDist', ' cm', 'DIST');
 ajuste('rTmax', 'vTmax', ' °C', 'TMAX');
 ajuste('rLuz', 'vLuz', ' %', 'LUZ');
+$('chkJefes').onchange = e => { tocado.chkJefes = Date.now(); enviar('JEFES:' + (e.target.checked ? 1 : 0)); };
 $('bReg').onclick = () => enviar(S.registrando ? 'CANCELAR' : 'REGISTRAR');
 $('bAbrir').onclick = () => enviar('ABRIR');
 let borrarArmado = 0;
@@ -853,6 +1140,7 @@ $('bBorrar').onclick = () => {
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x===t)));
   document.querySelectorAll('.vista').forEach(v => v.hidden = v.id !== 'v-'+t.dataset.vista);
+  graficar();
 });
 
 /* ---------- Programa Arduino ---------- */
@@ -871,7 +1159,7 @@ let puerto = null, lector = null, escritor = null, buffer = '';
 const enc = new TextEncoder();
 async function enviarReal(txt){
   try { if (escritor) await escritor.write(enc.encode(txt+'\n')); }
-  catch (e) { log('No se pudo enviar "'+txt+'"', true); }
+  catch (e) { log('No se pudo enviar "'+esc(txt)+'"', true); }
 }
 function recibirTexto(t){
   buffer += t;
@@ -880,7 +1168,7 @@ function recibirTexto(t){
   if (buffer.length > 300) buffer = '';
 }
 function pasarAReal(nombre){
-  S.modo = 'real'; S.ultimoLatido = Date.now(); S.alerta = false; S.origen = 0;
+  S.modo = 'real'; S.ultimoLatido = Date.now(); S.alerta = false; S.origen = 0; S.lista = []; S.lcd = ['', ''];
   [...gente].forEach(p=>{ p.cancelado = true; p.g.remove(); }); gente.length = 0;
   $('banner').classList.remove('ver');
   $('ctrlSim').hidden = true;
@@ -888,6 +1176,7 @@ function pasarAReal(nombre){
   log('Conectado a <b>'+nombre+'</b>');
   setTimeout(()=>enviarReal('ESTADO'), 1500);
   setTimeout(()=>enviarReal('ESTADO'), 2500);
+  setTimeout(()=>enviarReal('LISTA'), 3200);
   pintar();
 }
 async function conectar(bt){
@@ -903,7 +1192,7 @@ async function conectar(bt){
     leerSerial();
   } catch (e) {
     if (e.name === 'NotFoundError') log('No se eligió ningún equipo. ¿Está emparejado el HC-05?', true);
-    else log('No se pudo conectar: '+(e.message||e), true);
+    else log('No se pudo conectar: '+esc(e.message||e), true);
   }
 }
 async function leerSerial(){
@@ -920,7 +1209,7 @@ async function desconectar(){
   try { if (escritor) escritor.releaseLock(); } catch {}
   try { if (puerto) await puerto.close(); } catch {}
   puerto = lector = escritor = null;
-  S.modo = 'sim'; S.alerta = false; S.origen = 0; S.ultimoLatido = Date.now();
+  S.modo = 'sim'; S.alerta = false; S.origen = 0; S.ultimoLatido = Date.now(); S.lista = []; VA.d.lcd1 = null;
   $('ctrlSim').hidden = false;
   $('bDesc').disabled = true;
   log('Desconectado. De vuelta a la simulación');
@@ -931,26 +1220,33 @@ $('bUsb').onclick = () => conectar(false);
 $('bDesc').onclick = desconectar;
 
 /* ---------- Bucle ---------- */
-let antesVivo = true;
+let antesVivo = true, tDing = 0;
 setInterval(() => {
-  // el mundo cambia poco a poco
+  // el mundo cambia poco a poco (con el ventilador encendido el quirófano se enfría 5 °C)
   mundo.luz += Math.sign(mundo.luzMeta - mundo.luz) * Math.min(3, Math.abs(mundo.luzMeta - mundo.luz));
-  mundo.temp += Math.sign(mundo.tempMeta - mundo.temp) * Math.min(.08, Math.abs(mundo.tempMeta - mundo.temp));
+  const metaT = mundo.tempMeta - (S.modo === 'sim' && VA.d.vent ? 5 : 0);
+  mundo.temp += Math.sign(metaT - mundo.temp) * Math.min(.08, Math.abs(metaT - mundo.temp));
   const v = equipoVivo();
   if (v !== antesVivo) { log(v ? 'El equipo vuelve a responder' : '⚠ EQUIPO SIN RESPUESTA: usa la alerta manual si hace falta', !v); antesVivo = v; }
+  // ding-ding de la llamada cada 3 s
+  if (v && S.llamada && !S.alerta && Date.now() - tDing > 3000) { tDing = Date.now(); pitido(988, 180); pitido(784, 260, .22); }
   // narrador: cuando el equipo no puede avisar solo
   let aviso = '';
   if (S.modo === 'sim' && !S.alerta) {
-    const enPuerta = gente.some(p=>p.enPuerta && p.tipo !== 'enfermera');
+    const enPuerta = gente.some(p=>p.enPuerta && !PERS[p.tipo].dentro);
     if (enPuerta && !v) aviso = '⚠ Hay un intruso en la puerta de Farmacia, pero el Arduino no responde. Pulsa <b>ALERTA MANUAL</b>.';
     else if (enPuerta && !S.sistema) aviso = '⚠ Hay un intruso en la puerta de Farmacia, pero el sistema está <b>apagado</b>. Enciéndelo o usa la <b>alerta manual</b>.';
     else if (enPuerta && S.falla.U) aviso = '⚠ El sensor ultrasónico está dañado y no ve al intruso. Un guardia lo vio: pulsa <b>ALERTA MANUAL</b>.';
-    else if (S.falla.T) aviso = '⚠ El sensor de temperatura está desconectado: el quirófano no se está vigilando.';
+    else if (S.falla.T) aviso = '⚠ El sensor de temperatura está desconectado: el quirófano no se está vigilando y el ventilador no puede prenderse solo.';
   }
   $('banner').innerHTML = aviso; $('banner').classList.toggle('ver', !!aviso);
   pintar();
 }, 250);
-log('Sistema listo. Prueba “Enfermera con tarjeta” e “Intruso sin tarjeta”.');
+setInterval(muestrear, 2000);
+window.addEventListener('resize', graficar);
+if ('speechSynthesis' in window) speechSynthesis.getVoices();
+pintarHistorial();
+log('Sistema listo. Prueba “Enfermera con tarjeta”, “Anochecer” y “Paciente llama”.');
 pintar();
 })();
 </script>
