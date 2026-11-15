@@ -147,6 +147,7 @@ footer{margin-top:24px;color:var(--mut);font-size:12px}
 @media (prefers-reduced-motion:reduce){.persona{transition:none}.alarmando,#alarma.on .sir,.monitor .cab .rec i{animation:none}}
 /* ---- hospital inteligente ---- */
 .led.on.a i{background:#ffe23d;box-shadow:0 0 10px #ffe23d}
+.led.on.w i{background:#f4fbff;box-shadow:0 0 10px #dff4ff}
 .rango{display:grid;gap:4px;margin:12px 0 4px}
 .rango label{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:#c8cdea}
 .rango label b{font-family:var(--mono);color:var(--txt);white-space:nowrap}
@@ -198,66 +199,80 @@ input[type=range]{width:100%;accent-color:var(--verde)}
 
   <div class="monitor">
     <div class="cab"><span class="rec"><i></i>EN VIVO</span> Planta 1 · Hospital inteligente <span id="hora"></span></div>
-    <svg class="plano" viewBox="0 0 700 420" role="img" aria-label="Plano del hospital">
+    <svg class="plano" viewBox="0 0 700 420" role="img" aria-label="Plano del hospital, igual a la maqueta">
       <defs>
         <filter id="neon" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <pattern id="rayas" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0v10" stroke="#9b4dff" stroke-width="1.5" opacity=".22"/></pattern>
         <pattern id="malla" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#33d6f0" stroke-width=".5" opacity=".08"/></pattern>
-        <radialGradient id="foco"><stop offset="0" stop-color="#ffe23d" stop-opacity=".55"/><stop offset="1" stop-color="#ffe23d" stop-opacity="0"/></radialGradient>
+        <radialGradient id="foco"><stop offset="0" stop-color="#ffd23d" stop-opacity=".7"/><stop offset="1" stop-color="#ffd23d" stop-opacity="0"/></radialGradient>
+        <radialGradient id="focoB"><stop offset="0" stop-color="#ffffff" stop-opacity=".55"/><stop offset="1" stop-color="#dff4ff" stop-opacity="0"/></radialGradient>
+        <path id="cruz" d="M4 0h6v4h4v6h-4v4H4v-4H0V4h4z"/>
       </defs>
       <rect x="20" y="20" width="660" height="380" fill="#060812"/>
       <rect x="20" y="20" width="660" height="380" fill="url(#malla)"/>
-      <!-- zonas -->
-      <rect id="zF" class="zonaR" x="380" y="20" width="300" height="150" fill="#2a1450"/>
-      <rect x="380" y="20" width="300" height="150" fill="url(#rayas)"/>
-      <rect id="zQ" class="zonaR" x="400" y="220" width="280" height="180" fill="#101a3a"/>
+      <!-- pisos del pasillo y la recepción -->
+      <rect x="240" y="20" width="70" height="180" fill="#0d1022"/>
+      <rect x="240" y="200" width="200" height="200" fill="#0d1022"/><rect x="440" y="200" width="120" height="80" fill="#0d1022"/>
+      <!-- zonas vigiladas -->
+      <rect id="zF" class="zonaR" x="310" y="20" width="170" height="110" fill="#2a1450"/>
+      <rect x="310" y="20" width="170" height="110" fill="url(#rayas)"/>
+      <rect id="zQ" class="zonaR" x="480" y="20" width="200" height="160" fill="#101a3a"/>
       <!-- muebles -->
       <g fill="none" stroke="#5b62b0" stroke-width="1.5" opacity=".8">
-        <rect x="40" y="40" width="70" height="40" rx="6"/><rect x="120" y="40" width="70" height="40" rx="6"/>
-        <rect x="220" y="40" width="70" height="40" rx="6"/><rect x="300" y="40" width="70" height="40" rx="6"/>
-        <rect x="60" y="250" width="120" height="26" rx="4"/>
-        <rect x="280" y="250" width="100" height="14" rx="4"/><rect x="280" y="300" width="100" height="14" rx="4"/><rect x="280" y="350" width="100" height="14" rx="4"/>
-        <rect x="400" y="34" width="14" height="120"/><rect x="460" y="34" width="14" height="80"/><rect x="520" y="34" width="14" height="80"/><rect x="580" y="34" width="14" height="80"/><rect x="640" y="34" width="14" height="80"/>
-        <rect x="500" y="275" width="90" height="44" rx="8"/><circle cx="545" cy="262" r="16"/>
+        <rect x="60" y="62" width="88" height="36" rx="6"/><rect x="170" y="40" width="40" height="30" rx="3"/>
+        <rect x="60" y="270" width="96" height="38" rx="6"/><rect x="180" y="190" width="30" height="50" rx="3"/><circle cx="62" cy="215" r="10"/>
+        <rect x="325" y="32" width="140" height="12"/><rect x="455" y="50" width="12" height="50"/><rect x="345" y="88" width="100" height="14" rx="7"/>
+        <rect x="335" y="146" width="12" height="10"/><rect x="352" y="146" width="12" height="10"/><rect x="369" y="146" width="12" height="10"/><rect x="420" y="146" width="12" height="10"/><rect x="437" y="146" width="12" height="10"/><rect x="454" y="146" width="12" height="10"/>
+        <rect x="450" y="215" width="12" height="10"/><rect x="467" y="215" width="12" height="10"/><rect x="450" y="240" width="12" height="10"/><rect x="467" y="240" width="12" height="10"/>
+        <rect x="560" y="70" width="72" height="28" rx="4"/><circle cx="596" cy="58" r="14"/><rect x="505" y="40" width="22" height="30" rx="3"/>
+        <rect x="592" y="196" width="70" height="26" rx="5"/><rect x="592" y="240" width="70" height="26" rx="5"/>
+        <rect x="465" y="320" width="50" height="26" rx="3"/><circle cx="490" cy="358" r="8"/>
+        <rect x="575" y="296" width="92" height="12"/><rect x="575" y="376" width="92" height="12"/><rect x="580" y="320" width="40" height="22" rx="3"/>
       </g>
-      <g fill="#2ef2a0" opacity=".7"><path d="M72 52h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/><path d="M252 52h6v6h6v6h-6v6h-6v-6h-6v-6h6z"/></g>
+      <circle cx="340" cy="300" r="28" fill="none" stroke="#7a6a4a" stroke-width="9" opacity=".75"/>
+      <g fill="#2ef2a0" opacity=".55"><circle cx="258" cy="384" r="7"/><circle cx="422" cy="384" r="7"/><circle cx="258" cy="216" r="6"/></g>
+      <g fill="#2ef2a0" opacity=".75"><use href="#cruz" x="30" y="30"/><use href="#cruz" x="30" y="170"/><use href="#cruz" x="570" y="190"/><use href="#cruz" x="450" y="290"/></g>
       <!-- noche -->
       <rect id="oscuro" x="20" y="20" width="660" height="380" fill="#000" opacity="0" style="transition:opacity .6s"/>
-      <g id="focos" opacity="0" style="transition:opacity .6s">
-        <circle cx="100" cy="195" r="46" fill="url(#foco)"/><circle cx="250" cy="195" r="46" fill="url(#foco)"/><circle cx="400" cy="195" r="46" fill="url(#foco)"/><circle cx="600" cy="195" r="46" fill="url(#foco)"/>
-      </g>
-      <g id="lamparas" fill="#2a2a40" stroke="#5b62b0"><circle cx="100" cy="195" r="5"/><circle cx="250" cy="195" r="5"/><circle cx="400" cy="195" r="5"/><circle cx="600" cy="195" r="5"/></g>
+      <!-- luces del pasillo: 2 blancas (día) y 2 amarillas (noche) -->
+      <g id="focosB" opacity="0" style="transition:opacity .5s"><circle cx="275" cy="60" r="44" fill="url(#focoB)"/><circle cx="275" cy="130" r="44" fill="url(#focoB)"/></g>
+      <g id="focos" opacity="0" style="transition:opacity .6s"><circle cx="275" cy="95" r="40" fill="url(#foco)"/><circle cx="275" cy="165" r="40" fill="url(#foco)"/></g>
+      <g id="lampB" fill="#2a2a40" stroke="#8a90b8"><rect x="263" y="57" width="24" height="6" rx="2"/><rect x="263" y="127" width="24" height="6" rx="2"/></g>
+      <g id="lamparas" fill="#2a2a40" stroke="#8a7a40"><circle cx="275" cy="95" r="4.5"/><circle cx="275" cy="165" r="4.5"/></g>
       <!-- paredes de neón -->
       <g stroke="#33d6f0" stroke-width="3" stroke-linecap="round" fill="none" filter="url(#neon)">
-        <path d="M20 20H680V400H20V340 M20 280V20"/>
-        <path d="M200 20V170 M380 20V170"/>
-        <path d="M20 170H80 M130 170H260 M310 170H440 M490 170H680"/>
-        <path d="M20 220H120 M170 220H300 M350 220H460 M510 220H680"/>
-        <path d="M260 220V400 M400 220V400"/>
+        <path d="M310 400H20V20H680V400H370"/>
+        <path d="M20 160H240 M240 20V100 M240 140V200 M240 240V400"/>
+        <path d="M310 20V60 M310 100V130H480 M480 20V180H500 M540 180H680"/>
+        <path d="M560 180V210 M560 250V280H680 M440 280H460 M500 280H560 M440 280V400 M560 280V320 M560 350V400"/>
       </g>
-      <line id="pF" x1="440" y1="170" x2="490" y2="170" stroke="#9b4dff" stroke-width="5" stroke-dasharray="5 4" filter="url(#neon)"/>
+      <line id="pF" x1="310" y1="60" x2="310" y2="100" stroke="#9b4dff" stroke-width="5" stroke-dasharray="5 4" filter="url(#neon)"/>
       <g fill="#cfe9ff" font-family="Exo 2, Segoe UI, sans-serif" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1.5">
-        <text x="110" y="150">HAB. 101</text>
-        <text x="290" y="150">HAB. 102</text>
-        <text x="580" y="140" fill="#d9c2ff">FARMACIA</text>
-        <text x="140" y="390">RECEPCIÓN</text>
-        <text x="330" y="390">ESPERA</text>
-        <text x="540" y="380">QUIRÓFANO</text>
-        <text x="330" y="212" fill="#5b62b0" font-weight="600">PASILLO</text>
+        <text x="130" y="145">HABITACIÓN 2</text>
+        <text x="130" y="385">HABITACIÓN 1</text>
+        <text x="395" y="74" fill="#d9c2ff">FARMACIA</text>
+        <text x="395" y="190">ESPERA</text>
+        <text x="610" y="168">QUIRÓFANO 1</text>
+        <text x="620" y="276" font-size="10">HAB. 3</text>
+        <text x="500" y="392" font-size="10">CONSULTORIO</text>
+        <text x="620" y="364" font-size="10">DEPÓSITO</text>
+        <text x="340" y="352" font-size="11">RECEPCIÓN</text>
       </g>
-      <text x="580" y="156" fill="#b98cff" font-family="Exo 2, Segoe UI, sans-serif" font-size="9" text-anchor="middle" letter-spacing="2">ACCESO CON TARJETA</text>
-      <text x="6" y="312" fill="#5b62b0" font-size="10" text-anchor="middle" transform="rotate(-90 8 312)">ENTRADA</text>
-      <!-- ultrasónico (mira a la puerta) -->
-      <path id="cono" d="M426 182 L448 176 L482 176 L470 214 L438 214 Z" fill="#ff3d5a" opacity="0" style="transition:opacity .2s"/>
-      <g id="ultra"><rect x="414" y="174" width="14" height="10" rx="2" fill="#2f6fb0"/><circle cx="418" cy="179" r="2.6" fill="#cfd6dd"/><circle cx="424" cy="179" r="2.6" fill="#cfd6dd"/><text x="421" y="198" fill="#33d6f0" font-size="8.5" text-anchor="middle">ULTRA</text></g>
+      <text x="395" y="122" fill="#b98cff" font-family="Exo 2, Segoe UI, sans-serif" font-size="8.5" text-anchor="middle" letter-spacing="2">ACCESO CON TARJETA</text>
+      <text x="0" y="0" fill="#5b62b0" font-family="Exo 2, Segoe UI, sans-serif" font-size="9" font-weight="600" letter-spacing="3" text-anchor="middle" transform="translate(251 112) rotate(-90)">PASILLO</text>
+      <text x="340" y="414" fill="#5b62b0" font-family="Exo 2, Segoe UI, sans-serif" font-size="10" text-anchor="middle" letter-spacing="2">▲ ENTRADA</text>
+      <!-- ultrasónico (mira a la puerta de Farmacia) -->
+      <path id="cono" d="M300 110 L262 64 L262 118 Z" fill="#ff3d5a" opacity="0" style="transition:opacity .2s"/>
+      <g id="ultra"><rect x="298" y="103" width="10" height="14" rx="2" fill="#2f6fb0"/><circle cx="303" cy="107" r="2.4" fill="#cfd6dd"/><circle cx="303" cy="113" r="2.4" fill="#cfd6dd"/><text x="293" y="100" fill="#33d6f0" font-size="8" text-anchor="middle">ULTRA</text></g>
       <!-- lector RFID -->
-      <g id="rfid"><rect id="rfidCaja" x="496" y="173" width="22" height="16" rx="3" fill="#0a0c18" stroke="#2ef2a0" stroke-width="2"/><circle id="rfidLed" cx="507" cy="181" r="3" fill="#444"/><text x="507" y="200" fill="#2ef2a0" font-size="8.5" text-anchor="middle">RFID</text></g>
-      <text id="espTxt" x="465" y="234" fill="#ffbf3d" font-size="11" font-weight="700" text-anchor="middle" font-family="Exo 2, Segoe UI, sans-serif"></text>
+      <g id="rfid"><rect id="rfidCaja" x="292" y="38" width="16" height="16" rx="3" fill="#0a0c18" stroke="#2ef2a0" stroke-width="2"/><circle id="rfidLed" cx="300" cy="46" r="3" fill="#444"/><text x="300" y="33" fill="#2ef2a0" font-size="8" text-anchor="middle">RFID</text></g>
+      <text id="espTxt" x="275" y="192" fill="#ffbf3d" font-size="11" font-weight="700" text-anchor="middle" font-family="Exo 2, Segoe UI, sans-serif"></text>
       <!-- termómetro del quirófano -->
-      <g id="termo"><rect x="640" y="250" width="10" height="44" rx="5" fill="#0a0c18" stroke="#33d6f0"/><rect id="termoNivel" x="642" y="270" width="6" height="22" rx="3" fill="#2ef2a0"/><circle cx="645" cy="298" r="7" fill="#2ef2a0" id="termoBulbo"/></g>
-      <text id="tempTxt" x="610" y="340" fill="#2ef2a0" font-size="20" font-weight="800" text-anchor="middle" font-family="Exo 2, Segoe UI, sans-serif">— °C</text>
-      <text x="610" y="356" fill="#8a90b8" font-size="9" text-anchor="middle" letter-spacing="1.5">TEMPERATURA</text>
-      <g id="sirena"><circle cx="230" cy="245" r="10" fill="#3a1020" stroke="#ff3d5a"/><text x="230" y="249" font-size="11" text-anchor="middle">🔔</text></g>
+      <g id="termo"><rect x="655" y="38" width="10" height="44" rx="5" fill="#0a0c18" stroke="#33d6f0"/><rect id="termoNivel" x="657" y="58" width="6" height="22" rx="3" fill="#2ef2a0"/><circle cx="660" cy="86" r="7" fill="#2ef2a0" id="termoBulbo"/></g>
+      <text id="tempTxt" x="600" y="128" fill="#2ef2a0" font-size="20" font-weight="800" text-anchor="middle" font-family="Exo 2, Segoe UI, sans-serif">— °C</text>
+      <text x="600" y="143" fill="#8a90b8" font-size="9" text-anchor="middle" letter-spacing="1.5">TEMPERATURA</text>
+      <!-- baliza de alarma del pasillo -->
+      <g id="sirena"><circle cx="275" cy="30" r="8" fill="#3a1020" stroke="#ff3d5a" stroke-width="2"/><circle cx="275" cy="30" r="3" fill="#ff3d5a"/></g>
       <g id="personas"></g>
     </svg>
     <div class="hw" aria-label="Electrónica del sistema">
@@ -266,7 +281,8 @@ input[type=range]{width:100%;accent-color:var(--verde)}
       <div class="leds">
         <span class="led v" id="ledV"><i></i>Acceso</span>
         <span class="led r" id="ledR"><i></i>Alarma</span>
-        <span class="led a" id="ledA"><i></i>Pasillo</span>
+        <span class="led w" id="ledW"><i></i>Pasillo día ×2</span>
+        <span class="led a" id="ledA"><i></i>Pasillo noche ×2</span>
         <span class="led b" id="ledB"><i></i>Buzzer</span>
       </div>
     </div>
@@ -278,7 +294,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
         <h2>Escenarios de prueba</h2>
         <div class="sub" style="margin-top:0">Personas</div>
         <div class="escenas">
-          <button class="esc" data-acc="visita"><span>🧑</span><b>Visitante</b><small>Va a la Habitación 102</small></button>
+          <button class="esc" data-acc="visita"><span>🧑</span><b>Visitante</b><small>Va a la Habitación 2</small></button>
           <button class="esc" data-acc="enfermera"><span>🩺</span><b>Enfermera con tarjeta</b><small>Entra a Farmacia</small></button>
           <button class="esc peligro" data-acc="intruso"><span>🕵</span><b>Intruso sin tarjeta</b><small>Se queda en la puerta</small></button>
           <button class="esc peligro" data-acc="falsa"><span>💳</span><b>Intruso con tarjeta falsa</b><small>La pasa 3 veces</small></button>
@@ -345,7 +361,8 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>Fotoresistencia</td><td>Una pata a 5V, la otra a <b>A0</b> · resistencia 10 kΩ de A0 a GND</td><td></td></tr>
     <tr><td>LED verde (acceso)</td><td><b>D3</b> → 220 Ω → LED → GND</td><td>Pata larga del LED hacia el Arduino</td></tr>
     <tr><td>LED rojo (alarma)</td><td><b>D4</b> → 220 Ω → LED → GND</td><td></td></tr>
-    <tr><td>LED amarillo (pasillo)</td><td><b>D5</b> → 220 Ω → LED → GND</td><td></td></tr>
+    <tr><td>2 LEDs amarillos (pasillo de noche)</td><td>Amarillo 1: <b>D5</b> → 330 Ω → LED → GND<br>Amarillo 2: <b>A2</b> → 330 Ω → LED → GND</td><td>Luz suave de noche para que los pacientes duerman</td></tr>
+    <tr><td>2 LEDs blancos (pasillo de día)</td><td>Blanco 1: <b>D8</b> → 330 Ω → LED → GND<br>Blanco 2: <b>A3</b> → 330 Ω → LED → GND</td><td>De noche se prenden 10 s si alguien camina por el pasillo, y siempre durante una alarma</td></tr>
     <tr><td>Buzzer activo</td><td>+ → <b>D2</b> · − → GND</td><td></td></tr>
   </table>
 
@@ -375,7 +392,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
   <h3>2 · Vigilancia de la puerta (ultrasónico)</h3>
   <p>El sensor ultrasónico mide la distancia frente a la puerta. Si alguien se queda ahí, tiene 8 segundos para pasar una tarjeta válida; si no lo hace, suena la alarma. Una tarjeta autorizada también apaga esa alarma.</p>
   <h3>3 · Luz automática (fotoresistencia)</h3>
-  <p>Cuando oscurece, la fotoresistencia lo detecta y se enciende la luz del pasillo (LED amarillo). Con luz de día se apaga sola.</p>
+  <p>Un hospital nunca cierra, así que el pasillo siempre tiene luz. De día están encendidas las 2 luces blancas. Cuando oscurece, la fotoresistencia lo detecta y el pasillo pasa a <b>modo noche</b>: se apagan las blancas y se prenden 2 luces amarillas suaves para no despertar a los pacientes. Si alguien camina por el pasillo de noche, el sensor ultrasónico lo nota y las blancas se prenden 10 segundos. Durante una alarma, las blancas se quedan encendidas para que seguridad vea bien.</p>
   <h3>4 · Temperatura (LM35)</h3>
   <p>El sensor de temperatura vigila el quirófano. Si pasa del límite elegido, suena la alarma y llega el aviso al celular.</p>
   <h3>5 · Alerta manual y equipo vigilado</h3>
@@ -411,7 +428,7 @@ const S = {
   modo: 'sim',            // sim | real
   sistema: true, alerta: false, origen: 0,
   dist: 300, persona: false, espera: 0, acceso: false,
-  luz: 85, noche: false, temp: 23, tempOk: true,
+  luz: 85, noche: false, blanca: true, temp: 23, tempOk: true,
   distPuerta: 30, luzNoche: 30, tempMax: 30, nTarj: 1, registrando: false,
   ultTj: null, tTj: 0,
   falla: {R:false, U:false, T:false, E:false},
@@ -458,15 +475,15 @@ function vibrar(on){
 const mundo = { luz: 85, luzMeta: 85, temp: 23, tempMeta: 23 };
 const TARJ_ENF = 'E1A4339C', TARJ_FALSA = '13F0A2B7';
 const gP = $('personas');
-const ENTRADA = [-20,310], RECEP = [70,310], PUERTA = [465,196];
+const ENTRADA = [340,440], RECEP = [340,384], A = [275,335], B = [275,205], PUERTA = [282,82];
 const PERS = {
-  visita:    {color:'#33d6f0', icono:'🧑', nombre:'Visitante', camino:[[150,310],[145,195],[285,195],[285,110]]},
-  enfermera: {color:'#2ef2a0', icono:'🩺', nombre:'Enfermera', camino:[[150,310],[145,195],PUERTA], tarjeta: TARJ_ENF},
-  intruso:   {color:'#ff3d5a', icono:'🕵', nombre:'Intruso',   camino:[[150,310],[145,195],PUERTA]},
-  falsa:     {color:'#ff3d5a', icono:'🕵', nombre:'Intruso',   camino:[[150,310],[145,195],PUERTA], tarjeta: TARJ_FALSA, intentos: 3}
+  visita:    {color:'#33d6f0', icono:'🧑', nombre:'Visitante', camino:[A,B,[275,120],[205,120],[150,118]]},
+  enfermera: {color:'#2ef2a0', icono:'🩺', nombre:'Enfermera', camino:[A,B,PUERTA], tarjeta: TARJ_ENF},
+  intruso:   {color:'#ff3d5a', icono:'🕵', nombre:'Intruso',   camino:[A,B,PUERTA]},
+  falsa:     {color:'#ff3d5a', icono:'🕵', nombre:'Intruso',   camino:[A,B,PUERTA], tarjeta: TARJ_FALSA, intentos: 3}
 };
 const gente = [];
-function mover(g,[x,y]){ g.style.transform = `translate(${x}px,${y}px)`; }
+function mover(g,[x,y]){ g.style.transform = `translate(${x}px,${y}px)`; g._pos = [x,y]; }
 function caminar(p, puntos, fin){
   let i = 0;
   const sig = () => { if (!p.g.isConnected || p.cancelado) return; if (i >= puntos.length) { fin && fin(); return; } mover(p.g, puntos[i++]); setTimeout(sig, 850); };
@@ -494,25 +511,27 @@ function intentarEntrar(p){
   VA.tarjeta(TARJ_ENF);
   setTimeout(()=>{
     if (!p.enPuerta) return;
-    if (VA.d.accesoHasta > Date.now()) { p.enPuerta = false; p.dentro = true; caminar(p, [[465,140],[560,95]]); log('La enfermera entra a Farmacia'); }
+    if (VA.d.accesoHasta > Date.now()) { p.enPuerta = false; p.dentro = true; caminar(p, [[335,80],[400,58]]); log('La enfermera entra a Farmacia'); }
     else { log('La enfermera no pudo entrar a Farmacia', true); setTimeout(()=>salir(p), 3500); }
   }, 900);
 }
 function salir(p){
   const i = gente.indexOf(p); if (i < 0) return; gente.splice(i,1);
   p.enPuerta = false;
-  const camino = p.dentro ? [[465,140],PUERTA,[145,195],[150,310],RECEP,ENTRADA] : p.tipo==='visita' ? [[285,195],[145,195],[150,310],RECEP,ENTRADA] : [[145,195],[150,310],RECEP,ENTRADA];
+  const camino = p.dentro ? [[335,80],PUERTA,B,A,RECEP,ENTRADA] : p.tipo==='visita' ? [[205,120],[275,120],B,A,RECEP,ENTRADA] : [B,A,RECEP,ENTRADA];
   if (p.dentro) { VA.orden('ABRIR', true); }
   caminar(p, camino, ()=>p.g.remove());
 }
 function todosSalen(){ if (!gente.length) return; log('Todas las personas salen'); [...gente].forEach(salir); }
-mundo.dist = () => gente.some(p=>p.enPuerta) ? 18 + Math.round(Math.random()*2) : 150 + Math.round(Math.random()*4);
+// el ultrasónico ve la puerta (18 cm) y, más lejos, a quien camina por el pasillo (~70 cm)
+const enPasillo = p => p.g._pos && p.g._pos[0] > 245 && p.g._pos[0] < 305 && p.g._pos[1] < 215;
+mundo.dist = () => gente.some(p=>p.enPuerta) ? 18 + Math.round(Math.random()*2) : gente.some(enPasillo) ? 70 + Math.round(Math.random()*4) : 150 + Math.round(Math.random()*4);
 
 /* ---------- Arduino simulado: mismas reglas que el programa real ---------- */
 const VA = (() => {
   const d = { sis:1, alerta:0, origen:0, dist:150, persona:0, esperaFin:0, accesoHasta:0, tVista:0,
     luz:85, noche:0, temp:23, tempOk:1, avisoCalor:false, distPuerta:30, luzNoche:30, tempMax:30,
-    tarjetas:[TARJ_ENF], registrando:0, regHasta:0, negados:0, tNegado:0, ultUid:'', tUlt:0 };
+    tarjetas:[TARJ_ENF], registrando:0, regHasta:0, negados:0, tNegado:0, ultUid:'', tUlt:0, blancaHasta:0 };
   const ev = t => procesar('EV,'+t);
   const vivo = () => !S.falla.E;
   function alertar(o, t){ if (d.alerta) return; d.alerta = 1; d.origen = o; ev(t); st(); }
@@ -548,14 +567,15 @@ const VA = (() => {
     d.dist = S.falla.U ? 300 : mundo.dist();
     d.persona = d.dist < d.distPuerta ? 1 : 0;
     if (d.persona) d.tVista = ahora;
+    if (d.noche && d.dist < 100) { if (ahora >= d.blancaHasta) ev('Movimiento en el pasillo de noche: luces blancas 10 s'); d.blancaHasta = ahora + 10000; }
     if (!d.sis) d.esperaFin = 0;
     else if (d.persona && ahora > d.accesoHasta && !d.alerta && !d.esperaFin) { d.esperaFin = ahora + 8000; ev('Persona en la puerta de Farmacia: acerque su tarjeta'); }
     if (d.esperaFin && ahora - d.tVista > 2000) { d.esperaFin = 0; ev('La persona se alejó de la puerta'); }
     if (d.esperaFin && ahora >= d.esperaFin) { d.esperaFin = 0; alertar(1, 'ALARMA: persona sin tarjeta en la puerta de Farmacia'); }
     if (d.registrando && ahora > d.regHasta) { d.registrando = 0; ev('Registro de tarjeta cancelado (tiempo agotado)'); }
     d.luz = Math.round(mundo.luz);
-    if (!d.noche && d.luz < d.luzNoche) { d.noche = 1; ev('Anochece: luz del pasillo encendida'); }
-    else if (d.noche && d.luz > d.luzNoche + 5) { d.noche = 0; ev('Hay luz: luz del pasillo apagada'); }
+    if (!d.noche && d.luz < d.luzNoche) { d.noche = 1; d.blancaHasta = 0; ev('Anochece: pasillo en modo noche (luces amarillas)'); }
+    else if (d.noche && d.luz > d.luzNoche + 5) { d.noche = 0; ev('Amanece: pasillo con luces blancas'); }
     d.temp = S.falla.T ? -48.8 : mundo.temp; d.tempOk = d.temp > 1 && d.temp < 70 ? 1 : 0;
     if (d.tempOk) {
       if (d.temp >= d.tempMax && !d.avisoCalor) { d.avisoCalor = true; if (d.sis) alertar(2, 'ALARMA: temperatura alta ('+d.temp.toFixed(1)+' C)'); else ev('Temperatura alta ('+d.temp.toFixed(1)+' C), pero el sistema está apagado'); }
@@ -565,7 +585,7 @@ const VA = (() => {
   function st(){
     if (!vivo() || S.modo !== 'sim') return;
     const a = Date.now();
-    procesar(['ST',d.sis,d.alerta,d.origen,d.dist,d.persona,d.esperaFin?Math.ceil((d.esperaFin-a)/1000):0,a<d.accesoHasta?1:0,d.luz,d.noche,Math.round(d.temp*10),d.tempOk,d.distPuerta,d.luzNoche,d.tempMax,d.tarjetas.length,d.registrando].join(','));
+    procesar(['ST',d.sis,d.alerta,d.origen,d.dist,d.persona,d.esperaFin?Math.ceil((d.esperaFin-a)/1000):0,a<d.accesoHasta?1:0,d.luz,d.noche,Math.round(d.temp*10),d.tempOk,d.distPuerta,d.luzNoche,d.tempMax,d.tarjetas.length,d.registrando,(!d.noche||a<d.blancaHasta||d.alerta)?1:0].join(','));
   }
   function orden(o, callado){
     if (!vivo()) return;
@@ -614,19 +634,23 @@ function pintar(){
   $('tempTxt').textContent = !vivo ? '— °C' : S.tempOk ? S.temp.toFixed(1)+' °C' : 'SIN SENSOR';
   $('tempTxt').setAttribute('fill', colT);
   const niv = S.tempOk ? Math.max(4, Math.min(40, (S.temp - 10) / 40 * 40)) : 4;
-  $('termoNivel').setAttribute('y', 292 - niv); $('termoNivel').setAttribute('height', niv);
+  $('termoNivel').setAttribute('y', 82 - niv); $('termoNivel').setAttribute('height', niv);
   $('termoNivel').setAttribute('fill', colT); $('termoBulbo').setAttribute('fill', colT);
   $('zQ').setAttribute('fill', S.alerta && S.origen===2 ? '#5a0f24' : '#101a3a');
   // luz
   $('oscuro').setAttribute('opacity', vivo ? (Math.max(0, 70 - S.luz) / 70 * .55).toFixed(2) : 0);
   $('focos').setAttribute('opacity', vivo && S.noche ? 1 : 0);
   $('lamparas').setAttribute('fill', vivo && S.noche ? '#ffe23d' : '#2a2a40');
+  const blanca = vivo && S.blanca;
+  $('focosB').setAttribute('opacity', blanca ? (S.noche ? 1 : .55) : 0);
+  $('lampB').setAttribute('fill', blanca ? '#f4fbff' : '#2a2a40');
   $('sirena').classList.toggle('alarmando', S.alerta);
   // LEDs del banco
   const parp = Math.floor(a / 250) % 2 === 0;
   $('ledV').classList.toggle('on', vivo && S.acceso);
   $('ledR').classList.toggle('on', vivo && (S.alerta ? parp : (tjReciente && !S.ultTj.ok) || (S.espera && Math.floor(a/500)%2===0)));
   $('ledA').classList.toggle('on', vivo && S.noche);
+  $('ledW').classList.toggle('on', blanca);
   $('ledB').classList.toggle('on', vivo && (S.alerta ? parp : S.espera ? a % 1000 < 120 : false));
   $('chipTxt').textContent = !vivo ? 'sin respuesta' : S.sistema ? 'vigilando' : 'en espera';
   $('btTxt').textContent = S.modo==='real' ? (vivo?'conectado':'sin señal') : (vivo ? 'enlazado' : 'caído');
@@ -657,7 +681,7 @@ function pintar(){
   else { kT.textContent = S.temp.toFixed(1)+' °C'; kT.className = caliente ? 'mal' : 'ok'; }
   const kL = $('kLuz');
   if (!vivo) { kL.textContent = 'Sin datos'; kL.className = 'aviso'; }
-  else { kL.textContent = (S.noche ? '🌙 Noche · luz encendida' : '☀ Día') + ' (' + S.luz + ' %)'; kL.className = S.noche ? 'aviso' : 'ok'; }
+  else { kL.textContent = S.noche ? (S.blanca ? '🌙 Blancas 10 s' : '🌙 Amarillas') : '☀ Blancas'; kL.className = S.noche ? 'aviso' : 'ok'; }
   $('kAlertas').textContent = S.alertasHoy;
   // ajustes
   if (a - tocado.rDist > 1500) { $('rDist').value = S.distPuerta; $('vDist').textContent = S.distPuerta+' cm'; }
@@ -699,6 +723,7 @@ function procesar(l){
     S.dist = n[3]; S.persona = !!n[4]; S.espera = n[5]; S.acceso = !!n[6];
     S.luz = n[7]; S.noche = !!n[8]; S.temp = n[9] / 10; S.tempOk = !!n[10];
     S.distPuerta = n[11]; S.luzNoche = n[12]; S.tempMax = n[13]; S.nTarj = n[14]; S.registrando = !!n[15];
+    S.blanca = p.length >= 18 ? !!n[16] : !S.noche;   // programas viejos no envían este dato
     if (alerta && !S.alerta) dispararAlerta(origen);
     else if (alerta) S.origen = origen;
     else if (!alerta && S.alerta && S.origen !== 3) { S.alerta = false; S.origen = 0; quitarIntrusos(); }

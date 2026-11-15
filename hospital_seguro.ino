@@ -14,8 +14,11 @@
     Ultrasonico HC-SR04 (puerta de Farmacia)   VCC 5V, GND, TRIG D6, ECHO D7
     LED verde    (acceso permitido)   D3 -> 220 ohm -> GND
     LED rojo     (alarma)             D4 -> 220 ohm -> GND
-    LED amarillo (luz del pasillo)    D5 -> 220 ohm -> GND
-    Buzzer activo                     + D2, - GND
+    LED amarillo 1 (pasillo, noche)   D5 -> 330 ohm -> GND
+    LED amarillo 2 (pasillo, noche)   A2 -> 330 ohm -> GND
+    LED blanco 1   (pasillo, dia)     D8 -> 330 ohm -> GND
+    LED blanco 2   (pasillo, dia)     A3 -> 330 ohm -> GND
+    Buzzer activo                    + D2, - GND
     Fotoresistencia                   5V -> LDR -> A0, y 10k de A0 a GND
     Sensor de temperatura LM35 (cara plana hacia ti): izquierda 5V, centro A1, derecha GND
 
@@ -25,7 +28,9 @@
             Una tarjeta registrada tambien apaga la alarma de la puerta.
     - Ultrasonico: si alguien se queda frente a la puerta de Farmacia y no pasa una
             tarjeta valida en 8 s = ALARMA.
-    - Fotoresistencia: de noche enciende la luz del pasillo (LED amarillo).
+    - Pasillo (el hospital nunca cierra): de dia 2 LEDs blancos. De noche (fotoresistencia)
+            se apagan y se prenden 2 amarillos suaves. Si de noche alguien camina por el pasillo
+            (ultrasonico < 100 cm) los blancos se prenden 10 s. Con alarma, blancos siempre.
     - Temperatura: si pasa del limite = ALARMA (vuelve a avisar solo si baja y sube otra vez).
     - La matriz de la placa muestra el estado: cruz (normal), ? (esperando tarjeta),
       visto bueno (acceso), X (tarjeta negada), ! (alarma).
@@ -36,7 +41,7 @@
     DIST:n (cm, 5-150)   LUZ:n (%, 5-90)   TMAX:n (grados, 20-60)
   ENVIA cada 0,5 s:
     ST,sistema,alerta,origen,distancia,persona,espera_s,acceso,luz%,noche,temp*10,temp_ok,
-       dist_puerta,luz_noche,temp_max,tarjetas,registrando
+       dist_puerta,luz_noche,temp_max,tarjetas,registrando,luces_blancas
     origen: 0 ninguno, 1 persona sin tarjeta, 2 temperatura alta, 3 manual (app), 4 tarjeta no autorizada
   Y ademas:  EV,texto      TJ,uid,1/0 (tarjeta leida: 1 autorizada, 0 no)
 */
@@ -51,6 +56,9 @@
 const byte P_BUZ = 2, P_VERDE = 3, P_ROJO = 4, P_AMAR = 5, P_TRIG = 6, P_ECHO = 7;
 const byte P_RST = 9, P_SS = 10;
 const byte P_LDR = A0, P_TEMP = A1;
+const byte P_AMAR2 = A2, P_BLAN1 = 8, P_BLAN2 = A3;
+const int PASILLO_CM = 100;             // de noche, alguien a menos de esto = movimiento en el pasillo
+const unsigned long BLANCA_MS = 10000;  // tiempo con luz blanca al detectar movimiento de noche
 
 MFRC522 rfid(P_SS, P_RST);
 ArduinoLEDMatrix matriz;
@@ -80,6 +88,7 @@ bool registrando = false;
 unsigned long regHasta = 0;
 int luz = 100;
 bool noche = false;
+unsigned long blancaHasta = 0;
 float temp = 0;
 bool tempOk = false, avisoCalor = false;
 String linUsb, linBt;
@@ -106,6 +115,8 @@ void dibujar(const char **f) {
 void enviar(const String &s) { Serial.println(s); BT.println(s); }
 void evento(const String &s) { enviar("EV," + s); }
 
+bool lucesBlancas(unsigned long ahora) { return !noche || ahora < blancaHasta || alerta; }
+
 void enviarEstado() {
   unsigned long ahora = millis();
   String s = "ST,";
@@ -116,7 +127,8 @@ void enviarEstado() {
   s += luz; s += ','; s += noche; s += ',';
   s += (int)round(temp * 10); s += ','; s += tempOk; s += ',';
   s += distPuerta; s += ','; s += luzNoche; s += ','; s += tempMax; s += ',';
-  s += nTarj; s += ','; s += registrando;
+  s += nTarj; s += ','; s += registrando; s += ',';
+  s += lucesBlancas(ahora);
   enviar(s);
 }
 
@@ -274,6 +286,7 @@ void setup() {
   Serial.begin(9600);
   BT.begin(9600);
   pinMode(P_BUZ, OUTPUT); pinMode(P_VERDE, OUTPUT); pinMode(P_ROJO, OUTPUT); pinMode(P_AMAR, OUTPUT);
+  pinMode(P_AMAR2, OUTPUT); pinMode(P_BLAN1, OUTPUT); pinMode(P_BLAN2, OUTPUT);
   pinMode(P_TRIG, OUTPUT); pinMode(P_ECHO, INPUT);
   digitalWrite(P_TRIG, LOW);
   analogReadResolution(14);
@@ -283,9 +296,10 @@ void setup() {
   matriz.begin();
   dibujar(F_CRUZ);
   // prueba de luces al encender
-  digitalWrite(P_VERDE, HIGH); digitalWrite(P_ROJO, HIGH); digitalWrite(P_AMAR, HIGH); digitalWrite(P_BUZ, HIGH);
+  digitalWrite(P_VERDE, HIGH); digitalWrite(P_ROJO, HIGH); digitalWrite(P_AMAR, HIGH); digitalWrite(P_AMAR2, HIGH);
+  digitalWrite(P_BLAN1, HIGH); digitalWrite(P_BLAN2, HIGH); digitalWrite(P_BUZ, HIGH);
   delay(150); digitalWrite(P_BUZ, LOW); delay(450);
-  digitalWrite(P_VERDE, LOW); digitalWrite(P_ROJO, LOW); digitalWrite(P_AMAR, LOW);
+  digitalWrite(P_VERDE, LOW); digitalWrite(P_ROJO, LOW); digitalWrite(P_AMAR, LOW); digitalWrite(P_AMAR2, LOW);
   leerTemp();
   byte v = rfid.PCD_ReadRegister(MFRC522::VersionReg);
   evento("Hospital inteligente listo");
@@ -318,6 +332,10 @@ void loop() {
     dist = max(min(a, b), min(max(a, b), c));   // mediana: un eco falso no cuenta
     persona = dist < distPuerta;
     if (persona) tVistaPersona = ahora;
+    if (noche && dist < PASILLO_CM) {
+      if (ahora >= blancaHasta) evento("Movimiento en el pasillo de noche: luces blancas 10 s");
+      blancaHasta = ahora + BLANCA_MS;
+    }
     if (!sistema) esperaFin = 0;
     else if (persona && ahora > accesoHasta && !alerta && !esperaFin) {
       esperaFin = ahora + ESPERA_MS;
@@ -332,8 +350,8 @@ void loop() {
   if (ahora - tLuz >= 250) {
     tLuz = ahora;
     luz = (long)analogRead(P_LDR) * 100 / 16383;
-    if (!noche && luz < luzNoche) { noche = true; evento("Anochece: luz del pasillo encendida"); }
-    else if (noche && luz > luzNoche + 5) { noche = false; evento("Hay luz: luz del pasillo apagada"); }
+    if (!noche && luz < luzNoche) { noche = true; blancaHasta = 0; evento("Anochece: pasillo en modo noche (luces amarillas)"); }
+    else if (noche && luz > luzNoche + 5) { noche = false; evento("Amanece: pasillo con luces blancas"); }
   }
   static unsigned long tTemp = 0;
   if (ahora - tTemp >= 500) {
@@ -355,6 +373,10 @@ void loop() {
   digitalWrite(P_VERDE, acceso || (sistema && !alerta && (ahora % 2000) < 80));   // latido cada 2 s
   digitalWrite(P_ROJO, alerta ? parpadeo : negado || (esperaFin && (ahora / 500) % 2));
   digitalWrite(P_AMAR, noche);
+  digitalWrite(P_AMAR2, noche);
+  bool blanca = lucesBlancas(ahora);
+  digitalWrite(P_BLAN1, blanca);
+  digitalWrite(P_BLAN2, blanca);
   bool buz = false;
   if (alerta) buz = parpadeo;
   else if (negado) buz = ((negadoHasta - ahora) / 120) % 2;                     // 3 pitidos
