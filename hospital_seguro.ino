@@ -8,7 +8,7 @@
 
   CONEXIONES
     Bluetooth HC-05   VCC 5V, GND, TXD -> D0 (RX)
-                      RXD <- D1 (TX) con divisor: D1 -> 1k -> RXD, y 2k de RXD a GND
+                      RXD <- D1 (TX) con divisor: D1 -> 220 -> RXD, y 2 de 220 seguidas de RXD a GND
     Lector RFID RC522 (va a 3.3V, NO a 5V)
                       3.3V, GND, SDA D10, MOSI D11, MISO D12, SCK D13, RST -> 3.3V (IRQ sin conectar)
     Ultrasonico HC-SR04 (puerta de Farmacia y pasillo)   VCC 5V, GND, TRIG D6, ECHO D7
@@ -16,14 +16,14 @@
     Servo SG90 (puerta de Farmacia)   naranja -> A2, rojo 5V, cafe GND
     Boton de llamada (Habitacion 1)   una pata a D9, la otra a GND
     Luces de los 8 cuartos: modulo PCF8574 (direccion 0x20) en los MISMOS cables SDA/SCL que la LCD, VCC 5V, GND.
-                      Cada LED: 5V -> 1k -> pata larga del LED; pata corta -> P0..P7 del PCF8574
+                      Cada LED: 5V -> 220 -> pata larga del LED; pata corta -> P0..P7 del PCF8574
                       P0 Hab 1, P1 Hab 2, P2 Hab 3, P3 Farmacia, P4 Quirofano, P5 Consultorio, P6 Deposito, P7 Recepcion
-    LED verde    (acceso permitido)   D3 -> 470 ohm -> GND
-    LED rojo     (alarma)             D4 -> 470 ohm -> GND
-    2 LEDs amarillos (pasillo, noche) D5 -> 1k -> LED -> GND  (cada LED con su resistencia, los dos al D5)
-    2 LEDs blancos   (pasillo, dia)   D8 -> 1k -> LED -> GND  (cada LED con su resistencia, los dos al D8)
+    LED verde    (acceso permitido)   D3 -> 2x220 seguidas -> LED -> GND
+    LED rojo     (alarma)             D4 -> 2x220 seguidas -> LED -> GND
+    2 LEDs amarillos (pasillo, noche) D5 -> 220 -> LED1 -> LED2 -> GND  (los dos en fila)
+    2 LEDs blancos   (pasillo, dia)   D8 -> 2x220 seguidas -> LED -> GND  (cada LED con las suyas, los dos al D8)
     Buzzer activo                     + D2, - GND
-    Fotoresistencia                   5V -> LDR -> A0, y 10k de A0 a GND  (lejos de los LEDs del pasillo)
+    Fotoresistencia                   5V -> LDR -> A0, y 220 de A0 a GND  (lejos de los LEDs del pasillo)
     Sensor de temperatura LM35 (cara plana hacia ti): izquierda 5V, centro A1, derecha GND
 
   QUE HACE
@@ -495,7 +495,10 @@ void loop() {
   static unsigned long tLuz = 0;
   if (ahora - tLuz >= 250) {
     tLuz = ahora;
-    luz = (long)analogRead(P_LDR) * 100 / 16383;
+    // Con 220 ohm a GND: se calcula la resistencia del LDR y se da el % como si fuera con 10k
+    long a = analogRead(P_LDR);
+    if (a < 1) luz = 0;
+    else { long r = 220L * (16383 - a) / a; luz = 1000000L / (10000 + r); }
     if (!noche && luz < luzNoche) {
       noche = true; blancaHasta = 0; evento("Anochece: pasillo en modo noche (luces amarillas)");
       cuartosDia = cuartos; cuartos &= 0x90;   // quedan Quirofano y Recepcion

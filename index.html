@@ -459,22 +459,22 @@ input[type=range]{width:100%;accent-color:var(--verde)}
   <h3>Conexiones (Arduino UNO R4 WiFi)</h3>
   <table>
     <tr><th>Componente</th><th>Pata del componente → Arduino</th><th>Notas</th></tr>
-    <tr><td>Bluetooth HC-05</td><td>TXD → <b>D0</b> · RXD ← <b>D1</b> · VCC 5V · GND</td><td>RXD con divisor: D1 → 1 kΩ → RXD, y 2 kΩ de RXD a GND</td></tr>
+    <tr><td>Bluetooth HC-05</td><td>TXD → <b>D0</b> · RXD ← <b>D1</b> · VCC 5V · GND</td><td>RXD con divisor: D1 → 220 Ω → RXD, y de RXD a GND 2 resistencias de 220 Ω seguidas</td></tr>
     <tr><td>Lector RFID RC522</td><td>SDA → <b>D10</b> · SCK → <b>D13</b> · MOSI → <b>D11</b> · MISO → <b>D12</b> · <b>RST → 3.3V</b> · <b>3.3V</b> · GND</td><td>¡A 3.3V, no a 5V! La pata RST ya no va al D9: va fija a 3.3V. IRQ no se usa</td></tr>
     <tr><td>Sensor ultrasónico HC-SR04</td><td>TRIG → <b>D6</b> · ECHO → <b>D7</b> · VCC 5V · GND</td><td>En el pasillo, junto a la puerta de Farmacia, mirando hacia donde llega la persona</td></tr>
     <tr><td>Pantalla LCD 16×2 con I2C</td><td>SDA → <b>SDA</b> (A4) · SCL → <b>SCL</b> (A5) · VCC 5V · GND</td><td>Si no se ve el texto, gira el tornillito azul de atrás (contraste)</td></tr>
-    <tr><td>Módulo PCF8574 (luces de los cuartos)</td><td>SDA → <b>SDA</b> · SCL → <b>SCL</b> · VCC 5V · GND (los mismos cables que la LCD)</td><td>Cada LED: 5V → 1 kΩ → pata larga; pata corta → P0…P7. P0 Hab 1 · P1 Hab 2 · P2 Hab 3 · P3 Farmacia · P4 Quirófano · P5 Consultorio · P6 Depósito · P7 Recepción</td></tr>
+    <tr><td>Módulo PCF8574 (luces de los cuartos)</td><td>SDA → <b>SDA</b> · SCL → <b>SCL</b> · VCC 5V · GND (los mismos cables que la LCD)</td><td>Cada LED: 5V → 220 Ω → pata larga; pata corta → P0…P7. P0 Hab 1 · P1 Hab 2 · P2 Hab 3 · P3 Farmacia · P4 Quirófano · P5 Consultorio · P6 Depósito · P7 Recepción</td></tr>
     <tr><td>Servo SG90 (puerta de Farmacia)</td><td>Cable naranja → <b>A2</b> · rojo 5V · café GND</td><td>Pega un palito de paleta al brazo del servo como puerta</td></tr>
     <tr><td>Botón de llamada (Habitación 1)</td><td>Una pata → <b>D9</b> · la otra → GND</td><td>No necesita resistencia (se usa la interna)</td></tr>
     <tr><td>Sensor de temperatura LM35</td><td>Con la cara plana hacia ti: izquierda <b>5V</b> · centro <b>A1</b> · derecha <b>GND</b></td><td>Dentro del quirófano. Si se calienta solo, está al revés: desconéctalo y gíralo</td></tr>
-    <tr><td>Fotoresistencia</td><td>Una pata a 5V, la otra a <b>A0</b> · resistencia 10 kΩ de A0 a GND</td><td>Ponla lejos de los LEDs (arriba en la pared del fondo, mirando hacia afuera), si no el pasillo parpadea de noche</td></tr>
-    <tr><td>LED verde (acceso)</td><td><b>D3</b> → 470 Ω → LED → GND</td><td>Pata larga del LED hacia el Arduino</td></tr>
-    <tr><td>LED rojo (alarma del pasillo)</td><td><b>D4</b> → 470 Ω → LED → GND</td><td></td></tr>
-    <tr><td>2 LEDs amarillos (pasillo de noche)</td><td><b>D5</b> → 1 kΩ → LED 1 → GND, y <b>D5</b> → 1 kΩ → LED 2 → GND</td><td>Los dos al mismo pin, cada uno con su resistencia</td></tr>
-    <tr><td>2 LEDs blancos (pasillo de día)</td><td><b>D8</b> → 1 kΩ → LED 1 → GND, y <b>D8</b> → 1 kΩ → LED 2 → GND</td><td>De noche se prenden 10 s si alguien camina por el pasillo, y siempre con alarma</td></tr>
+    <tr><td>Fotoresistencia</td><td>Una pata a 5V, la otra a <b>A0</b> · resistencia de 220 Ω de A0 a GND</td><td>Ponla lejos de los LEDs (arriba en la pared del fondo, mirando hacia afuera), si no el pasillo parpadea de noche</td></tr>
+    <tr><td>LED verde (acceso)</td><td><b>D3</b> → 2 resistencias de 220 Ω seguidas → LED → GND</td><td>Pata larga del LED hacia el Arduino</td></tr>
+    <tr><td>LED rojo (alarma del pasillo)</td><td><b>D4</b> → 2 resistencias de 220 Ω seguidas → LED → GND</td><td></td></tr>
+    <tr><td>2 LEDs amarillos (pasillo de noche)</td><td><b>D5</b> → 220 Ω → LED 1 → LED 2 → GND (los dos LEDs en fila: la pata corta del 1 a la pata larga del 2)</td><td>Los dos en fila con una sola resistencia</td></tr>
+    <tr><td>2 LEDs blancos (pasillo de día)</td><td><b>D8</b> → 2 resistencias de 220 Ω seguidas → LED 1 → GND, y lo mismo para el LED 2</td><td>De noche se prenden 10 s si alguien camina por el pasillo, y siempre con alarma</td></tr>
     <tr><td>Buzzer activo</td><td>+ → <b>D2</b> · − → GND</td><td></td></tr>
   </table>
-  <p class="nota">Las resistencias de los LEDs son más grandes que antes (470 Ω y 1 kΩ) porque cada pin del UNO R4 aguanta poca corriente (unos 8 mA).</p>
+  <p class="nota">Solo se usan resistencias de 220 Ω. Los LEDs conectados al Arduino llevan 2 seguidas (440 Ω) porque cada pin del UNO R4 aguanta poca corriente (unos 8 mA).</p>
 
   <h3>Qué hace cada botón con el Arduino</h3>
   <table>
