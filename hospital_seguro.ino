@@ -4,7 +4,7 @@
 
   Placa: Arduino UNO R4 WiFi
   Librerias (Gestor de librerias): "MFRC522" (GithubCommunity) y "LiquidCrystal I2C" (Frank de Brabander).
-            Las demas (SPI, Wire, EEPROM, Servo, Arduino_LED_Matrix) ya vienen con la placa.
+            Las demas (SPI, Wire, EEPROM, Arduino_LED_Matrix) ya vienen con la placa.
 
   CONEXIONES
     Bluetooth HC-05   VCC 5V, GND, TXD -> D0 (RX)
@@ -13,11 +13,14 @@
                       3.3V, GND, SDA D10, MOSI D11, MISO D12, SCK D13, RST -> 3.3V (IRQ sin conectar)
     Ultrasonico HC-SR04 (puerta de Farmacia y pasillo)   VCC 5V, GND, TRIG D6, ECHO D7
     Pantalla LCD 16x2 I2C   VCC 5V, GND, SDA -> SDA (A4), SCL -> SCL (A5)   (direccion 0x27 o 0x3F, se busca sola)
-    Servo SG90 (puerta de Farmacia)   naranja -> A2, rojo 5V, cafe GND
-    Boton de llamada (Habitacion 1)   una pata a D9, la otra a GND
-    Luces de los 8 cuartos: modulo PCF8574 (direccion 0x20) en los MISMOS cables SDA/SCL que la LCD, VCC 5V, GND.
-                      Cada LED: 5V -> 220 -> pata larga del LED; pata corta -> P0..P7 del PCF8574
-                      P0 Hab 1, P1 Hab 2, P2 Hab 3, P3 Farmacia, P4 Quirofano, P5 Consultorio, P6 Deposito, P7 Recepcion
+    Luces de cuartos CONTROLADAS (sin modulo PCF8574):
+                      Farmacia  (azul)          A2 -> 2x220 seguidas -> pata larga del LED; pata corta -> GND
+                      Quirofano (azul)          A3 -> 2x220 seguidas -> pata larga del LED; pata corta -> GND
+                      Recepcion (blanco grande) D9 -> 2x220 seguidas -> pata larga del LED; pata corta -> GND
+    Luces de cuartos FIJAS (siempre prendidas, no van al Arduino):
+                      Hab 1, Hab 2, Hab 3 (blancos), Consultorio y Deposito (azules):
+                      5V -> 220 -> pata larga del LED; pata corta -> GND  (cada LED con su resistencia)
+    (Sin servo ni boton de llamada: se quitaron para liberar A2 y D9.)
     LED verde    (acceso permitido)   D3 -> 2x220 seguidas -> LED -> GND
     LED rojo     (alarma)             D4 -> 2x220 seguidas -> LED -> GND
     2 LEDs amarillos (pasillo, noche) D5 -> 220 -> LED1 -> LED2 -> GND  (los dos en fila)
@@ -27,26 +30,23 @@
     Sensor de temperatura LM35 (cara plana hacia ti): izquierda 5V, centro A1, derecha GND
 
   QUE HACE
-    - RFID: tarjeta registrada = la puerta (servo) se abre 8 s, LED verde, pitido y "Hola, nombre" en la LCD.
+    - RFID: tarjeta registrada = acceso 8 s (se prende la luz de Farmacia), LED verde, pitido y "Hola, nombre" en la LCD.
             Tarjeta desconocida = LED rojo + 3 pitidos. 3 intentos en 1 minuto = ALARMA.
             De noche, si "solo jefes" esta activo, solo entran las tarjetas marcadas como jefe.
     - Ultrasonico: si alguien se queda frente a la puerta de Farmacia sin tarjeta 8 s = ALARMA.
             De noche, si alguien camina por el pasillo (< 100 cm), las luces blancas se prenden 10 s.
     - Pasillo: de dia 2 LEDs blancos; de noche 2 amarillos suaves. Con alarma, blancos siempre.
     - Temperatura: si pasa del limite = ALARMA (vuelve a avisar solo si baja y sube otra vez).
-    - Boton de la Habitacion 1: llamada a la enfermera (pitido suave y aviso en la app). Se atiende
-            desde la app o apretando otra vez el boton.
-    - Luces de cuartos: se prenden y apagan desde la app. De noche se apagan solas las de las
-            habitaciones, consultorio, deposito y farmacia (pacientes duermen); al amanecer vuelven.
-            La de Farmacia se prende sola al abrir la puerta. Con alarma se prenden todas y parpadea
-            la del cuarto con problema; con llamada parpadea la de la Habitacion 1.
+    - Luces de Farmacia, Quirofano y Recepcion: se prenden y apagan desde la app. De noche se apaga
+            sola la de Farmacia; al amanecer vuelve. Se prende sola al abrir con tarjeta. Con alarma
+            se prenden las 3 y parpadea la del cuarto con problema. Las otras 5 luces son fijas.
     - LCD: temperatura, dia/noche, bienvenida, alarmas y llamadas. La matriz de la placa muestra el estado.
 
   ORDENES (una por linea, por Bluetooth o por el monitor serie a 9600):
     ON  OFF  ALERTA  SILENCIAR  ESTADO  ABRIR  ATENDER  LISTA
     REGISTRAR (la proxima tarjeta queda registrada; 15 s)  CANCELAR  BORRAR (borra todas)
     DIST:n (cm, 5-150)   LUZ:n (%, 5-90)   TMAX:n (grados, 20-60)   JEFES:1/0 (de noche solo jefes)
-    CUARTO:n:0/1 (luz del cuarto n, 1-8; n=0 todos)
+    CUARTO:n:0/1 (luz del cuarto n: 4 Farmacia, 5 Quirofano, 8 Recepcion; n=0 las 3; los demas son fijos)
     TARJ:UID:jefe(0/1):NOMBRE   (pone nombre y rango a una tarjeta registrada; nombre hasta 10 letras)
   ENVIA cada 0,5 s:
     ST,sistema,alerta,origen,distancia,persona,espera_s,acceso,luz%,noche,temp*10,temp_ok,
@@ -61,22 +61,20 @@
 #include <Wire.h>
 #include <MFRC522.h>
 #include <EEPROM.h>
-#include <Servo.h>
 #include <LiquidCrystal_I2C.h>
 #include "Arduino_LED_Matrix.h"
 
 #define BT Serial1   // HC-05 en D0/D1 (en el R4 el USB va aparte)
 
 const byte P_BUZ = 2, P_VERDE = 3, P_ROJO = 4, P_AMAR = 5, P_TRIG = 6, P_ECHO = 7, P_BLANCA = 8;
-const byte P_BOTON = 9, P_SS = 10;
-const byte P_LDR = A0, P_TEMP = A1, P_SERVO = A2;
+const byte P_RECEP = 9, P_SS = 10;
+const byte P_LDR = A0, P_TEMP = A1, P_FARM = A2, P_QUIR = A3;
+const byte FIJOS = 1 | 2 | 4 | 32 | 64;   // Hab 1-3, Consultorio y Deposito: siempre prendidas (a 5V)
 const int PASILLO_CM = 100;             // de noche, alguien a menos de esto = movimiento en el pasillo
 const unsigned long BLANCA_MS = 10000;  // tiempo con luz blanca al detectar movimiento de noche
-const byte SERVO_CERRADA = 0, SERVO_ABIERTA = 90;
 
 MFRC522 rfid(P_SS, MFRC522::UNUSED_PIN);   // RST del lector va fijo a 3.3V
 ArduinoLEDMatrix matriz;
-Servo puerta;
 LiquidCrystal_I2C *lcd = 0;
 
 // ---------- ajustes (se guardan en la memoria) ----------
@@ -112,7 +110,6 @@ float temp = 0;
 bool tempOk = false, avisoCalor = false;
 bool llamada = false;
 byte cuartos = 0xFF, cuartosDia = 0xFF;   // luces de los cuartos (1 bit cada uno)
-byte pcf = 0;                            // direccion del PCF8574 (0 = no esta)
 const char *CUARTO_NOM[8] = {"Habitacion 1", "Habitacion 2", "Habitacion 3", "Farmacia", "Quirofano 1", "Consultorio", "Deposito", "Recepcion"};
 String linUsb, linBt;
 String ultimaUid;
@@ -153,7 +150,7 @@ void enviarEstado() {
   s += (int)round(temp * 10); s += ','; s += tempOk; s += ',';
   s += distPuerta; s += ','; s += luzNoche; s += ','; s += tempMax; s += ',';
   s += nTarj; s += ','; s += registrando; s += ',';
-  s += lucesBlancas(ahora); s += ','; s += llamada; s += ','; s += soloJefes; s += ','; s += cuartos;
+  s += lucesBlancas(ahora); s += ','; s += llamada; s += ','; s += soloJefes; s += ','; s += (byte)(cuartos | FIJOS);
   enviar(s);
 }
 
@@ -357,10 +354,11 @@ void orden(String s) {
     int b = s.indexOf(':', dos + 1);
     bool on = b > 0 && s.substring(b + 1).toInt() == 1;
     byte m = val == 0 ? 0xFF : (1 << (val - 1));
+    if (val != 0 && (m & FIJOS)) { evento(String("La luz de ") + CUARTO_NOM[val - 1] + " es fija (va a 5V)"); return; }
     cuartos = on ? (cuartos | m) : (cuartos & ~m);
     if (!noche) cuartosDia = cuartos;
     guardar();
-    evento(String("Luz de ") + (val == 0 ? "todos los cuartos" : CUARTO_NOM[val - 1]) + (on ? " encendida" : " apagada"));
+    evento(String("Luz de ") + (val == 0 ? "Farmacia, Quirofano y Recepcion" : CUARTO_NOM[val - 1]) + (on ? " encendida" : " apagada"));
   }
   else if (cmd == "TARJ" && dos > 0) {
     // TARJ:UID:jefe:NOMBRE
@@ -407,7 +405,7 @@ void setup() {
   BT.begin(9600);
   pinMode(P_BUZ, OUTPUT); pinMode(P_VERDE, OUTPUT); pinMode(P_ROJO, OUTPUT);
   pinMode(P_AMAR, OUTPUT); pinMode(P_BLANCA, OUTPUT);
-  pinMode(P_BOTON, INPUT_PULLUP);
+  pinMode(P_FARM, OUTPUT); pinMode(P_QUIR, OUTPUT); pinMode(P_RECEP, OUTPUT);
   pinMode(P_TRIG, OUTPUT); pinMode(P_ECHO, INPUT);
   digitalWrite(P_TRIG, LOW);
   analogReadResolution(14);
@@ -416,19 +414,13 @@ void setup() {
   rfid.PCD_Init();
   matriz.begin();
   dibujar(F_CRUZ);
-  puerta.attach(P_SERVO);
-  puerta.write(SERVO_CERRADA);
-  // pantalla: se busca en 0x27 y en 0x3F; luces de cuartos (PCF8574) en 0x20-0x26 o 0x38-0x3E
+  // pantalla: se busca en 0x27 y en 0x3F
   Wire.begin();
-  for (byte d = 0x20; d <= 0x3E && !pcf; d++) {
-    if (d == 0x27 || (d > 0x27 && d < 0x38)) continue;
-    Wire.beginTransmission(d); if (Wire.endTransmission() == 0) pcf = d;
-  }
   byte dir = 0;
   for (byte d : {0x27, 0x3F}) { Wire.beginTransmission(d); if (Wire.endTransmission() == 0) { dir = d; break; } }
   if (dir) { lcd = new LiquidCrystal_I2C(dir, 16, 2); lcd->init(); lcd->backlight(); lcd->setCursor(0, 0); lcd->print("  INFINITY TEC"); lcd->setCursor(0, 1); lcd->print("Hospital intelig"); }
   // prueba de luces al encender
-  digitalWrite(P_VERDE, HIGH); digitalWrite(P_ROJO, HIGH); digitalWrite(P_AMAR, HIGH); digitalWrite(P_BLANCA, HIGH); digitalWrite(P_BUZ, HIGH);
+  digitalWrite(P_VERDE, HIGH); digitalWrite(P_ROJO, HIGH); digitalWrite(P_AMAR, HIGH); digitalWrite(P_BLANCA, HIGH); digitalWrite(P_FARM, HIGH); digitalWrite(P_QUIR, HIGH); digitalWrite(P_RECEP, HIGH); digitalWrite(P_BUZ, HIGH);
   delay(150); digitalWrite(P_BUZ, LOW); delay(850);
   digitalWrite(P_VERDE, LOW); digitalWrite(P_ROJO, LOW); digitalWrite(P_AMAR, LOW);
   leerTemp();
@@ -436,7 +428,6 @@ void setup() {
   evento("Hospital inteligente listo");
   evento(v == 0x00 || v == 0xFF ? "No se encuentra el lector RFID: revisa sus cables (3.3V)" : "Lector RFID listo (" + String(nTarj) + " tarjetas registradas)");
   if (!dir) evento("No se encuentra la pantalla LCD: revisa SDA, SCL y 5V");
-  if (!pcf) evento("No se encuentra el modulo de luces de cuartos (PCF8574): revisa SDA, SCL y 5V");
   if (!tempOk) evento("El sensor de temperatura no da una lectura valida: revisa sus patas");
   enviarEstado();
 }
@@ -453,19 +444,6 @@ void loop() {
     rfid.PCD_StopCrypto1();
   }
   if (registrando && ahora > regHasta) { registrando = false; evento("Registro de tarjeta cancelado (tiempo agotado)"); }
-
-  // ---- boton de llamada de la Habitacion 1 ----
-  static bool botonAntes = HIGH;
-  static unsigned long tBoton = 0;
-  bool boton = digitalRead(P_BOTON);
-  if (boton != botonAntes && ahora - tBoton > 40) {
-    tBoton = ahora; botonAntes = boton;
-    if (boton == LOW) {
-      llamada = !llamada;
-      evento(llamada ? "LLAMADA: la Habitacion 1 pide una enfermera" : "Llamada de la Habitacion 1 cancelada desde la habitacion");
-      enviarEstado();
-    }
-  }
 
   // ---- ultrasonico en la puerta de Farmacia y el pasillo ----
   static unsigned long tDist = 0;
@@ -522,7 +500,7 @@ void loop() {
     }
   }
 
-  // ---- luces, buzzer, servo, matriz y LCD ----
+  // ---- luces, buzzer, matriz y LCD ----
   bool parpadeo = (ahora / 250) % 2;
   bool acceso = ahora < accesoHasta;
   bool negado = ahora < negadoHasta;
@@ -533,16 +511,14 @@ void loop() {
   // luces de cuartos
   byte ef = cuartos;
   if (acceso) ef |= 8;                         // Farmacia se ilumina al abrir la puerta
-  if (llamada) ef = (ef & ~1) | ((ahora / 500) % 2);
   if (alerta) {
     ef = 0xFF;
     int b = (origen == 1 || origen == 4) ? 3 : origen == 2 ? 4 : -1;
     if (b >= 0 && !parpadeo) ef &= ~(1 << b);
   }
-  static int efAntes = -1;
-  if (pcf && ef != efAntes) { efAntes = ef; Wire.beginTransmission(pcf); Wire.write((byte)~ef); Wire.endTransmission(); }   // LED prende con 0
-  static bool abierta = false;
-  if (acceso != abierta) { abierta = acceso; puerta.write(abierta ? SERVO_ABIERTA : SERVO_CERRADA); }
+  digitalWrite(P_FARM, (ef & 8) != 0);
+  digitalWrite(P_QUIR, (ef & 16) != 0);
+  digitalWrite(P_RECEP, (ef & 128) != 0);
   bool buz = false;
   unsigned long f3 = ahora % 3000;
   if (alerta) buz = parpadeo;
