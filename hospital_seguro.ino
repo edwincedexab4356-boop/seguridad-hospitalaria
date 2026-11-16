@@ -22,7 +22,8 @@
                       (la muesca del chip mira hacia arriba: la pata 1 es la de arriba a la izquierda)
     LED verde    (acceso permitido)   D3 -> 2x220 seguidas -> LED -> GND
     LED rojo     (alarma)             D4 -> 2x220 seguidas -> LED -> GND
-    2 LEDs amarillos (pasillo, noche) D5 -> 220 -> LED1 -> LED2 -> GND  (los dos en fila)
+    2 LEDs amarillos (pasillo, noche) D5 -> 3x220 seguidas -> LED -> GND  (cada LED con las suyas, los dos al D5;
+                                      NO en fila: dos LEDs en fila no prenden con 5 V)
     2 LEDs blancos   (pasillo, dia)   D8 -> 2x220 seguidas -> LED -> GND  (cada LED con las suyas, los dos al D8)
     Buzzer activo                     + D2, - GND
     Fotoresistencia                   5V -> LDR -> A0, y 220 de A0 a GND  (lejos de los LEDs del pasillo)

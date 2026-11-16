@@ -471,7 +471,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>Fotoresistencia</td><td>Una pata a 5V, la otra a <b>A0</b> · resistencia de 220 Ω de A0 a GND</td><td>Ponla lejos de los LEDs (arriba en la pared del fondo, mirando hacia afuera), si no el pasillo parpadea de noche</td></tr>
     <tr><td>LED verde (acceso)</td><td><b>D3</b> → 2 resistencias de 220 Ω seguidas → LED → GND</td><td>Pata larga del LED hacia el Arduino</td></tr>
     <tr><td>LED rojo (alarma del pasillo)</td><td><b>D4</b> → 2 resistencias de 220 Ω seguidas → LED → GND</td><td></td></tr>
-    <tr><td>2 LEDs amarillos (pasillo de noche)</td><td><b>D5</b> → 220 Ω → LED 1 → LED 2 → GND (los dos LEDs en fila: la pata corta del 1 a la pata larga del 2)</td><td>Los dos en fila con una sola resistencia</td></tr>
+    <tr><td>2 LEDs amarillos (pasillo de noche)</td><td><b>D5</b> → 3 resistencias de 220 Ω seguidas → pata larga del LED 1 · pata corta → GND, y lo mismo para el LED 2 (los dos al D5)</td><td>Cada LED con sus propias 3 resistencias. YA NO van en fila: dos LEDs en fila necesitan más de 4 V y no prenden</td></tr>
     <tr><td>2 LEDs blancos (pasillo de día)</td><td><b>D8</b> → 2 resistencias de 220 Ω seguidas → LED 1 → GND, y lo mismo para el LED 2</td><td>De noche se prenden 10 s si alguien camina por el pasillo, y siempre con alarma</td></tr>
     <tr><td>Buzzer activo</td><td>+ → <b>D2</b> · − → GND</td><td></td></tr>
   </table>
