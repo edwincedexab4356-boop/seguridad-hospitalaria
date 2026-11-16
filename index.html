@@ -86,6 +86,7 @@ svg{display:block;width:100%;height:auto}
 .leds{display:flex;gap:14px;margin-left:auto;flex-wrap:wrap}
 .led{display:flex;align-items:center;gap:6px}
 .lcdG{font:700 15px/1.25 ui-monospace,Consolas,monospace;background:#2f5fd0;color:#eaf2ff;padding:6px 10px;border-radius:4px;border:3px solid #10204a;box-shadow:inset 0 0 8px #0006;white-space:pre;letter-spacing:.5px;min-width:17ch}
+.pasillo div{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px}.pasillo b{min-width:96px;font-size:13px}.pasillo .btn{padding:3px 10px;font-size:12px}.pasillo .btn[aria-pressed=true]{background:var(--verde);color:#04140c}
 .lcdG.off{background:#1a2440;color:#1a2440}
 .zonaLuz{cursor:pointer}
 .led i{width:11px;height:11px;border-radius:50%;background:#262a3d;box-shadow:inset 0 -2px 3px #0008}
@@ -285,13 +286,13 @@ input[type=range]{width:100%;accent-color:var(--verde)}
       <rect id="oscuro" x="6" y="6" width="688" height="438" rx="6" fill="#05070f" opacity="0" style="transition:opacity .6s"/>
       <!-- luz de cada cuarto (Farmacia, Quirófano y Recepción se tocan para prenderlas o apagarlas) -->
       <g class="zonaLuz">
-        <rect id="lz0" x="20" y="160" width="220" height="240" opacity="0"><title>Luz de Habitación 1 (en la maqueta va fija a 5V)</title></rect>
-        <rect id="lz1" x="20" y="20" width="220" height="140" opacity="0"><title>Luz de Habitación 2 (en la maqueta va fija a 5V)</title></rect>
-        <rect id="lz2" x="560" y="180" width="120" height="100" opacity="0"><title>Luz de Habitación 3 (en la maqueta va fija a 5V)</title></rect>
+        <rect id="lz0" x="20" y="160" width="220" height="240" opacity="0"><title>Luz de Habitación 1</title></rect>
+        <rect id="lz1" x="20" y="20" width="220" height="140" opacity="0"><title>Luz de Habitación 2</title></rect>
+        <rect id="lz2" x="560" y="180" width="120" height="100" opacity="0"><title>Luz de Habitación 3</title></rect>
         <rect id="lz3" x="310" y="20" width="170" height="110" opacity="0"><title>Luz de la Farmacia (A2) · toca para prender o apagar</title></rect>
         <rect id="lz4" x="480" y="20" width="200" height="160" opacity="0"><title>Luz del Quirófano (A3) · toca para prender o apagar</title></rect>
-        <rect id="lz5" x="440" y="280" width="120" height="120" opacity="0"><title>Luz de Consultorio (en la maqueta va fija a 5V)</title></rect>
-        <rect id="lz6" x="560" y="280" width="120" height="120" opacity="0"><title>Luz de Depósito (en la maqueta va fija a 5V)</title></rect>
+        <rect id="lz5" x="440" y="280" width="120" height="120" opacity="0"><title>Luz de Consultorio</title></rect>
+        <rect id="lz6" x="560" y="280" width="120" height="120" opacity="0"><title>Luz de Depósito</title></rect>
         <path id="lz7" d="M240 200H310V130H480V200H560V280H440V400H240Z" opacity="0"><title>Luz de la Recepción (D9) · toca para prender o apagar</title></path>
       </g>
       <!-- luces del pasillo: 2 blancas (día) y 2 amarillas (noche) -->
@@ -417,7 +418,12 @@ input[type=range]{width:100%;accent-color:var(--verde)}
       <div class="card">
         <h2>Luces de los cuartos <span class="der"><button class="btn" id="bTodas" style="padding:3px 10px;font-size:12px">Todas</button> <button class="btn" id="bNinguna" style="padding:3px 10px;font-size:12px">Ninguna</button></span></h2>
         <div class="cuartos" id="cuartos"></div>
-        <p class="nota" style="margin-bottom:0">También puedes tocar un cuarto en el plano. En el simulador se controlan las 8. En la maqueta real solo Farmacia, Quirófano y Recepción van al Arduino; las Habitaciones 1, 2 y 3, el Consultorio y el Depósito van fijas a 5V y siempre están prendidas. De noche se apagan solas las de habitaciones, consultorio, depósito y farmacia; con una alarma se prenden todas.</p>
+        <h3 style="margin:14px 0 6px;font-size:14px">Luces del pasillo</h3>
+        <div class="pasillo">
+          <div><b>Blancas ×2</b> <button class="btn" data-pas="B:1">Prender</button><button class="btn" data-pas="B:0">Apagar</button><button class="btn" data-pas="B:2">Automático</button></div>
+          <div><b>Amarillas ×2</b> <button class="btn" data-pas="A:1">Prender</button><button class="btn" data-pas="A:0">Apagar</button><button class="btn" data-pas="A:2">Automático</button></div>
+        </div>
+        <p class="nota" style="margin-bottom:0">También puedes tocar un cuarto en el plano. Las 8 luces se prenden y apagan solo a mano (en la maqueta, con el chip 74HC595); con una alarma se prenden todas. En el pasillo, “Automático” usa la fotoresistencia: blancas de día, amarillas de noche.</p>
       </div>
     </div>
     <div class="card">
@@ -459,8 +465,8 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>Lector RFID RC522</td><td>SDA → <b>D10</b> · SCK → <b>D13</b> · MOSI → <b>D11</b> · MISO → <b>D12</b> · <b>RST → 3.3V</b> · <b>3.3V</b> · GND</td><td>¡A 3.3V, no a 5V! La pata RST ya no va al D9: va fija a 3.3V. IRQ no se usa</td></tr>
     <tr><td>Sensor ultrasónico HC-SR04</td><td>TRIG → <b>D6</b> · ECHO → <b>D7</b> · VCC 5V · GND</td><td>En el pasillo, junto a la puerta de Farmacia, mirando hacia donde llega la persona</td></tr>
     <tr><td>Pantalla LCD 16×2 con I2C</td><td>SDA → <b>SDA</b> (A4) · SCL → <b>SCL</b> (A5) · VCC 5V · GND</td><td>Si no se ve el texto, gira el tornillito azul de atrás (contraste)</td></tr>
-    <tr><td>3 luces controladas</td><td>Farmacia (azul) <b>A2</b> · Quirófano (azul) <b>A3</b> · Recepción (blanco grande) <b>D9</b>: cada una pin → 2 resistencias de 220 Ω seguidas → pata larga del LED · pata corta → GND</td><td>Se prenden y apagan desde la app. Farmacia se prende sola con la tarjeta</td></tr>
-    <tr><td>5 luces fijas</td><td>Habitaciones 1, 2 y 3 (blancos) · Consultorio y Depósito (azules): <b>5V</b> → 220 Ω → pata larga del LED · pata corta → GND</td><td>No van a ningún pin: siempre prendidas. Sin módulo PCF8574, sin servo y sin botón de llamada</td></tr>
+    <tr><td>Chip 74HC595 (las 8 luces de los cuartos)</td><td>Pata 16 → <b>5V</b> · pata 8 → <b>GND</b> · pata 10 → <b>5V</b> · pata 13 → <b>GND</b> · pata 14 → <b>A2</b> · pata 11 → <b>A3</b> · pata 12 → <b>D9</b></td><td>Con la muesca hacia arriba, la pata 1 es la de arriba a la izquierda y se cuenta hacia abajo; la 16 queda arriba a la derecha</td></tr>
+    <tr><td>Luces de los 8 cuartos</td><td>Pata 15 Hab 1 · pata 1 Hab 2 · pata 2 Hab 3 · pata 3 Farmacia · pata 4 Quirófano · pata 5 Consultorio · pata 6 Depósito · pata 7 Recepción: cada pata del chip → 2 resistencias de 220 Ω seguidas → pata larga del LED · pata corta → GND</td><td>Ninguna va fija a 5V: todas se prenden y apagan desde la app. Colores: Hab 1-3 blancos · Farmacia, Quirófano, Consultorio y Depósito azules · Recepción el blanco grande</td></tr>
     <tr><td>Sensor de temperatura LM35</td><td>Con la cara plana hacia ti: izquierda <b>5V</b> · centro <b>A1</b> · derecha <b>GND</b></td><td>Dentro del quirófano. Si se calienta solo, está al revés: desconéctalo y gíralo</td></tr>
     <tr><td>Fotoresistencia</td><td>Una pata a 5V, la otra a <b>A0</b> · resistencia de 220 Ω de A0 a GND</td><td>Ponla lejos de los LEDs (arriba en la pared del fondo, mirando hacia afuera), si no el pasillo parpadea de noche</td></tr>
     <tr><td>LED verde (acceso)</td><td><b>D3</b> → 2 resistencias de 220 Ω seguidas → LED → GND</td><td>Pata larga del LED hacia el Arduino</td></tr>
@@ -479,7 +485,8 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>Registrar tarjeta</td><td><code>REGISTRAR</code></td><td>La próxima tarjeta que pases (15 s) queda autorizada</td></tr>
     <tr><td>Abrir puerta</td><td><code>ABRIR</code></td><td>Da acceso a Farmacia 8 segundos sin tarjeta</td></tr>
     <tr><td>Borrar todas</td><td><code>BORRAR</code></td><td>Quita todas las tarjetas autorizadas</td></tr>
-    <tr><td>Luces de los cuartos</td><td><code>CUARTO:n:1</code> / <code>CUARTO:n:0</code></td><td>Prende o apaga una luz: 4 Farmacia, 5 Quirófano, 8 Recepción (0 = las 3)</td></tr>
+    <tr><td>Luces de los cuartos</td><td><code>CUARTO:n:1</code> / <code>CUARTO:n:0</code></td><td>Prende o apaga la luz del cuarto n (1 a 8; 0 = todos)</td></tr>
+    <tr><td>Luces del pasillo</td><td><code>BLANCAS:n</code> · <code>AMARILLAS:n</code></td><td>0 apagadas · 1 prendidas · 2 automático (con la fotoresistencia)</td></tr>
     <tr><td>Nombre y rango de tarjeta</td><td><code>TARJ:UID:jefe:NOMBRE</code></td><td>Guarda el nombre (sale en la LCD) y si es jefe</td></tr>
     <tr><td>Solo jefes de noche</td><td><code>JEFES:1</code> / <code>JEFES:0</code></td><td>De noche solo entran a Farmacia las tarjetas de jefe</td></tr>
     <tr><td>Barras de ajustes</td><td><code>DIST:n</code> · <code>TMAX:n</code> · <code>LUZ:n</code></td><td>Cambian la distancia de la puerta, la temperatura máxima y el nivel de noche (se guardan aunque lo apagues)</td></tr>
@@ -504,11 +511,11 @@ input[type=range]{width:100%;accent-color:var(--verde)}
   <h3>4 · Temperatura (LM35)</h3>
   <p>El sensor de temperatura vigila el quirófano. Si pasa del límite elegido, suena la alarma y llega el aviso al celular.</p>
   <h3>Tarjetas con nombre</h3>
-  <p>Con una tarjeta válida hay acceso a la Farmacia 8 segundos: se prende el LED verde y la luz de la Farmacia. Cada tarjeta tiene nombre: la pantalla LCD dice “Hola, Ana” y el celular lo dice en voz alta. Todo queda en el <b>historial de Farmacia</b>: quién intentó entrar, a qué hora y si pudo.</p>
+  <p>Con una tarjeta válida hay acceso a la Farmacia 8 segundos y se prende el LED verde. Cada tarjeta tiene nombre: la pantalla LCD dice “Hola, Ana” y el celular lo dice en voz alta. Todo queda en el <b>historial de Farmacia</b>: quién intentó entrar, a qué hora y si pudo.</p>
   <h3>Farmacia cerrada de noche</h3>
   <p>De noche solo entran las tarjetas marcadas como <b>jefe</b> (por ejemplo, el doctor de guardia). Las demás son rechazadas aunque estén registradas.</p>
   <h3>Luces de cada cuarto</h3>
-  <p>Farmacia, Quirófano y Recepción se controlan desde la app; las habitaciones, el consultorio y el depósito quedan siempre prendidos. De noche se apaga sola la de Farmacia; con una alarma se prenden las 3 y parpadea la del cuarto con el problema.</p>
+  <p>Las 8 luces (habitaciones, farmacia, quirófano, consultorio, depósito y recepción) se prenden y apagan a mano desde la app, gracias a un chip 74HC595 que con solo 3 pines maneja las 8. Las del pasillo también: prendidas, apagadas o en automático. Con una alarma se prenden todas y parpadea la del cuarto con el problema.</p>
   <h3>5 · Alerta manual y equipo vigilado</h3>
   <p>Si algo falla (un sensor dañado, el Arduino sin energía o el Bluetooth caído), cualquiera con la página puede activar la <b>alerta manual</b>: suena en el Arduino si está conectado y siempre suena y vibra en el celular. El Arduino envía una señal dos veces por segundo; si se corta, la página muestra <b>EQUIPO SIN RESPUESTA</b>.</p>
   <h3>6 · Matriz de la placa</h3>
@@ -539,7 +546,7 @@ const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag)
 const esc = t => String(t).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
 
 /* ---------- Estado que muestra la página (llega del Arduino real o del simulado) ---------- */
-const FIJOS = 1|2|4|32|64, AZULES = 8|16|32|64;   // FIJOS: en la maqueta real van a 5V
+const AZULES = 8|16|32|64;
 const CUARTOS = ['Habitación 1','Habitación 2','Habitación 3','Farmacia','Quirófano 1','Consultorio','Depósito','Recepción'];
 const S = {
   modo: 'sim',            // sim | real
@@ -547,7 +554,7 @@ const S = {
   dist: 300, persona: false, espera: 0, acceso: false,
   luz: 85, noche: false, blanca: true, temp: 23, tempOk: true,
   distPuerta: 30, luzNoche: 30, tempMax: 30, nTarj: 2, registrando: false,
-  llamada: false, soloJefes: true, cuartos: 255, lcd: ['', ''], lista: [],
+  llamada: false, soloJefes: true, cuartos: 255, amar: false, modoB: 2, modoA: 2, lcdOk: true, lcd: ['', ''], lista: [],
   ultTj: null, tTj: 0,
   falla: {R:false, U:false, T:false, E:false},
   alertasHoy: 0, sonido: true, ocultaAlarma: false,
@@ -672,7 +679,7 @@ const VA = (() => {
     luz:85, noche:0, temp:23, tempOk:1, avisoCalor:false, distPuerta:30, luzNoche:30, tempMax:30, soloJefes:1,
     tarjetas:[{uid:TARJ_ENF, j:0, n:'ENF. ANA'}, {uid:TARJ_DOC, j:1, n:'DR. LUIS'}],
     registrando:0, regHasta:0, negados:0, tNegado:0, negadoHasta:0, blancaHasta:0,
-    llamada:0, cuartos:255, cuartosDia:255, lcdM:0, lcdN:'', lcdHasta:0, lcd1:null, lcd2:null };
+    llamada:0, cuartos:255, mB:2, mA:2, lcdM:0, lcdN:'', lcdHasta:0, lcd1:null, lcd2:null };
   const ev = t => procesar('EV,'+t);
   const vivo = () => !S.falla.E;
   const nom = t => t.n || t.uid;
@@ -741,10 +748,8 @@ const VA = (() => {
     d.luz = Math.round(mundo.luz);
     if (!d.noche && d.luz < d.luzNoche) {
       d.noche = 1; d.blancaHasta = 0; ev('Anochece: pasillo en modo noche (luces amarillas)');
-      d.cuartosDia = d.cuartos; d.cuartos &= 0x90; ev('Noche: se apagan las luces de habitaciones, consultorio, depósito y farmacia');
     } else if (d.noche && d.luz > d.luzNoche + 5) {
       d.noche = 0; ev('Amanece: pasillo con luces blancas');
-      d.cuartos = d.cuartosDia; ev('Día: las luces de los cuartos vuelven como estaban');
     }
     d.temp = S.falla.T ? -48.8 : mundo.temp; d.tempOk = d.temp > 1 && d.temp < 70 ? 1 : 0;
     if (d.tempOk) {
@@ -757,7 +762,8 @@ const VA = (() => {
     if (!vivo() || S.modo !== 'sim') return;
     const a = Date.now();
     procesar(['ST',d.sis,d.alerta,d.origen,d.dist,d.persona,d.esperaFin?Math.ceil((d.esperaFin-a)/1000):0,a<d.accesoHasta?1:0,d.luz,d.noche,Math.round(d.temp*10),d.tempOk,d.distPuerta,d.luzNoche,d.tempMax,d.tarjetas.length,d.registrando,
-      (!d.noche||a<d.blancaHasta||d.alerta)?1:0, d.llamada, d.soloJefes, d.cuartos].join(','));
+      (d.alerta||d.mB===1)?1:d.mB===0?0:(!d.noche||a<d.blancaHasta)?1:0, d.llamada, d.soloJefes, d.cuartos,
+      d.mA===2?d.noche:d.mA, d.mB, d.mA, 1].join(','));
   }
   function orden(o, callado){
     if (!vivo()) return;
@@ -779,8 +785,12 @@ const VA = (() => {
     else if (c === 'JEFES' && v >= 0) { d.soloJefes = v === 1 ? 1 : 0; ev(d.soloJefes ? 'De noche la Farmacia es solo para jefes' : 'De noche entran todas las tarjetas'); }
     else if (c === 'CUARTO' && v >= 0 && v <= 8) {
       const on = parseInt(partes[2]) === 1, m = v === 0 ? 255 : 1 << (v-1);
-      d.cuartos = on ? (d.cuartos | m) : (d.cuartos & ~m); if (!d.noche) d.cuartosDia = d.cuartos;
+      d.cuartos = on ? (d.cuartos | m) : (d.cuartos & ~m);
       ev('Luz de '+(v === 0 ? 'todos los cuartos' : CUARTOS[v-1])+(on ? ' encendida' : ' apagada'));
+    }
+    else if ((c === 'BLANCAS' || c === 'AMARILLAS') && v >= 0 && v <= 2) {
+      if (c === 'BLANCAS') d.mB = v; else d.mA = v;
+      ev('Luces '+(c === 'BLANCAS' ? 'blancas' : 'amarillas')+' del pasillo '+['apagadas','prendidas','en automatico'][v]);
     }
     else if (c === 'TARJ' && partes.length >= 3) {
       const t = d.tarjetas.find(x=>x.uid===partes[1]);
@@ -800,7 +810,6 @@ const VA = (() => {
 function equipoVivo(){ return Date.now() - S.ultimoLatido < 3000; }
 function lucesEfectivas(a){
   let ef = S.cuartos;
-  if (S.acceso) ef |= 8;
   if (S.alerta) { ef = 255; const b = (S.origen===1||S.origen===4) ? 3 : S.origen===2 ? 4 : -1; if (b >= 0 && Math.floor(a/250) % 2 === 0) ef &= ~(1 << b); }
   return ef;
 }
@@ -810,7 +819,9 @@ function pintarLcd(){
   $('lcdL2').textContent = vivo ? S.lcd[1] : '';
   $('lcdFondo').setAttribute('fill', vivo ? '#2f5fd0' : '#1a2440');
   const g = $('lcdG'); g.classList.toggle('off', !vivo);
-  g.textContent = (vivo ? S.lcd[0] : '').padEnd(16) + String.fromCharCode(10) + (vivo ? S.lcd[1] : '').padEnd(16);
+  const sinLcd = vivo && !S.lcdOk, l = sinLcd ? ['LCD NO ENCONTRADA','revisa SDA y SCL'] : S.lcd;
+  g.textContent = (vivo ? l[0] : '').padEnd(16) + String.fromCharCode(10) + (vivo ? l[1] : '').padEnd(16);
+  g.style.background = sinLcd ? '#7a1f2b' : '';
 }
 function pintar(){
   const vivo = equipoVivo();
@@ -839,8 +850,8 @@ function pintar(){
   // luz: noche, pasillo y cuartos
   const oscF = vivo ? Math.max(0, 70 - S.luz) / 70 : 0;
   $('oscuro').setAttribute('opacity', (oscF * .78).toFixed(2));
-  $('focos').setAttribute('opacity', vivo && S.noche ? 1 : 0);
-  $('lamparas').setAttribute('fill', vivo && S.noche ? '#ffe23d' : '#7d7560');
+  $('focos').setAttribute('opacity', vivo && S.amar ? 1 : 0);
+  $('lamparas').setAttribute('fill', vivo && S.amar ? '#ffe23d' : '#7d7560');
   const blanca = vivo && S.blanca;
   $('focosB').setAttribute('opacity', blanca ? (S.noche ? 1 : .55) : 0);
   $('lampB').setAttribute('fill', blanca ? '#ffffff' : '#8d939a');
@@ -859,7 +870,8 @@ function pintar(){
   const parp = Math.floor(a / 250) % 2 === 0;
   $('ledV').classList.toggle('on', vivo && S.acceso);
   $('ledR').classList.toggle('on', vivo && (S.alerta ? parp : (tjReciente && !S.ultTj.ok) || (S.espera && Math.floor(a/500)%2===0)));
-  $('ledA').classList.toggle('on', vivo && S.noche);
+  $('ledA').classList.toggle('on', vivo && S.amar);
+  document.querySelectorAll('[data-pas]').forEach(b => { const [g,v] = b.dataset.pas.split(':'); b.setAttribute('aria-pressed', String((g==='B'?S.modoB:S.modoA) === +v)); });
   $('ledW').classList.toggle('on', blanca);
   $('ledB').classList.toggle('on', vivo && (S.alerta ? parp : S.espera ? a % 1000 < 120 : S.llamada ? a % 3000 < 300 : false));
   $('chipTxt').textContent = !vivo ? 'sin respuesta' : S.sistema ? 'vigilando' : 'en espera';
@@ -892,7 +904,7 @@ function pintar(){
   else { kT.textContent = S.temp.toFixed(1)+' °C'; kT.className = caliente ? 'mal' : 'ok'; }
   const kL = $('kLuz');
   if (!vivo) { kL.textContent = 'Sin datos'; kL.className = 'aviso'; }
-  else { kL.textContent = S.noche ? (S.blanca ? '🌙 Blancas 10 s' : '🌙 Amarillas') : '☀ Blancas'; kL.className = S.noche ? 'aviso' : 'ok'; }
+  else { kL.textContent = (S.modoB!==2||S.modoA!==2) ? ((S.blanca?'Blancas ':'')+(S.amar?'Amarillas':'')||'Apagado')+' (a mano)' : S.noche ? (S.blanca ? '🌙 Blancas 10 s' : '🌙 Amarillas') : '☀ Blancas'; kL.className = S.noche ? 'aviso' : 'ok'; }
   $('kAlertas').textContent = S.alertasHoy;
   // ajustes
   if (a - tocado.rDist > 1500) { $('rDist').value = S.distPuerta; $('vDist').textContent = S.distPuerta+' cm'; }
@@ -991,6 +1003,9 @@ function procesar(l){
     const llamada = p.length >= 19 && !!n[17];
     S.soloJefes = p.length >= 20 ? !!n[18] : false;
     S.cuartos = p.length >= 21 ? n[19] : 255;
+    S.amar = p.length >= 22 ? !!n[20] : S.noche;
+    S.modoB = p.length >= 23 ? n[21] : 2; S.modoA = p.length >= 24 ? n[22] : 2;
+    S.lcdOk = p.length >= 25 ? !!n[23] : true;
     if (llamada && !S.llamada) { log('📞 La Habitación 1 pide una enfermera', true); hablar('Atención. La habitación uno pide una enfermera.'); }
     S.llamada = llamada;
     if (S.nTarj !== S.lista.length && Date.now() - tListaPedida > 3000) { tListaPedida = Date.now(); setTimeout(()=>enviar('LISTA', true), 0); }
@@ -1076,6 +1091,7 @@ for (let i = 0; i < 8; i++) $('lz'+i).addEventListener('click', () => cuarto(i))
 $('cuartos').innerHTML = CUARTOS.map((n,i)=>`<button class="cto" data-c="${i}" aria-pressed="true"><span>💡</span> ${n}</button>`).join('');
 document.querySelectorAll('.cto').forEach(b => b.onclick = () => cuarto(+b.dataset.c));
 $('bTodas').onclick = () => enviar('CUARTO:0:1');
+document.querySelectorAll('[data-pas]').forEach(b => b.onclick = () => { if (ctx) ctx.resume(); const [g,v] = b.dataset.pas.split(':'); enviar((g==='B'?'BLANCAS:':'AMARILLAS:')+v); });
 $('bNinguna').onclick = () => enviar('CUARTO:0:0');
 
 // ajustes: se envían al soltar la barra

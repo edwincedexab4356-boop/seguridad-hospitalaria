@@ -12,15 +12,14 @@
     Lector RFID RC522 (va a 3.3V, NO a 5V)
                       3.3V, GND, SDA D10, MOSI D11, MISO D12, SCK D13, RST -> 3.3V (IRQ sin conectar)
     Ultrasonico HC-SR04 (puerta de Farmacia y pasillo)   VCC 5V, GND, TRIG D6, ECHO D7
-    Pantalla LCD 16x2 I2C   VCC 5V, GND, SDA -> SDA (A4), SCL -> SCL (A5)   (direccion 0x27 o 0x3F, se busca sola)
-    Luces de cuartos CONTROLADAS (sin modulo PCF8574):
-                      Farmacia  (azul)          A2 -> 2x220 seguidas -> pata larga del LED; pata corta -> GND
-                      Quirofano (azul)          A3 -> 2x220 seguidas -> pata larga del LED; pata corta -> GND
-                      Recepcion (blanco grande) D9 -> 2x220 seguidas -> pata larga del LED; pata corta -> GND
-    Luces de cuartos FIJAS (siempre prendidas, no van al Arduino):
-                      Hab 1, Hab 2, Hab 3 (blancos), Consultorio y Deposito (azules):
-                      5V -> 220 -> pata larga del LED; pata corta -> GND  (cada LED con su resistencia)
-    (Sin servo ni boton de llamada: se quitaron para liberar A2 y D9.)
+    Pantalla LCD 16x2 I2C   VCC 5V, GND, SDA -> SDA (A4), SCL -> SCL (A5)   (la direccion se busca sola)
+    Luces de los 8 cuartos con un chip 74HC595 (TODAS se prenden y apagan desde la app, ninguna fija):
+                      pata 16 VCC -> 5V   pata 8 GND -> GND   pata 10 (MR) -> 5V   pata 13 (OE) -> GND
+                      pata 14 (DS) -> A2   pata 11 (SH_CP) -> A3   pata 12 (ST_CP) -> D9
+                      Q0 pata 15 Hab 1 · Q1 pata 1 Hab 2 · Q2 pata 2 Hab 3 · Q3 pata 3 Farmacia
+                      Q4 pata 4 Quirofano · Q5 pata 5 Consultorio · Q6 pata 6 Deposito · Q7 pata 7 Recepcion
+                      Cada salida -> 2x220 seguidas -> pata larga del LED; pata corta -> GND
+                      (la muesca del chip mira hacia arriba: la pata 1 es la de arriba a la izquierda)
     LED verde    (acceso permitido)   D3 -> 2x220 seguidas -> LED -> GND
     LED rojo     (alarma)             D4 -> 2x220 seguidas -> LED -> GND
     2 LEDs amarillos (pasillo, noche) D5 -> 220 -> LED1 -> LED2 -> GND  (los dos en fila)
@@ -35,23 +34,24 @@
             De noche, si "solo jefes" esta activo, solo entran las tarjetas marcadas como jefe.
     - Ultrasonico: si alguien se queda frente a la puerta de Farmacia sin tarjeta 8 s = ALARMA.
             De noche, si alguien camina por el pasillo (< 100 cm), las luces blancas se prenden 10 s.
-    - Pasillo: de dia 2 LEDs blancos; de noche 2 amarillos suaves. Con alarma, blancos siempre.
+    - Pasillo: en AUTOMATICO, de dia 2 LEDs blancos y de noche 2 amarillos suaves. Desde la app cada
+            grupo (blancas / amarillas) se puede poner PRENDIDO, APAGADO o AUTOMATICO. Con alarma, blancas siempre.
     - Temperatura: si pasa del limite = ALARMA (vuelve a avisar solo si baja y sube otra vez).
-    - Luces de Farmacia, Quirofano y Recepcion: se prenden y apagan desde la app. De noche se apaga
-            sola la de Farmacia; al amanecer vuelve. Se prende sola al abrir con tarjeta. Con alarma
-            se prenden las 3 y parpadea la del cuarto con problema. Las otras 5 luces son fijas.
+    - Luces de los 8 cuartos: se prenden y apagan SOLO a mano desde la app (se guardan aunque se
+            desconecte). Con alarma se prenden todas y parpadea la del cuarto con problema.
     - LCD: temperatura, dia/noche, bienvenida, alarmas y llamadas. La matriz de la placa muestra el estado.
 
   ORDENES (una por linea, por Bluetooth o por el monitor serie a 9600):
     ON  OFF  ALERTA  SILENCIAR  ESTADO  ABRIR  ATENDER  LISTA
     REGISTRAR (la proxima tarjeta queda registrada; 15 s)  CANCELAR  BORRAR (borra todas)
     DIST:n (cm, 5-150)   LUZ:n (%, 5-90)   TMAX:n (grados, 20-60)   JEFES:1/0 (de noche solo jefes)
-    CUARTO:n:0/1 (luz del cuarto n: 4 Farmacia, 5 Quirofano, 8 Recepcion; n=0 las 3; los demas son fijos)
+    CUARTO:n:0/1 (luz del cuarto n, 1 a 8; n=0 todas)
+    BLANCAS:n  AMARILLAS:n  (luces del pasillo: 0 apagadas, 1 prendidas, 2 automatico)
     TARJ:UID:jefe(0/1):NOMBRE   (pone nombre y rango a una tarjeta registrada; nombre hasta 10 letras)
   ENVIA cada 0,5 s:
     ST,sistema,alerta,origen,distancia,persona,espera_s,acceso,luz%,noche,temp*10,temp_ok,
        dist_puerta,luz_noche,temp_max,tarjetas,registrando,luces_blancas,llamada,solo_jefes,cuartos(bits: 1 Hab1, 2 Hab2, 4 Hab3, 8 Farmacia,
-       16 Quirofano, 32 Consultorio, 64 Deposito, 128 Recepcion)
+       16 Quirofano, 32 Consultorio, 64 Deposito, 128 Recepcion),amarillas,modo_blancas,modo_amarillas,lcd_ok
     origen: 0 ninguno, 1 persona sin tarjeta, 2 temperatura alta, 3 manual (app), 4 tarjeta no autorizada
   Y ademas:  EV,texto    TJ,uid,ok,motivo (0 desconocida, 1 permitida, 2 cerrada de noche, 3 registrada)
              LC,linea1,linea2 (lo que muestra la LCD)    TL,uid,jefe,nombre ... TL,FIN (lista de tarjetas)
@@ -67,9 +67,8 @@
 #define BT Serial1   // HC-05 en D0/D1 (en el R4 el USB va aparte)
 
 const byte P_BUZ = 2, P_VERDE = 3, P_ROJO = 4, P_AMAR = 5, P_TRIG = 6, P_ECHO = 7, P_BLANCA = 8;
-const byte P_RECEP = 9, P_SS = 10;
-const byte P_LDR = A0, P_TEMP = A1, P_FARM = A2, P_QUIR = A3;
-const byte FIJOS = 1 | 2 | 4 | 32 | 64;   // Hab 1-3, Consultorio y Deposito: siempre prendidas (a 5V)
+const byte P_LATCH = 9, P_SS = 10;
+const byte P_LDR = A0, P_TEMP = A1, P_DATA = A2, P_CLOCK = A3;   // 74HC595 de las luces de los cuartos
 const int PASILLO_CM = 100;             // de noche, alguien a menos de esto = movimiento en el pasillo
 const unsigned long BLANCA_MS = 10000;  // tiempo con luz blanca al detectar movimiento de noche
 
@@ -109,7 +108,9 @@ unsigned long blancaHasta = 0;
 float temp = 0;
 bool tempOk = false, avisoCalor = false;
 bool llamada = false;
-byte cuartos = 0xFF, cuartosDia = 0xFF;   // luces de los cuartos (1 bit cada uno)
+byte cuartos = 0xFF;                      // luces de los cuartos (1 bit cada uno), solo a mano
+byte modoBlancas = 2, modoAmar = 2;       // pasillo: 0 apagadas, 1 prendidas, 2 automatico
+byte lcdDir = 0;
 const char *CUARTO_NOM[8] = {"Habitacion 1", "Habitacion 2", "Habitacion 3", "Farmacia", "Quirofano 1", "Consultorio", "Deposito", "Recepcion"};
 String linUsb, linBt;
 String ultimaUid;
@@ -137,7 +138,17 @@ void dibujar(const char **f) {
 void enviar(const String &s) { Serial.println(s); BT.println(s); }
 void evento(const String &s) { enviar("EV," + s); }
 
-bool lucesBlancas(unsigned long ahora) { return !noche || ahora < blancaHasta || alerta; }
+bool lucesBlancas(unsigned long ahora) {
+  if (alerta || modoBlancas == 1) return true;
+  if (modoBlancas == 0) return false;
+  return !noche || ahora < blancaHasta;
+}
+bool lucesAmarillas() { return modoAmar == 2 ? noche : modoAmar == 1; }
+void escribir595(byte v) {
+  digitalWrite(P_LATCH, LOW);
+  shiftOut(P_DATA, P_CLOCK, MSBFIRST, v);   // Q7..Q0
+  digitalWrite(P_LATCH, HIGH);
+}
 
 void enviarEstado() {
   unsigned long ahora = millis();
@@ -150,12 +161,13 @@ void enviarEstado() {
   s += (int)round(temp * 10); s += ','; s += tempOk; s += ',';
   s += distPuerta; s += ','; s += luzNoche; s += ','; s += tempMax; s += ',';
   s += nTarj; s += ','; s += registrando; s += ',';
-  s += lucesBlancas(ahora); s += ','; s += llamada; s += ','; s += soloJefes; s += ','; s += (byte)(cuartos | FIJOS);
+  s += lucesBlancas(ahora); s += ','; s += llamada; s += ','; s += soloJefes; s += ','; s += cuartos; s += ',';
+  s += lucesAmarillas(); s += ','; s += modoBlancas; s += ','; s += modoAmar; s += ','; s += (lcd != 0);
   enviar(s);
 }
 
 // ---------- memoria ----------
-const byte FIRMA = 0xB4;
+const byte FIRMA = 0xB5;
 void guardar() {
   EEPROM.update(0, FIRMA);
   EEPROM.update(1, distPuerta);
@@ -164,6 +176,8 @@ void guardar() {
   EEPROM.update(4, nTarj);
   EEPROM.update(5, soloJefes);
   EEPROM.update(6, cuartos);
+  EEPROM.update(7, modoBlancas);
+  EEPROM.update(8, modoAmar);
   for (byte i = 0; i < MAX_TARJ; i++) {
     EEPROM.update(10 + i * 8, tarjLen[i]);
     for (byte j = 0; j < 7; j++) EEPROM.update(11 + i * 8 + j, tarjUid[i][j]);
@@ -174,7 +188,7 @@ void guardar() {
 void cargar() {
   for (byte i = 0; i < MAX_TARJ; i++) { tarjJefe[i] = false; tarjNom[i][0] = 0; }
   byte f = EEPROM.read(0);
-  if (f != 0xB3 && f != FIRMA) return;   // primera vez: valores de fabrica
+  if (f != 0xB3 && f != 0xB4 && f != FIRMA) return;   // primera vez: valores de fabrica
   distPuerta = constrain(EEPROM.read(1), 5, 150);
   luzNoche = constrain(EEPROM.read(2), 5, 90);
   tempMax = constrain(EEPROM.read(3), 20, 60);
@@ -183,9 +197,13 @@ void cargar() {
     tarjLen[i] = min((int)EEPROM.read(10 + i * 8), 7);
     for (byte j = 0; j < 7; j++) tarjUid[i][j] = EEPROM.read(11 + i * 8 + j);
   }
-  if (f == FIRMA) {   // la version anterior (0xB3) no tenia nombres
+  if (f == FIRMA) {   // modos del pasillo (desde 0xB5)
+    cuartos = EEPROM.read(6);
+    modoBlancas = EEPROM.read(7); if (modoBlancas > 2) modoBlancas = 2;
+    modoAmar = EEPROM.read(8); if (modoAmar > 2) modoAmar = 2;
+  }
+  if (f != 0xB3) {   // la version 0xB3 no tenia nombres
     soloJefes = EEPROM.read(5) == 1;
-    cuartos = cuartosDia = EEPROM.read(6);
     for (byte i = 0; i < MAX_TARJ; i++) {
       tarjJefe[i] = EEPROM.read(100 + i * 12) == 1;
       for (byte j = 0; j <= MAX_NOM; j++) tarjNom[i][j] = EEPROM.read(101 + i * 12 + j);
@@ -354,11 +372,15 @@ void orden(String s) {
     int b = s.indexOf(':', dos + 1);
     bool on = b > 0 && s.substring(b + 1).toInt() == 1;
     byte m = val == 0 ? 0xFF : (1 << (val - 1));
-    if (val != 0 && (m & FIJOS)) { evento(String("La luz de ") + CUARTO_NOM[val - 1] + " es fija (va a 5V)"); return; }
     cuartos = on ? (cuartos | m) : (cuartos & ~m);
-    if (!noche) cuartosDia = cuartos;
     guardar();
-    evento(String("Luz de ") + (val == 0 ? "Farmacia, Quirofano y Recepcion" : CUARTO_NOM[val - 1]) + (on ? " encendida" : " apagada"));
+    evento(String("Luz de ") + (val == 0 ? "todos los cuartos" : CUARTO_NOM[val - 1]) + (on ? " encendida" : " apagada"));
+  }
+  else if ((cmd == "BLANCAS" || cmd == "AMARILLAS") && val >= 0 && val <= 2) {
+    static const char *MODO[3] = {"apagadas", "prendidas", "en automatico"};
+    if (cmd == "BLANCAS") modoBlancas = val; else modoAmar = val;
+    guardar();
+    evento("Luces " + String(cmd == "BLANCAS" ? "blancas" : "amarillas") + " del pasillo " + MODO[val]);
   }
   else if (cmd == "TARJ" && dos > 0) {
     // TARJ:UID:jefe:NOMBRE
@@ -377,7 +399,12 @@ void orden(String s) {
     guardar();
     evento("Tarjeta " + id + " = " + nombreDe(i) + (tarjJefe[i] ? " (jefe)" : ""));
   }
-  else if (cmd == "ESTADO") { lcd1 = ""; }
+  else if (cmd == "ESTADO") {
+    if (!lcd) buscarLcd();   // por si se conecto despues de prender
+    if (lcd) { lcd->clear(); lcd->backlight(); evento("Pantalla LCD en la direccion 0x" + String(lcdDir, HEX) + ": si no ves letras, gira el tornillo azul de atras"); }
+    else evento("No se encuentra la pantalla LCD: revisa SDA -> SDA (A4), SCL -> SCL (A5), VCC 5V y GND");
+    lcd1 = "";
+  }
   else {
     // Solo se contesta a algo que parezca una orden (corta, letras/numeros/:). Asi el ruido o un
     // cable que devuelve lo que la placa envia no arma un bucle de "Orden desconocida".
@@ -399,13 +426,31 @@ void leer(Stream &p, String &lin) {
   }
 }
 
+// La pantalla se busca en todas las direcciones donde suelen venir (0x20-0x27 y 0x38-0x3F)
+void buscarLcd() {
+  lcdDir = 0;
+  for (byte d = 0x20; d <= 0x3F && !lcdDir; d++) {
+    if (d > 0x27 && d < 0x38) continue;
+    Wire.beginTransmission(d);
+    if (Wire.endTransmission() == 0) lcdDir = d;
+  }
+  if (!lcdDir) return;
+  lcd = new LiquidCrystal_I2C(lcdDir, 16, 2);
+  delay(50);
+  lcd->init(); lcd->init();   // algunas pantallas necesitan dos veces
+  lcd->backlight();
+  lcd->clear();
+  lcd->setCursor(0, 0); lcd->print("  INFINITY TEC");
+  lcd->setCursor(0, 1); lcd->print("Hospital intelig");
+}
+
 // ================= setup / loop =================
 void setup() {
   Serial.begin(9600);
   BT.begin(9600);
   pinMode(P_BUZ, OUTPUT); pinMode(P_VERDE, OUTPUT); pinMode(P_ROJO, OUTPUT);
   pinMode(P_AMAR, OUTPUT); pinMode(P_BLANCA, OUTPUT);
-  pinMode(P_FARM, OUTPUT); pinMode(P_QUIR, OUTPUT); pinMode(P_RECEP, OUTPUT);
+  pinMode(P_DATA, OUTPUT); pinMode(P_CLOCK, OUTPUT); pinMode(P_LATCH, OUTPUT);
   pinMode(P_TRIG, OUTPUT); pinMode(P_ECHO, INPUT);
   digitalWrite(P_TRIG, LOW);
   analogReadResolution(14);
@@ -414,20 +459,17 @@ void setup() {
   rfid.PCD_Init();
   matriz.begin();
   dibujar(F_CRUZ);
-  // pantalla: se busca en 0x27 y en 0x3F
   Wire.begin();
-  byte dir = 0;
-  for (byte d : {0x27, 0x3F}) { Wire.beginTransmission(d); if (Wire.endTransmission() == 0) { dir = d; break; } }
-  if (dir) { lcd = new LiquidCrystal_I2C(dir, 16, 2); lcd->init(); lcd->backlight(); lcd->setCursor(0, 0); lcd->print("  INFINITY TEC"); lcd->setCursor(0, 1); lcd->print("Hospital intelig"); }
+  buscarLcd();
   // prueba de luces al encender
-  digitalWrite(P_VERDE, HIGH); digitalWrite(P_ROJO, HIGH); digitalWrite(P_AMAR, HIGH); digitalWrite(P_BLANCA, HIGH); digitalWrite(P_FARM, HIGH); digitalWrite(P_QUIR, HIGH); digitalWrite(P_RECEP, HIGH); digitalWrite(P_BUZ, HIGH);
+  digitalWrite(P_VERDE, HIGH); digitalWrite(P_ROJO, HIGH); digitalWrite(P_AMAR, HIGH); digitalWrite(P_BLANCA, HIGH); escribir595(0xFF); digitalWrite(P_BUZ, HIGH);
   delay(150); digitalWrite(P_BUZ, LOW); delay(850);
   digitalWrite(P_VERDE, LOW); digitalWrite(P_ROJO, LOW); digitalWrite(P_AMAR, LOW);
   leerTemp();
   byte v = rfid.PCD_ReadRegister(MFRC522::VersionReg);
   evento("Hospital inteligente listo");
   evento(v == 0x00 || v == 0xFF ? "No se encuentra el lector RFID: revisa sus cables (3.3V)" : "Lector RFID listo (" + String(nTarj) + " tarjetas registradas)");
-  if (!dir) evento("No se encuentra la pantalla LCD: revisa SDA, SCL y 5V");
+  if (!lcd) evento("No se encuentra la pantalla LCD: revisa SDA, SCL y 5V");
   if (!tempOk) evento("El sensor de temperatura no da una lectura valida: revisa sus patas");
   enviarEstado();
 }
@@ -479,12 +521,9 @@ void loop() {
     else { long r = 220L * (16383 - a) / a; luz = 1000000L / (10000 + r); }
     if (!noche && luz < luzNoche) {
       noche = true; blancaHasta = 0; evento("Anochece: pasillo en modo noche (luces amarillas)");
-      cuartosDia = cuartos; cuartos &= 0x90;   // quedan Quirofano y Recepcion
-      evento("Noche: se apagan las luces de habitaciones, consultorio, deposito y farmacia");
     }
     else if (noche && luz > luzNoche + 5) {
       noche = false; evento("Amanece: pasillo con luces blancas");
-      cuartos = cuartosDia; evento("Dia: las luces de los cuartos vuelven como estaban");
     }
   }
   static unsigned long tTemp = 0;
@@ -506,19 +545,17 @@ void loop() {
   bool negado = ahora < negadoHasta;
   digitalWrite(P_VERDE, acceso || (sistema && !alerta && (ahora % 2000) < 80));   // latido cada 2 s
   digitalWrite(P_ROJO, alerta ? parpadeo : negado || (esperaFin && (ahora / 500) % 2));
-  digitalWrite(P_AMAR, noche);
+  digitalWrite(P_AMAR, lucesAmarillas());
   digitalWrite(P_BLANCA, lucesBlancas(ahora));
-  // luces de cuartos
+  // luces de cuartos (solo a mano; con alarma se prenden todas)
   byte ef = cuartos;
-  if (acceso) ef |= 8;                         // Farmacia se ilumina al abrir la puerta
   if (alerta) {
     ef = 0xFF;
     int b = (origen == 1 || origen == 4) ? 3 : origen == 2 ? 4 : -1;
     if (b >= 0 && !parpadeo) ef &= ~(1 << b);
   }
-  digitalWrite(P_FARM, (ef & 8) != 0);
-  digitalWrite(P_QUIR, (ef & 16) != 0);
-  digitalWrite(P_RECEP, (ef & 128) != 0);
+  static int ef595 = -1;
+  if (ef != ef595) { ef595 = ef; escribir595(ef); }
   bool buz = false;
   unsigned long f3 = ahora % 3000;
   if (alerta) buz = parpadeo;
