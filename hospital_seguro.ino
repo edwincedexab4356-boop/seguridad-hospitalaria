@@ -14,9 +14,10 @@
     LED amarillo (pasillo)    D5  -> 2x220 seguidas -> LED -> GND
     LED verde  (puerta abierta)  D3 -> 2x220 seguidas -> LED -> GND
     LED rojo   (alarma)          D4 -> 2x220 seguidas -> LED -> GND
-    Buzzer activo             + D2, - GND
-    Servo puerta de ENTRADA   cafe/negro GND, rojo 5V, naranja/amarillo (senal) -> D9
-    Servo puerta QUIROFANO    cafe/negro GND, rojo 5V, naranja/amarillo (senal) -> D10
+    Buzzer activo             cable ROJO (+) -> D2, cable NEGRO (-) -> GND
+    Servo puerta de ENTRADA   MARRON -> GND, ROJO -> 5V, AMARILLO (senal) -> D9
+    Servo puerta QUIROFANO    MARRON -> GND, ROJO -> 5V, AMARILLO (senal) -> D10
+    Ultrasonico HC-SR04 (en la entrada, mirando hacia afuera)   VCC 5V, GND, TRIG -> D12, ECHO -> D13
                               (los 2 servos juntos piden mucha corriente: si la placa se reinicia o la
                                LCD se borra al moverlos, dales 5 V de otra fuente y une los GND)
     Pantalla LCD 16x2 I2C     VCC 5V, GND, SDA -> SDA, SCL -> SCL   (la direccion se busca sola)
@@ -29,6 +30,8 @@
       LED rojo parpadea, buzzer suena, la puerta del quirofano se cierra y se prenden las habitaciones.
     - Puertas (servos): se abren desde la app y se cierran solas a los 10 s (o con la orden de cerrar).
       Mientras una puerta esta abierta el LED verde esta prendido. Con alarma la del quirofano no abre.
+    - Ultrasonico de la entrada: si alguien se acerca a menos de DIST cm, la puerta de entrada se abre sola
+      (puerta automatica) y se queda abierta mientras haya alguien; se cierra 10 s despues.
     - Habitaciones 1 y 2 y luz amarilla del pasillo: se prenden y apagan desde la app (se guardan).
     - LCD: estado, puertas abiertas con cuenta atras, alarmas. La matriz de la placa muestra el estado.
     - Al encender, el PIR necesita unos 30 s para calmarse: en ese tiempo no da alarma.
@@ -40,8 +43,10 @@
     USO:1 / USO:0                (quirofano en uso: el PIR solo prende la luz azul, sin alarma)
     HAB:n:1 / HAB:n:0            (luz de la habitacion n = 1 o 2; n = 0 las dos)
     AMARILLA:1 / AMARILLA:0      (luz amarilla del pasillo)
+    DIST:n                       (cm, 5-150: a que distancia se abre sola la entrada)
+    AUTO:1 / AUTO:0              (entrada automatica con el ultrasonico prendida / apagada)
   ENVIA cada 0,5 s:
-    ST,sistema,alerta,origen,pir,azul,entrada,puerta_q,seg_entrada,seg_q,hab1,hab2,amarilla,en_uso,lcd_ok,calentando
+    ST,sistema,alerta,origen,pir,azul,entrada,puerta_q,seg_entrada,seg_q,hab1,hab2,amarilla,en_uso,lcd_ok,calentando,distancia,persona,dist_entrada,auto
     origen: 0 ninguno, 1 intruso en quirofano, 3 manual (app)
   Y ademas:  EV,texto      LC,linea1,linea2 (lo que muestra la LCD)
 */
@@ -55,7 +60,8 @@
 #define BT Serial1   // HC-05 en D0/D1 (en el R4 el USB va aparte)
 
 const byte P_BUZ = 2, P_VERDE = 3, P_ROJO = 4, P_AMAR = 5, P_AZUL = 6, P_PIR = 7;
-const byte P_HAB1 = 8, P_SERVO_E = 9, P_SERVO_Q = 10, P_HAB2 = 11;
+const byte P_HAB1 = 8, P_SERVO_E = 9, P_SERVO_Q = 10, P_HAB2 = 11, P_TRIG = 12, P_ECHO = 13;
+const int DIST_MAX = 300;
 const int CERRADA = 0, ABIERTA = 90;            // grados del servo (cambialos si tu puerta va al reves)
 const unsigned long PUERTA_MS = 10000;          // tiempo abierta antes de cerrarse sola
 const unsigned long AZUL_MS = 10000;            // luz azul tras el ultimo movimiento
@@ -74,6 +80,10 @@ unsigned long azulHasta = 0;
 bool entrada = false, puertaQ = false;
 unsigned long entradaHasta = 0, puertaQHasta = 0;
 bool hab1 = true, hab2 = true, amarilla = true;
+int distEntrada = 20;      // cm: mas cerca = alguien en la entrada
+bool autoEntrada = true;   // abre sola con el ultrasonico
+int dist = DIST_MAX;
+bool persona = false;
 unsigned long pitidoHasta = 0;
 String linUsb, linBt, lcd1, lcd2;
 
@@ -110,25 +120,40 @@ void enviarEstado() {
   s += entrada; s += ','; s += puertaQ; s += ',';
   s += segRestantes(entrada, entradaHasta); s += ','; s += segRestantes(puertaQ, puertaQHasta); s += ',';
   s += hab1; s += ','; s += hab2; s += ','; s += amarilla; s += ','; s += enUso; s += ',';
-  s += (lcd != 0); s += ','; s += calentando();
+  s += (lcd != 0); s += ','; s += calentando(); s += ',';
+  s += dist; s += ','; s += persona; s += ','; s += distEntrada; s += ','; s += autoEntrada;
   enviar(s);
 }
 
 // ---------- memoria ----------
-const byte FIRMA = 0xC1;
+const byte FIRMA = 0xC2;
 void guardar() {
   EEPROM.update(0, FIRMA);
   EEPROM.update(1, hab1);
   EEPROM.update(2, hab2);
   EEPROM.update(3, amarilla);
   EEPROM.update(4, sistema);
+  EEPROM.update(5, distEntrada);
+  EEPROM.update(6, autoEntrada);
 }
 void cargar() {
-  if (EEPROM.read(0) != FIRMA) return;   // primera vez: valores de fabrica
+  byte f = EEPROM.read(0);
+  if (f != 0xC1 && f != FIRMA) return;   // primera vez: valores de fabrica
   hab1 = EEPROM.read(1) == 1;
   hab2 = EEPROM.read(2) == 1;
   amarilla = EEPROM.read(3) == 1;
   sistema = EEPROM.read(4) == 1;
+  if (f == FIRMA) { distEntrada = constrain(EEPROM.read(5), 5, 150); autoEntrada = EEPROM.read(6) == 1; }
+}
+
+// ---------- ultrasonico ----------
+int medir() {
+  digitalWrite(P_TRIG, LOW); delayMicroseconds(2);
+  digitalWrite(P_TRIG, HIGH); delayMicroseconds(10);
+  digitalWrite(P_TRIG, LOW);
+  unsigned long us = pulseIn(P_ECHO, HIGH, 20000);   // 20 ms = unos 3 m
+  if (!us) return DIST_MAX;
+  return min((int)(us / 58), DIST_MAX);
 }
 
 // ---------- puertas ----------
@@ -207,6 +232,8 @@ void orden(String s) {
   }
   else if (s.startsWith("ENTRADA:")) moverEntrada(valor(s, 8));
   else if (s == "ABRIR") moverEntrada(true);
+  else if (s.startsWith("DIST:")) { distEntrada = constrain(s.substring(5).toInt(), 5, 150); guardar(); evento("La entrada se abre a menos de " + String(distEntrada) + " cm"); }
+  else if (s.startsWith("AUTO:")) { autoEntrada = valor(s, 5); guardar(); evento(autoEntrada ? "Entrada automatica prendida" : "Entrada automatica apagada"); }
   else if (s.startsWith("PUERTA_Q:")) moverQuirofano(valor(s, 9));
   else if (s.startsWith("USO:")) { enUso = valor(s, 4); evento(enUso ? "Quirofano en uso (sin alarma del PIR)" : "Quirofano libre"); }
   else if (s.startsWith("HAB:")) {
@@ -253,6 +280,7 @@ void setup() {
   pinMode(P_BUZ, OUTPUT); pinMode(P_VERDE, OUTPUT); pinMode(P_ROJO, OUTPUT); pinMode(P_AMAR, OUTPUT);
   pinMode(P_AZUL, OUTPUT); pinMode(P_HAB1, OUTPUT); pinMode(P_HAB2, OUTPUT);
   pinMode(P_PIR, INPUT);
+  pinMode(P_TRIG, OUTPUT); pinMode(P_ECHO, INPUT); digitalWrite(P_TRIG, LOW);
   cargar();
   servoE.attach(P_SERVO_E); servoE.write(CERRADA);
   servoQ.attach(P_SERVO_Q); servoQ.write(CERRADA);
@@ -282,6 +310,17 @@ void loop() {
     if (sistema && !enUso && !calentando()) alertar(1, "ALARMA: alguien entro al quirofano");
   }
   pir = p;
+
+  // ---- ultrasonico de la entrada (cada 100 ms) ----
+  static unsigned long tUltra = 0;
+  if (ahora - tUltra >= 100) {
+    tUltra = ahora;
+    dist = medir();
+    bool pr = dist < distEntrada;
+    if (pr && !persona) evento("Alguien llega a la entrada (" + String(dist) + " cm)");
+    persona = pr;
+    if (persona && autoEntrada) moverEntrada(true);   // abre y mantiene abierta mientras haya alguien
+  }
 
   // ---- puertas que se cierran solas ----
   if (entrada && (long)(ahora - entradaHasta) >= 0) moverEntrada(false);
