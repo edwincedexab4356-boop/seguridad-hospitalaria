@@ -45,8 +45,11 @@
     AMARILLA:1 / AMARILLA:0      (luz amarilla del pasillo)
     DIST:n                       (cm, 5-150: a que distancia se abre sola la entrada)
     AUTO:1 / AUTO:0              (entrada automatica con el ultrasonico prendida / apagada)
+    ANG_E:n / ANG_Q:n            (grados que abre la entrada / el quirofano, 10-180; se guarda)
+    GIRO:n                       (calibracion del servo 360 de la entrada: ms que tarda en girar 90 grados, 50-2000)
+    INVERTIR                     (si la puerta de entrada abre hacia el lado contrario)
   ENVIA cada 0,5 s:
-    ST,sistema,alerta,origen,pir,azul,entrada,puerta_q,seg_entrada,seg_q,hab1,hab2,amarilla,en_uso,lcd_ok,calentando,distancia,persona,dist_entrada,auto
+    ST,sistema,alerta,origen,pir,azul,entrada,puerta_q,seg_entrada,seg_q,hab1,hab2,amarilla,en_uso,lcd_ok,calentando,distancia,persona,dist_entrada,auto,ang_e,ang_q,giro_ms,invertir
     origen: 0 ninguno, 1 intruso en quirofano, 3 manual (app)
   Y ademas:  EV,texto      LC,linea1,linea2 (lo que muestra la LCD)
 */
@@ -62,7 +65,11 @@
 const byte P_BUZ = 2, P_VERDE = 3, P_ROJO = 4, P_AMAR = 5, P_AZUL = 6, P_PIR = 7;
 const byte P_HAB1 = 8, P_SERVO_E = 9, P_SERVO_Q = 10, P_HAB2 = 11, P_TRIG = 12, P_ECHO = 13;
 const int DIST_MAX = 300;
-const int CERRADA = 0, ABIERTA = 90;            // grados del servo (cambialos si tu puerta va al reves)
+const int CERRADA = 0;     // grados del servo del quirofano cuando esta cerrada
+// El servo de la ENTRADA es de 360 (rotacion continua): no sabe en que angulo esta,
+// asi que se limita a 90 grados por TIEMPO: gira giroMs milisegundos y se detiene.
+const int PARADO = 90;     // con 90 el servo de 360 se queda quieto
+const int VELOC = 35;      // cuanto se aleja de 90 al girar (mas = mas rapido)
 const unsigned long PUERTA_MS = 10000;          // tiempo abierta antes de cerrarse sola
 const unsigned long AZUL_MS = 10000;            // luz azul tras el ultimo movimiento
 const unsigned long CALENTAR_MS = 30000;        // PIR calibrandose al encender
@@ -82,6 +89,14 @@ unsigned long entradaHasta = 0, puertaQHasta = 0;
 bool hab1 = true, hab2 = true, amarilla = true;
 int distEntrada = 20;      // cm: mas cerca = alguien en la entrada
 bool autoEntrada = true;   // abre sola con el ultrasonico
+int giroMs = 400;          // ms que tarda en girar 90 grados (se ajusta con GIRO:n)
+int angE = 90;             // grados que abre la entrada (ANG_E:n, 10-180)
+int angQ = 90;             // grados que abre el quirofano (ANG_Q:n, 10-180)
+long objE = 0;             // hasta donde debe girar la entrada
+bool invertir = false;     // INVERTIR si abre hacia el lado contrario
+long posE = 0;             // cuanto ha girado la entrada (0 = cerrada, giroMs = 90 grados)
+int dirE = 0;              // 1 abriendo, -1 cerrando, 0 quieto
+unsigned long tGiro = 0;
 int dist = DIST_MAX;
 bool persona = false;
 unsigned long pitidoHasta = 0;
@@ -121,7 +136,8 @@ void enviarEstado() {
   s += segRestantes(entrada, entradaHasta); s += ','; s += segRestantes(puertaQ, puertaQHasta); s += ',';
   s += hab1; s += ','; s += hab2; s += ','; s += amarilla; s += ','; s += enUso; s += ',';
   s += (lcd != 0); s += ','; s += calentando(); s += ',';
-  s += dist; s += ','; s += persona; s += ','; s += distEntrada; s += ','; s += autoEntrada;
+  s += dist; s += ','; s += persona; s += ','; s += distEntrada; s += ','; s += autoEntrada; s += ',';
+  s += angE; s += ','; s += angQ; s += ','; s += giroMs; s += ','; s += invertir;
   enviar(s);
 }
 
@@ -135,6 +151,10 @@ void guardar() {
   EEPROM.update(4, sistema);
   EEPROM.update(5, distEntrada);
   EEPROM.update(6, autoEntrada);
+  EEPROM.update(7, giroMs / 10);
+  EEPROM.update(8, invertir);
+  EEPROM.update(9, angE);
+  EEPROM.update(10, angQ);
 }
 void cargar() {
   byte f = EEPROM.read(0);
@@ -144,6 +164,13 @@ void cargar() {
   amarilla = EEPROM.read(3) == 1;
   sistema = EEPROM.read(4) == 1;
   if (f == FIRMA) { distEntrada = constrain(EEPROM.read(5), 5, 150); autoEntrada = EEPROM.read(6) == 1; }
+  byte g = EEPROM.read(7);
+  if (f == FIRMA && g >= 5 && g <= 200) {
+    giroMs = g * 10; invertir = EEPROM.read(8) == 1;
+    byte a = EEPROM.read(9), b = EEPROM.read(10);
+    if (a >= 10 && a <= 180) angE = a;
+    if (b >= 10 && b <= 180) angQ = b;
+  }
 }
 
 // ---------- ultrasonico ----------
@@ -157,11 +184,39 @@ int medir() {
 }
 
 // ---------- puertas ----------
+// servo de 360: gira hacia un lado hasta completar giroMs y se suelta (detach) para que no siga
+void girarEntrada(int d) {
+  dirE = d;
+  tGiro = millis();
+  if (!servoE.attached()) servoE.attach(P_SERVO_E);
+  int v = (d > 0) != invertir ? PARADO + VELOC : PARADO - VELOC;
+  servoE.write(v);
+}
+void pararEntrada() {
+  dirE = 0;
+  servoE.write(PARADO);
+  servoE.detach();
+  digitalWrite(P_SERVO_E, LOW);
+}
+long msAbierta() { return (long)giroMs * angE / 90; }
+void irEntrada(long obj) {   // gira hasta la posicion obj (en ms de giro)
+  objE = obj;
+  if (obj == posE) { if (dirE) pararEntrada(); return; }
+  int d = obj > posE ? 1 : -1;
+  if (d != dirE) girarEntrada(d);
+}
+void tickEntrada() {
+  if (!dirE) return;
+  unsigned long ahora = millis();
+  posE += (long)(ahora - tGiro) * dirE;
+  tGiro = ahora;
+  if ((dirE > 0 && posE >= objE) || (dirE < 0 && posE <= objE)) { posE = objE; pararEntrada(); }
+}
 void moverEntrada(bool abrir) {
   if (abrir) entradaHasta = millis() + PUERTA_MS;
   if (abrir == entrada) return;
   entrada = abrir;
-  servoE.write(abrir ? ABIERTA : CERRADA);
+  irEntrada(abrir ? msAbierta() : 0);
   if (abrir) pitidoHasta = millis() + 120;
   evento(abrir ? "Puerta de entrada abierta" : "Puerta de entrada cerrada");
 }
@@ -170,7 +225,7 @@ void moverQuirofano(bool abrir) {
   if (abrir) puertaQHasta = millis() + PUERTA_MS;
   if (abrir == puertaQ) return;
   puertaQ = abrir;
-  servoQ.write(abrir ? ABIERTA : CERRADA);
+  servoQ.write(abrir ? angQ : CERRADA);
   if (abrir) pitidoHasta = millis() + 120;
   evento(abrir ? "Puerta del quirofano abierta" : "Puerta del quirofano cerrada");
 }
@@ -233,6 +288,21 @@ void orden(String s) {
   else if (s.startsWith("ENTRADA:")) moverEntrada(valor(s, 8));
   else if (s == "ABRIR") moverEntrada(true);
   else if (s.startsWith("DIST:")) { distEntrada = constrain(s.substring(5).toInt(), 5, 150); guardar(); evento("La entrada se abre a menos de " + String(distEntrada) + " cm"); }
+  else if (s.startsWith("GIRO:")) {
+    giroMs = constrain(s.substring(5).toInt(), 50, 2000) / 10 * 10; guardar();   // posE no cambia: al cerrar deshace lo que giro de verdad
+    evento("Calibrado: 90 grados = " + String(giroMs) + " ms de giro");
+  }
+  else if (s.startsWith("ANG_E:")) {
+    angE = constrain(s.substring(6).toInt(), 10, 180); guardar();
+    if (entrada) irEntrada(msAbierta());
+    evento("La entrada abre " + String(angE) + " grados");
+  }
+  else if (s.startsWith("ANG_Q:")) {
+    angQ = constrain(s.substring(6).toInt(), 10, 180); guardar();
+    if (puertaQ) servoQ.write(angQ);
+    evento("El quirofano abre " + String(angQ) + " grados");
+  }
+  else if (s == "INVERTIR") { if (dirE) pararEntrada(); invertir = !invertir; guardar(); evento(invertir ? "Entrada: giro invertido" : "Entrada: giro normal"); }
   else if (s.startsWith("AUTO:")) { autoEntrada = valor(s, 5); guardar(); evento(autoEntrada ? "Entrada automatica prendida" : "Entrada automatica apagada"); }
   else if (s.startsWith("PUERTA_Q:")) moverQuirofano(valor(s, 9));
   else if (s.startsWith("USO:")) { enUso = valor(s, 4); evento(enUso ? "Quirofano en uso (sin alarma del PIR)" : "Quirofano libre"); }
@@ -282,7 +352,7 @@ void setup() {
   pinMode(P_PIR, INPUT);
   pinMode(P_TRIG, OUTPUT); pinMode(P_ECHO, INPUT); digitalWrite(P_TRIG, LOW);
   cargar();
-  servoE.attach(P_SERVO_E); servoE.write(CERRADA);
+  pinMode(P_SERVO_E, OUTPUT); digitalWrite(P_SERVO_E, LOW);   // el de 360 queda suelto y quieto: se supone cerrado
   servoQ.attach(P_SERVO_Q); servoQ.write(CERRADA);
   matriz.begin();
   dibujar(F_CRUZ);
@@ -323,6 +393,7 @@ void loop() {
   }
 
   // ---- puertas que se cierran solas ----
+  tickEntrada();
   if (entrada && (long)(ahora - entradaHasta) >= 0) moverEntrada(false);
   if (puertaQ && (long)(ahora - puertaQHasta) >= 0) moverQuirofano(false);
 
