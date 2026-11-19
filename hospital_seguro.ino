@@ -142,7 +142,7 @@ void enviarEstado() {
 }
 
 // ---------- memoria ----------
-const byte FIRMA = 0xC2;
+const byte FIRMA = 0xC3;   // 0xC3: con angulos de las puertas (bytes 7-11)
 void guardar() {
   EEPROM.update(0, FIRMA);
   EEPROM.update(1, hab1);
@@ -159,12 +159,12 @@ void guardar() {
 }
 void cargar() {
   byte f = EEPROM.read(0);
-  if (f != 0xC1 && f != FIRMA) return;   // primera vez: valores de fabrica
+  if (f != 0xC1 && f != 0xC2 && f != FIRMA) return;   // primera vez: valores de fabrica
   hab1 = EEPROM.read(1) == 1;
   hab2 = EEPROM.read(2) == 1;
   amarilla = EEPROM.read(3) == 1;
   sistema = EEPROM.read(4) == 1;
-  if (f == FIRMA) { distEntrada = constrain(EEPROM.read(5), 5, 150); autoEntrada = EEPROM.read(6) == 1; }
+  if (f != 0xC1) { distEntrada = constrain(EEPROM.read(5), 5, 150); autoEntrada = EEPROM.read(6) == 1; }
   byte g = EEPROM.read(7);
   if (f == FIRMA && g >= 5 && g <= 200) {
     giroMs = g * 10; invertir = EEPROM.read(8) == 1;
