@@ -48,6 +48,7 @@
     ANG_E:n / ANG_Q:n            (grados que abre la entrada 10-90 (servo 360) / el quirofano 10-180; se guarda)
     GIRO:n                       (calibracion del servo 360 de la entrada: ms que tarda en girar 90 grados, 20-2000)
     INVERTIR                     (si la puerta de entrada abre hacia el lado contrario)
+    ULTRA                        (prueba el ultrasonico y dice que pasa)
   ENVIA cada 0,5 s:
     ST,sistema,alerta,origen,pir,azul,entrada,puerta_q,seg_entrada,seg_q,hab1,hab2,amarilla,en_uso,lcd_ok,calentando,distancia,persona,dist_entrada,auto,ang_e,ang_q,giro_ms,invertir
     origen: 0 ninguno, 1 intruso en quirofano, 3 manual (app)
@@ -174,13 +175,40 @@ void cargar() {
 }
 
 // ---------- ultrasonico ----------
-int medir() {
-  digitalWrite(P_TRIG, LOW); delayMicroseconds(2);
-  digitalWrite(P_TRIG, HIGH); delayMicroseconds(10);
-  digitalWrite(P_TRIG, LOW);
-  unsigned long us = pulseIn(P_ECHO, HIGH, 20000);   // 20 ms = unos 3 m
+byte pTrig = P_TRIG, pEcho = P_ECHO;   // si los cables TRIG y ECHO estan al reves, se cambian solos
+int medirCon(byte t, byte e) {
+  pinMode(t, OUTPUT); pinMode(e, INPUT);
+  digitalWrite(t, LOW); delayMicroseconds(2);
+  digitalWrite(t, HIGH); delayMicroseconds(10);
+  digitalWrite(t, LOW);
+  unsigned long us = pulseIn(e, HIGH, 20000);   // 20 ms = unos 3 m
   if (!us) return DIST_MAX;
   return min((int)(us / 58), DIST_MAX);
+}
+int medir() { return medirCon(pTrig, pEcho); }
+int mejor(byte t, byte e) {   // la menor de 3 lecturas
+  int m = DIST_MAX;
+  for (byte i = 0; i < 3; i++) { m = min(m, medirCon(t, e)); delay(30); }
+  return m;
+}
+// Prueba el ultrasonico en los dos sentidos y dice que pasa
+void revisarUltra(bool avisar) {
+  pinMode(P_ECHO, INPUT); pinMode(P_TRIG, INPUT);
+  delay(5);
+  bool echoAlto = digitalRead(P_ECHO), trigAlto = digitalRead(P_TRIG);
+  int normal = mejor(P_TRIG, P_ECHO);
+  int alReves = mejor(P_ECHO, P_TRIG);
+  if (normal < DIST_MAX) { pTrig = P_TRIG; pEcho = P_ECHO; }
+  else if (alReves < DIST_MAX) { pTrig = P_ECHO; pEcho = P_TRIG; }
+  pinMode(pTrig, OUTPUT); pinMode(pEcho, INPUT); digitalWrite(pTrig, LOW);
+  if (!avisar && normal < DIST_MAX) return;
+  String r = "Ultrasonico: D12->D13 " + (normal < DIST_MAX ? String(normal) + " cm" : String("sin eco")) +
+             ", al reves " + (alReves < DIST_MAX ? String(alReves) + " cm" : String("sin eco")) +
+             ", en reposo D12=" + String(trigAlto) + " D13=" + String(echoAlto);
+  evento(r);
+  if (normal < DIST_MAX) evento("Ultrasonico bien conectado");
+  else if (alReves < DIST_MAX) evento("TRIG y ECHO estaban al reves: lo arregle por programa (o cambia los cables)");
+  else evento("El ultrasonico no responde: revisa VCC a 5V, GND, TRIG a D12 y ECHO a D13");
 }
 
 // ---------- puertas ----------
@@ -289,6 +317,7 @@ void orden(String s) {
     if (puertaQ) servoQ.write(angQ);
     evento("El quirofano abre " + String(angQ) + " grados");
   }
+  else if (s == "ULTRA") revisarUltra(true);
   else if (s == "INVERTIR") { invertir = !invertir; guardar(); evento(invertir ? "Entrada: giro invertido" : "Entrada: giro normal"); }
   else if (s.startsWith("AUTO:")) { autoEntrada = valor(s, 5); guardar(); evento(autoEntrada ? "Entrada automatica prendida" : "Entrada automatica apagada"); }
   else if (s.startsWith("PUERTA_Q:")) moverQuirofano(valor(s, 9));
@@ -338,6 +367,7 @@ void setup() {
   pinMode(P_AZUL, OUTPUT); pinMode(P_HAB1, OUTPUT); pinMode(P_HAB2, OUTPUT);
   pinMode(P_PIR, INPUT);
   pinMode(P_TRIG, OUTPUT); pinMode(P_ECHO, INPUT); digitalWrite(P_TRIG, LOW);
+  revisarUltra(true);
   cargar();
   pinMode(P_SERVO_E, OUTPUT); digitalWrite(P_SERVO_E, LOW);   // el de 360 queda suelto y quieto: se supone cerrado
   servoQ.attach(P_SERVO_Q); servoQ.write(CERRADA);
