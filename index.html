@@ -297,8 +297,8 @@ input[type=range]{width:100%;accent-color:var(--verde)}
       <line id="pQ" class="puertaS" x1="502" y1="180" x2="538" y2="180" stroke="#8a5a32" stroke-width="6" stroke-linecap="round" style="transform-origin:502px 180px"/>
       <line id="pE" class="puertaS" x1="312" y1="400" x2="368" y2="400" stroke="#8a5a32" stroke-width="6" stroke-linecap="round" style="transform-origin:312px 400px"/>
       <g id="servoQ"><rect x="494" y="184" width="14" height="9" rx="2" fill="#2f6fb0"/><text x="501" y="202" fill="#1d4f80" font-size="7" font-weight="700" text-anchor="middle">SERVO</text></g>
-      <path id="conoU" d="M386 404 L360 446 L412 446 Z" fill="#ff3d5a" opacity="0" style="transition:opacity .2s"/>
-      <g id="ultraS"><rect x="378" y="392" width="16" height="10" rx="2" fill="#2f6fb0"/><circle cx="383" cy="397" r="2.4" fill="#cfd6dd"/><circle cx="389" cy="397" r="2.4" fill="#cfd6dd"/><text x="398" y="390" fill="#1d4f80" font-size="7" font-weight="700">ULTRA</text></g>
+      <g id="conoU" opacity="0" style="transition:opacity .15s" fill="none" stroke="#ff3d5a" stroke-width="2" stroke-linecap="round"><path d="M378 410 q8 8 16 0"/><path d="M372 416 q14 13 28 0"/><path d="M366 422 q20 18 40 0"/></g>
+      <g id="ultraS"><rect x="378" y="392" width="16" height="10" rx="2" fill="#2f6fb0"/><circle cx="386" cy="397" r="3.2" fill="#cfd6dd"/><circle cx="386" cy="397" r="1.4" fill="#2f6fb0"/><text x="398" y="390" fill="#1d4f80" font-size="7" font-weight="700">SONIDO</text></g>
       <g id="servoE"><rect x="296" y="388" width="14" height="9" rx="2" fill="#2f6fb0"/><text x="292" y="384" fill="#1d4f80" font-size="7" font-weight="700" text-anchor="middle">SERVO</text></g>
       <!-- lámpara amarilla del pasillo -->
       <circle id="lampA" cx="275" cy="110" r="5.5" fill="#7d7560" stroke="#5e5640"/>
@@ -359,15 +359,14 @@ input[type=range]{width:100%;accent-color:var(--verde)}
         <div class="ctl">
           <div class="fila"><b>🚪 Puerta de entrada</b><button class="btn ver" id="bEAbrir">Abrir</button><button class="btn" id="bECerrar">Cerrar</button><span class="est" id="eE">Cerrada</span></div>
           <div class="fila"><b>🚪 Puerta del quirófano</b><button class="btn ver" id="bQAbrir">Abrir</button><button class="btn" id="bQCerrar">Cerrar</button><span class="est" id="eQ">Cerrada</span></div>
-          <div class="fila"><b>📡 Entrada automática</b><button class="btn" id="bAuto" aria-pressed="true">Sí</button><span class="est" id="eDist">—</span></div>
-          <div class="rango" style="margin:0 2px"><label for="rDist">Abre sola si alguien está a menos de <b id="vDist">20 cm</b></label><input type="range" id="rDist" min="5" max="150" value="20"></div>
+          <div class="fila"><b>👏 Entrada por sonido</b><button class="btn" id="bAuto" aria-pressed="true">Sí</button><span class="est" id="eDist">—</span></div>
           <div class="rango" style="margin:4px 2px 0"><label for="rAngE">Ángulo que abre la puerta de entrada <b id="vAngE">90°</b></label><input type="range" id="rAngE" min="10" max="180" step="5" value="90"></div>
           <div class="rango" style="margin:4px 2px 0"><label for="rAngQ">Ángulo que abre la puerta del quirófano <b id="vAngQ">90°</b></label><input type="range" id="rAngQ" min="10" max="180" step="5" value="90"></div>
 
           <div class="fila"><b>🩺 Quirófano en uso</b><button class="btn" id="bUso" aria-pressed="false">No</button><span class="est" id="eUso">El PIR da alarma</span></div>
           <div class="fila"><b>💡 Luces</b><button class="btn" id="bH1" aria-pressed="true">Hab 1</button><button class="btn" id="bH2" aria-pressed="true">Hab 2</button><button class="btn" id="bAm" aria-pressed="true">Amarilla</button></div>
         </div>
-        <p class="nota" style="margin-bottom:0">El ultrasónico de la entrada abre la puerta sola cuando alguien se acerca. Las puertas se cierran solas a los 10 s. Con alarma, la puerta del quirófano se cierra y no abre hasta silenciar. También puedes tocar las habitaciones o el pasillo en el plano.</p>
+        <p class="nota" style="margin-bottom:0">El sensor de sonido de la entrada abre la puerta sola con un aplauso o con pasos (su sensibilidad se ajusta con el tornillo azul del sensor). Las puertas se cierran solas a los 10 s. Con alarma, la puerta del quirófano se cierra y no abre hasta silenciar. También puedes tocar las habitaciones o el pasillo en el plano.</p>
       </div>
       <div class="card solo-sim" id="ctrlSim">
         <h2>Escenarios de prueba</h2>
@@ -376,6 +375,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
           <button class="esc" data-acc="visita"><span>🧑</span><b>Visitante</b><small>Entra y va a la Habitación 1</small></button>
           <button class="esc" data-acc="doctor"><span>🥼</span><b>Doctor a operar</b><small>Pone el quirófano en uso y entra</small></button>
           <button class="esc peligro" data-acc="intruso"><span>🕵</span><b>Intruso</b><small>Intenta entrar al quirófano</small></button>
+          <button class="esc" id="bAplauso"><span>👏</span><b>Aplauso</b><small>El sensor de sonido abre la entrada</small></button>
           <button class="esc peligro" id="bMov"><span>👋</span><b>Movimiento</b><small>El PIR ve algo en el quirófano</small></button>
           <button class="esc" data-acc="salir"><span>🚪</span><b>Todos salen</b><small>Vaciar el hospital</small></button>
           <button class="esc" id="bNoche"><span>🌙</span><b>Vista de noche</b><small>Solo visual, para ver las luces</small></button>
@@ -424,7 +424,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>LED verde (puerta abierta)</td><td><b>D3</b> → 2 resistencias de 220 Ω seguidas → LED → GND</td><td></td></tr>
     <tr><td>LED rojo (alarma)</td><td><b>D4</b> → 2 resistencias de 220 Ω seguidas → LED → GND</td><td></td></tr>
     <tr><td>Buzzer activo</td><td>cable <b>rojo (+)</b> → <b>D2</b> · cable <b>negro (−)</b> → GND</td><td></td></tr>
-    <tr><td>Sensor ultrasónico HC-SR04</td><td>TRIG → <b>D12</b> · ECHO → <b>D13</b> · VCC 5V · GND</td><td>En la entrada, mirando hacia afuera: abre la puerta sola cuando alguien se acerca</td></tr>
+    <tr><td>Sensor de sonido (KY-037 / KY-038)</td><td>DO → <b>D12</b> · + (VCC) → 5V · G → GND · AO sin conectar</td><td>En la entrada: un aplauso o pasos abren la puerta. Gira su tornillo azul hasta que su luz se apague en silencio y prenda al aplaudir</td></tr>
     <tr><td>Pantalla LCD 16×2 con I2C</td><td>SDA → <b>SDA</b> · SCL → <b>SCL</b> · VCC 5V · GND</td><td>Si no se ve el texto, gira el tornillito azul de atrás (contraste)</td></tr>
     <tr><td>Bluetooth HC-05 (para la app)</td><td>TXD → <b>D0</b> · RXD ← <b>D1</b> · VCC 5V · GND</td><td>RXD con divisor: D1 → 220 Ω → RXD, y de RXD a GND 2 resistencias de 220 Ω seguidas</td></tr>
   </table>
@@ -439,7 +439,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>Puerta del quirófano</td><td><code>PUERTA_Q:1</code> / <code>PUERTA_Q:0</code></td><td>Abre o cierra el servo del quirófano (se cierra solo a los 10 s; con alarma no abre)</td></tr>
     <tr><td>Quirófano en uso</td><td><code>USO:1</code> / <code>USO:0</code></td><td>En uso, el PIR solo prende la luz azul y no da alarma</td></tr>
     <tr><td>Luces de las habitaciones</td><td><code>HAB:n:1</code> / <code>HAB:n:0</code></td><td>Prende o apaga la habitación n (1 o 2; 0 = las dos)</td></tr>
-    <tr><td>Entrada automática / distancia</td><td><code>AUTO:1</code> / <code>AUTO:0</code> · <code>DIST:n</code></td><td>El ultrasónico abre la entrada sola si alguien está a menos de n cm (se guarda)</td></tr>
+    <tr><td>Entrada por sonido</td><td><code>AUTO:1</code> / <code>AUTO:0</code> · <code>SONIDO</code></td><td>Prende o apaga que un aplauso o pasos abran la entrada (se guarda). SONIDO dice cómo está el sensor</td></tr>
     <tr><td>Ángulo de las puertas</td><td><code>ANG_E:n</code> · <code>ANG_Q:n</code></td><td>Cuántos grados abre la entrada / el quirófano (10-180). Se guarda</td></tr>
     <tr><td>Luz amarilla</td><td><code>AMARILLA:1</code> / <code>AMARILLA:0</code></td><td>Prende o apaga la luz del pasillo</td></tr>
   </table>
@@ -458,8 +458,8 @@ input[type=range]{width:100%;accent-color:var(--verde)}
   <p>El sensor PIR detecta movimiento dentro del quirófano y prende la <b>luz azul</b>, que se apaga 10 segundos después del último movimiento. Si la vigilancia está encendida y el quirófano no está <b>en uso</b>, es un intruso: suena el buzzer, parpadea el LED rojo, se prenden las luces y la puerta del quirófano se cierra.</p>
   <h3>2 · Puertas automáticas (servomotores)</h3>
   <p>La puerta de entrada y la del quirófano se abren desde la app y se cierran solas a los 10 segundos. Mientras una está abierta se prende el LED verde y la pantalla muestra la cuenta atrás.</p>
-  <h3>2b · Entrada automática (ultrasónico)</h3>
-  <p>El sensor ultrasónico de la entrada mide la distancia. Si alguien se acerca, la puerta se abre sola y se queda abierta mientras haya alguien; luego se cierra a los 10 segundos.</p>
+  <h3>2b · Entrada automática (sensor de sonido)</h3>
+  <p>El sensor de sonido de la entrada escucha. Con un aplauso o con los pasos de alguien que llega, la puerta se abre sola; cada sonido la deja abierta 10 segundos más. El Arduino no hace caso al ruido de los servos ni del buzzer, para que la puerta no se abra sola por su propio ruido.</p>
   <h3>3 · Quirófano en uso</h3>
   <p>Cuando hay una operación, el doctor marca el quirófano <b>en uso</b>: el PIR sigue prendiendo la luz azul, pero no da alarma.</p>
   <h3>4 · Luces</h3>
@@ -498,7 +498,7 @@ const S = {
   modo: 'sim',
   sistema: true, alerta: false, origen: 0,
   pir: false, azul: false, entrada: false, puertaQ: false, segE: 0, segQ: 0,
-  hab1: true, hab2: true, amar: true, enUso: false, dist: 300, persona: false, distE: 20, auto: true, angE: 90, angQ: 90, giro: 400, inv: false, lcdOk: true, calentando: false, lcd: ['', ''],
+  hab1: true, hab2: true, amar: true, enUso: false, sonidos: 0, persona: false, auto: true, angE: 90, angQ: 90, giro: 400, inv: false, lcdOk: true, calentando: false, lcd: ['', ''],
   falla: {P:false, E:false},
   alertasHoy: 0, sonido: true, ocultaAlarma: false, noche: false,
   ultimoLatido: Date.now()
@@ -631,20 +631,21 @@ function salir(p){
 function todosSalen(){ if (!gente.length) return; log('Todas las personas salen'); [...gente].forEach(salir); }
 // el PIR ve a quien está dentro del quirófano
 const enQuirofano = p => p.g._pos && p.g._pos[0] > 482 && p.g._pos[1] < 178;
-const mundo = { dist: () => gente.some(p => p.g._pos && Math.abs(p.g._pos[0]-340) < 30 && p.g._pos[1] > 410 && p.g._pos[1] < 440) ? 12 + Math.round(Math.random()*2) : 180 + Math.round(Math.random()*4) };
+let aplausoHasta = 0;
+const mundo = { sonido: () => Date.now() < aplausoHasta || gente.some(p => p.g._pos && Math.abs(p.g._pos[0]-340) < 40 && p.g._pos[1] > 400 && p.g._pos[1] < 470) };
 const pirMundo = () => !S.falla.P && (Date.now() < movManualHasta || gente.some(enQuirofano));
 
 /* ---------- Arduino simulado: mismas reglas que el programa real ---------- */
 const VA = (() => {
   const d = { sis:1, alerta:0, origen:0, pir:0, azulHasta:0, entrada:0, puertaQ:0, eHasta:0, qHasta:0,
-    hab1:1, hab2:1, amar:1, enUso:0, lcd1:null, lcd2:null, dist:300, persona:0, distE:20, auto:1, angE:90, angQ:90, giro:400, inv:0 };
+    hab1:1, hab2:1, amar:1, enUso:0, lcd1:null, lcd2:null, sonidos:0, ultSon:0, silHasta:0, auto:1, angE:90, angQ:90, giro:400, inv:0 };
   const ev = t => procesar('EV,'+t);
   const vivo = () => !S.falla.E;
   const seg = (ab, h) => ab ? Math.max(0, Math.ceil((h - Date.now())/1000)) : 0;
-  function moverE(abrir){ if (abrir) d.eHasta = Date.now() + 10000; if (+abrir === d.entrada) return; d.entrada = +abrir; ev(abrir ? 'Puerta de entrada abierta' : 'Puerta de entrada cerrada'); }
+  function moverE(abrir){ if (abrir) d.eHasta = Date.now() + 10000; if (+abrir === d.entrada) return; d.entrada = +abrir; d.silHasta = Date.now() + 1500; ev(abrir ? 'Puerta de entrada abierta' : 'Puerta de entrada cerrada'); }
   function moverQ(abrir){
     if (abrir && d.alerta) { ev('Alarma activa: la puerta del quirofano no se abre'); return; }
-    if (abrir) d.qHasta = Date.now() + 10000; if (+abrir === d.puertaQ) return; d.puertaQ = +abrir; ev(abrir ? 'Puerta del quirofano abierta' : 'Puerta del quirofano cerrada');
+    if (abrir) d.qHasta = Date.now() + 10000; if (+abrir === d.puertaQ) return; d.puertaQ = +abrir; d.silHasta = Date.now() + 1500; ev(abrir ? 'Puerta del quirofano abierta' : 'Puerta del quirofano cerrada');
   }
   function alertar(o, t){ if (d.alerta) return; d.alerta = 1; d.origen = o; moverQ(false); ev(t); st(); }
   function silenciar(t){ if (!d.alerta) return; d.alerta = 0; d.origen = 0; ev(t); }
@@ -668,9 +669,14 @@ const VA = (() => {
     if (p) d.azulHasta = ahora + 10000;
     if (p && !d.pir) { ev('Movimiento en el quirofano'); if (d.sis && !d.enUso) alertar(1, 'ALARMA: alguien entro al quirofano'); }
     d.pir = p;
-    d.dist = mundo.dist(); const pr = d.dist < d.distE ? 1 : 0;
-    if (pr && !d.persona) ev('Alguien llega a la entrada ('+d.dist+' cm)');
-    d.persona = pr; if (pr && d.auto) moverE(true);
+    if (mundo.sonido() && ahora >= d.silHasta && !d.alerta) {   // igual que tickSonido() del Arduino
+      if (ahora - d.ultSon > 300) {
+        d.sonidos++;
+        if (!d.auto) { if (!d.entrada) ev('Sonido en la entrada (entrada automatica apagada)'); }
+        else { if (!d.entrada) ev('Sonido en la entrada: se abre la puerta'); moverE(true); }
+      }
+      d.ultSon = ahora;
+    }
     if (d.entrada && ahora >= d.eHasta) moverE(false);
     if (d.puertaQ && ahora >= d.qHasta) moverQ(false);
     pantalla();
@@ -678,7 +684,7 @@ const VA = (() => {
   function st(){
     if (!vivo() || S.modo !== 'sim') return;
     const a = Date.now();
-    procesar(['ST',d.sis,d.alerta,d.origen,d.pir,a<d.azulHasta?1:0,d.entrada,d.puertaQ,seg(d.entrada,d.eHasta),seg(d.puertaQ,d.qHasta),d.hab1,d.hab2,d.amar,d.enUso,1,0,d.dist,d.persona,d.distE,d.auto,d.angE,d.angQ,d.giro,d.inv].join(','));
+    procesar(['ST',d.sis,d.alerta,d.origen,d.pir,a<d.azulHasta?1:0,d.entrada,d.puertaQ,seg(d.entrada,d.eHasta),seg(d.puertaQ,d.qHasta),d.hab1,d.hab2,d.amar,d.enUso,1,0,d.sonidos,(d.sonidos && a - d.ultSon < 600) ? 1 : 0,0,d.auto,d.angE,d.angQ,d.giro,d.inv].join(','));
   }
   function orden(o){
     if (!vivo()) return;
@@ -693,7 +699,7 @@ const VA = (() => {
     else if (c === 'USO') { d.enUso = v === 1 ? 1 : 0; ev(d.enUso ? 'Quirofano en uso (sin alarma del PIR)' : 'Quirofano libre'); }
     else if (c === 'HAB' && partes.length >= 3) { const on = parseInt(partes[2]) === 1 ? 1 : 0; if (v === 0 || v === 1) d.hab1 = on; if (v === 0 || v === 2) d.hab2 = on; }
     else if (c === 'AMARILLA') d.amar = v === 1 ? 1 : 0;
-    else if (c === 'DIST' && v >= 0) { d.distE = Math.max(5, Math.min(150, v)); ev('La entrada se abre a menos de '+d.distE+' cm'); }
+    else if (c === 'SONIDO') ev('Sensor de sonido: silencio=0 ahora='+(mundo.sonido()?1:0)+' sonidos='+d.sonidos);
     else if (c === 'ANG_E' && v >= 0) { d.angE = Math.max(10, Math.min(180, v)); ev('La entrada abre '+d.angE+' grados'); }
     else if (c === 'ANG_Q' && v >= 0) { d.angQ = Math.max(10, Math.min(180, v)); ev('El quirofano abre '+d.angQ+' grados'); }
     else if (c === 'GIRO' && v >= 0) { d.giro = Math.round(Math.max(50, Math.min(2000, v)) / 10) * 10; ev('Calibrado: 90 grados = '+d.giro+' ms de giro'); }
@@ -763,9 +769,8 @@ function pintar(){
   $('eE').className = 'est ' + (S.entrada ? 'ok' : '');
   $('eQ').className = 'est ' + (S.alerta ? 'mal' : S.puertaQ ? 'ok' : '');
   $('bAuto').setAttribute('aria-pressed', String(S.auto)); $('bAuto').textContent = S.auto ? 'Sí' : 'No';
-  $('eDist').textContent = !vivo ? '—' : S.dist >= 300 ? 'Mide: nadie cerca' : 'Mide: '+S.dist+' cm';
+  $('eDist').textContent = !vivo ? '—' : S.persona ? '🔊 ¡Escuchó algo!' : 'Escuchando… ('+S.sonidos+' sonidos)';
   if (Date.now() - tocadoAng > 1500) { $('rAngE').value = S.angE; $('vAngE').textContent = S.angE+'°'; $('rAngQ').value = S.angQ; $('vAngQ').textContent = S.angQ+'°'; }
-  if (Date.now() - tocadoDist > 1500) { $('rDist').value = S.distE; $('vDist').textContent = S.distE+' cm'; }
   $('bUso').setAttribute('aria-pressed', String(S.enUso)); $('bUso').textContent = S.enUso ? 'Sí, en uso' : 'No';
   $('eUso').textContent = S.enUso ? 'El PIR solo prende la luz azul' : 'El PIR da alarma';
   $('bH1').setAttribute('aria-pressed', String(S.hab1));
@@ -830,7 +835,7 @@ function procesar(l){
     S.azul = !!n[4]; S.entrada = !!n[5]; S.puertaQ = !!n[6]; S.segE = n[7]; S.segQ = n[8];
     S.hab1 = !!n[9]; S.hab2 = !!n[10]; S.amar = !!n[11]; S.enUso = !!n[12];
     S.lcdOk = !!n[13]; S.calentando = p.length >= 16 && !!n[14];
-    if (p.length >= 20) { S.dist = n[15]; S.persona = !!n[16]; S.distE = n[17]; S.auto = !!n[18]; }
+    if (p.length >= 20) { S.sonidos = n[15]; S.persona = !!n[16]; S.auto = !!n[18]; }
     if (p.length >= 24) { S.angE = n[19]; S.angQ = n[20]; S.giro = n[21]; S.inv = !!n[22]; }
     S.pir = pir;
     if (alerta && !S.alerta) dispararAlerta(origen);
@@ -894,8 +899,7 @@ $('bECerrar').onclick = ()=>enviar('ENTRADA:0');
 $('bQAbrir').onclick = ()=>enviar('PUERTA_Q:1');
 $('bQCerrar').onclick = ()=>enviar('PUERTA_Q:0');
 
-$('rDist').oninput = e => { tocadoDist = Date.now(); $('vDist').textContent = e.target.value+' cm'; };
-$('rDist').onchange = e => { tocadoDist = Date.now(); enviar('DIST:'+e.target.value); };
+$('bAplauso').onclick = ()=>{ aplausoHasta = Date.now() + 250; log('👏 Alguien aplaude en la entrada'); };
 $('bAuto').onclick = ()=>enviar('AUTO:'+(S.auto?0:1));
 ['E','Q'].forEach(k => {
   $('rAng'+k).oninput = e => { tocadoAng = Date.now(); $('vAng'+k).textContent = e.target.value+'°'; };

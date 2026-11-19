@@ -17,7 +17,8 @@
     Buzzer activo             cable ROJO (+) -> D2, cable NEGRO (-) -> GND
     Servo puerta de ENTRADA   MARRON -> GND, ROJO -> 5V, AMARILLO (senal) -> D9
     Servo puerta QUIROFANO    MARRON -> GND, ROJO -> 5V, AMARILLO (senal) -> D10
-    Ultrasonico HC-SR04 (en la entrada, mirando hacia afuera)   VCC 5V, GND, TRIG -> D12, ECHO -> D13
+    Sensor de sonido (KY-037/KY-038, en la entrada)   VCC (+) 5V, GND (G) GND, DO (salida digital) -> D12
+                              (AO no se usa; la sensibilidad se ajusta con su tornillo azul)
                               (los 2 servos juntos piden mucha corriente: si la placa se reinicia o la
                                LCD se borra al moverlos, dales 5 V de otra fuente y une los GND)
     Pantalla LCD 16x2 I2C     VCC 5V, GND, SDA -> SDA, SCL -> SCL   (la direccion se busca sola)
@@ -30,8 +31,8 @@
       LED rojo parpadea, buzzer suena, la puerta del quirofano se cierra y se prenden las habitaciones.
     - Puertas (servos): se abren desde la app y se cierran solas a los 10 s (o con la orden de cerrar).
       Mientras una puerta esta abierta el LED verde esta prendido. Con alarma la del quirofano no abre.
-    - Ultrasonico de la entrada: si alguien se acerca a menos de DIST cm, la puerta de entrada se abre sola
-      (puerta automatica) y se queda abierta mientras haya alguien; se cierra 10 s despues.
+    - Sensor de sonido de la entrada: un aplauso o pasos abren la puerta de entrada sola (puerta automatica);
+      cada sonido la mantiene abierta 10 s mas. Ignora el ruido de los servos y del buzzer.
     - Habitaciones 1 y 2 y luz amarilla del pasillo: se prenden y apagan desde la app (se guardan).
     - LCD: estado, puertas abiertas con cuenta atras, alarmas. La matriz de la placa muestra el estado.
     - Al encender, el PIR necesita unos 30 s para calmarse: en ese tiempo no da alarma.
@@ -43,12 +44,11 @@
     USO:1 / USO:0                (quirofano en uso: el PIR solo prende la luz azul, sin alarma)
     HAB:n:1 / HAB:n:0            (luz de la habitacion n = 1 o 2; n = 0 las dos)
     AMARILLA:1 / AMARILLA:0      (luz amarilla del pasillo)
-    DIST:n                       (cm, 5-150: a que distancia se abre sola la entrada)
-    AUTO:1 / AUTO:0              (entrada automatica con el ultrasonico prendida / apagada)
+    AUTO:1 / AUTO:0              (entrada automatica con el sensor de sonido prendida / apagada)
     ANG_E:n / ANG_Q:n            (grados que abre la entrada / el quirofano, 10-180; se guarda)
-    ULTRA                        (prueba el ultrasonico y dice que pasa)
+    SONIDO                       (dice como esta el sensor de sonido)
   ENVIA cada 0,5 s:
-    ST,sistema,alerta,origen,pir,azul,entrada,puerta_q,seg_entrada,seg_q,hab1,hab2,amarilla,en_uso,lcd_ok,calentando,distancia,persona,dist_entrada,auto,ang_e,ang_q,0,0
+    ST,sistema,alerta,origen,pir,azul,entrada,puerta_q,seg_entrada,seg_q,hab1,hab2,amarilla,en_uso,lcd_ok,calentando,sonidos,oyendo,0,auto,ang_e,ang_q,0,0
     origen: 0 ninguno, 1 intruso en quirofano, 3 manual (app)
   Y ademas:  EV,texto      LC,linea1,linea2 (lo que muestra la LCD)
 */
@@ -62,8 +62,7 @@
 #define BT Serial1   // HC-05 en D0/D1 (en el R4 el USB va aparte)
 
 const byte P_BUZ = 2, P_VERDE = 3, P_ROJO = 4, P_AMAR = 5, P_AZUL = 6, P_PIR = 7;
-const byte P_HAB1 = 8, P_SERVO_E = 9, P_SERVO_Q = 10, P_HAB2 = 11, P_TRIG = 12, P_ECHO = 13;
-const int DIST_MAX = 300;
+const byte P_HAB1 = 8, P_SERVO_E = 9, P_SERVO_Q = 10, P_HAB2 = 11, P_SONIDO = 12;
 const int CERRADA = 0;     // grados de los servos con la puerta cerrada
 const unsigned long PUERTA_MS = 10000;          // tiempo abierta antes de cerrarse sola
 const unsigned long AZUL_MS = 10000;            // luz azul tras el ultimo movimiento
@@ -82,12 +81,12 @@ unsigned long azulHasta = 0;
 bool entrada = false, puertaQ = false;
 unsigned long entradaHasta = 0, puertaQHasta = 0;
 bool hab1 = true, hab2 = true, amarilla = true;
-int distEntrada = 20;      // cm: mas cerca = alguien en la entrada
-bool autoEntrada = true;   // abre sola con el ultrasonico
+bool autoEntrada = true;   // abre sola con el sensor de sonido
 int angE = 90;             // grados que abre la entrada (ANG_E:n, 10-180)
 int angQ = 90;             // grados que abre el quirofano (ANG_Q:n, 10-180)
-int dist = DIST_MAX;
-bool persona = false;
+bool reposoS = LOW;        // nivel de DO en silencio (se detecta solo al prender)
+unsigned long ultimoSonido = 0, silencioHasta = 0, activoDesde = 0;
+unsigned int sonidos = 0;  // sonidos escuchados desde que prendio
 unsigned long pitidoHasta = 0;
 String linUsb, linBt, lcd1, lcd2;
 
@@ -125,7 +124,7 @@ void enviarEstado() {
   s += segRestantes(entrada, entradaHasta); s += ','; s += segRestantes(puertaQ, puertaQHasta); s += ',';
   s += hab1; s += ','; s += hab2; s += ','; s += amarilla; s += ','; s += enUso; s += ',';
   s += (lcd != 0); s += ','; s += calentando(); s += ',';
-  s += dist; s += ','; s += persona; s += ','; s += distEntrada; s += ','; s += autoEntrada; s += ',';
+  s += sonidos; s += ','; s += oyendo(); s += ",0,"; s += autoEntrada; s += ',';
   s += angE; s += ','; s += angQ; s += ",0,0";   // los dos ultimos ya no se usan
   enviar(s);
 }
@@ -138,7 +137,6 @@ void guardar() {
   EEPROM.update(2, hab2);
   EEPROM.update(3, amarilla);
   EEPROM.update(4, sistema);
-  EEPROM.update(5, distEntrada);
   EEPROM.update(6, autoEntrada);
   EEPROM.update(9, angE & 0xFF);
   EEPROM.update(11, angE >> 8);
@@ -151,7 +149,7 @@ void cargar() {
   hab2 = EEPROM.read(2) == 1;
   amarilla = EEPROM.read(3) == 1;
   sistema = EEPROM.read(4) == 1;
-  if (f != 0xC1) { distEntrada = constrain(EEPROM.read(5), 5, 150); autoEntrada = EEPROM.read(6) == 1; }
+  if (f != 0xC1) autoEntrada = EEPROM.read(6) == 1;
   if (f == FIRMA) {
     int a = EEPROM.read(9) | (EEPROM.read(11) << 8);
     byte b = EEPROM.read(10);
@@ -160,77 +158,31 @@ void cargar() {
   }
 }
 
-// ---------- ultrasonico ----------
-byte pTrig = P_TRIG, pEcho = P_ECHO;   // si los cables TRIG y ECHO estan al reves, se cambian solos
-unsigned int trabas = 0;   // veces que el sensor se quedo trabado con ECHO en alto
-int medirCon(byte t, byte e) {
-  pinMode(t, OUTPUT); pinMode(e, INPUT);
-  // Muchos HC-SR04 se traban con ECHO en alto cuando un pulso no vuelve, y ya no miden mas.
-  // Se destraban bajando ECHO a la fuerza un momento.
-  if (digitalRead(e) == HIGH) {
-    trabas++;
-    pinMode(e, OUTPUT); digitalWrite(e, LOW);
-    delay(2);
-    pinMode(e, INPUT);
-    delay(1);
-  }
-  digitalWrite(t, LOW); delayMicroseconds(2);
-  digitalWrite(t, HIGH); delayMicroseconds(10);
-  digitalWrite(t, LOW);
-  unsigned long us = pulseIn(e, HIGH, 20000);   // 20 ms = unos 3 m
-  if (us < 116) return DIST_MAX;   // menos de 2 cm no es un eco real (ruido o sensor sin 5V)
-  return min((int)(us / 58), DIST_MAX);
+// ---------- sensor de sonido ----------
+bool oyendo() { return sonidos && millis() - ultimoSonido < 600; }
+void calibrarSonido() {      // en silencio: mira si DO queda en 0 o en 1
+  int altos = 0;
+  for (int i = 0; i < 200; i++) { altos += digitalRead(P_SONIDO); delay(1); }
+  reposoS = altos > 100;
 }
-int medir() { return medirCon(pTrig, pEcho); }
-int mejor(byte t, byte e) {   // la menor de 3 lecturas
-  int m = DIST_MAX;
-  for (byte i = 0; i < 3; i++) { m = min(m, medirCon(t, e)); delay(30); }
-  return m;
-}
-// Diagnostico fino: dice si ECHO esta "suelto" (flotando) o si algo lo empuja a 5V,
-// y cuantas veces cambia ECHO despues de un disparo de TRIG.
-void diagnosticoEcho() {
-  pinMode(P_TRIG, OUTPUT); digitalWrite(P_TRIG, LOW);
-  pinMode(P_ECHO, OUTPUT); digitalWrite(P_ECHO, LOW); delay(5);
-  pinMode(P_ECHO, INPUT);
-  delayMicroseconds(20); bool a = digitalRead(P_ECHO);
-  delay(1);              bool b = digitalRead(P_ECHO);
-  delay(20);             bool c = digitalRead(P_ECHO);
-  delay(100);            bool d = digitalRead(P_ECHO);
-  evento("ECHO despues de bajarlo: 20us=" + String(a) + " 1ms=" + String(b) + " 20ms=" + String(c) + " 120ms=" + String(d));
-  pinMode(P_ECHO, INPUT_PULLUP); delay(2); bool pu = digitalRead(P_ECHO);
-  pinMode(P_ECHO, INPUT);
-  evento("ECHO con pullup=" + String(pu));
-  // disparo y cuento cambios de ECHO durante 60 ms
-  delay(60);
-  bool antes = digitalRead(P_ECHO); int cambios = 0; unsigned long altoUs = 0, t0 = micros(), tAlto = 0;
-  digitalWrite(P_TRIG, HIGH); delayMicroseconds(10); digitalWrite(P_TRIG, LOW);
-  while (micros() - t0 < 60000) {
-    bool v = digitalRead(P_ECHO);
-    if (v != antes) { cambios++; if (v) tAlto = micros(); else altoUs += micros() - tAlto; antes = v; }
+void tickSonido() {
+  unsigned long ahora = millis();
+  bool v = digitalRead(P_SONIDO);
+  if (v == reposoS) { activoDesde = 0; return; }
+  if (!activoDesde) activoDesde = ahora;
+  else if (ahora - activoDesde > 3000) {   // 3 s seguidos "oyendo": esta demasiado sensible
+    reposoS = v; activoDesde = 0;
+    evento("Sensor de sonido muy sensible: gira su tornillo azul hasta que se apague su luz");
+    return;
   }
-  evento("Tras disparar TRIG: ECHO cambio " + String(cambios) + " veces, pulso " + String(altoUs) + " us, termina en " + String(antes));
-}
-
-// Prueba el ultrasonico en D12/D13 y en A0/A1 (en los dos sentidos) y usa el que responda
-void revisarUltra(bool avisar) {
-  const byte pares[4][2] = {{P_TRIG, P_ECHO}, {P_ECHO, P_TRIG}, {A0, A1}, {A1, A0}};
-  const char *nombres[4] = {"TRIG D12/ECHO D13", "TRIG D13/ECHO D12", "TRIG A0/ECHO A1", "TRIG A1/ECHO A0"};
-  int res[4];
-  int bueno = -1;
-  for (byte k = 0; k < 4; k++) {
-    res[k] = mejor(pares[k][0], pares[k][1]);
-    pinMode(pares[k][0], INPUT); pinMode(pares[k][1], INPUT);
-    if (res[k] < DIST_MAX && bueno < 0) bueno = k;
-  }
-  if (bueno >= 0) { pTrig = pares[bueno][0]; pEcho = pares[bueno][1]; }
-  pinMode(pTrig, OUTPUT); pinMode(pEcho, INPUT); digitalWrite(pTrig, LOW);
-  if (!avisar && bueno == 0) return;
-  String r = "Ultrasonico:";
-  for (byte k = 0; k < 4; k++) r += String(" ") + nombres[k] + "=" + (res[k] < DIST_MAX ? String(res[k]) + "cm" : String("nada")) + ";";
-  evento(r);
-  if (bueno >= 0) evento(String("Ultrasonico responde con ") + nombres[bueno] + ": ya lo uso asi");
-  else evento("El ultrasonico no responde en ningun pin: revisa VCC a 5V y GND, o el sensor esta danado");
+  if ((long)(ahora - silencioHasta) < 0 || alerta) return;   // ruido de servos / buzzer / alarma
+  bool nuevo = ahora - ultimoSonido > 300;
+  ultimoSonido = ahora;
+  if (!nuevo) return;
+  sonidos++;
+  if (!autoEntrada) { if (!entrada) evento("Sonido en la entrada (entrada automatica apagada)"); return; }
+  if (!entrada) evento("Sonido en la entrada: se abre la puerta");
+  moverEntrada(true);   // abre, o la mantiene abierta 10 s mas
 }
 
 // ---------- puertas ----------
@@ -239,6 +191,7 @@ void moverEntrada(bool abrir) {
   if (abrir == entrada) return;
   entrada = abrir;
   servoE.write(abrir ? angE : CERRADA);
+  silencioHasta = millis() + 1500;   // que el sensor de sonido no oiga al servo
   if (abrir) pitidoHasta = millis() + 120;
   evento(abrir ? "Puerta de entrada abierta" : "Puerta de entrada cerrada");
 }
@@ -248,6 +201,7 @@ void moverQuirofano(bool abrir) {
   if (abrir == puertaQ) return;
   puertaQ = abrir;
   servoQ.write(abrir ? angQ : CERRADA);
+  silencioHasta = millis() + 1500;   // que el sensor de sonido no oiga al servo
   if (abrir) pitidoHasta = millis() + 120;
   evento(abrir ? "Puerta del quirofano abierta" : "Puerta del quirofano cerrada");
 }
@@ -263,6 +217,7 @@ void alertar(byte o, const String &texto) {
 void silenciar(const char *como) {
   if (!alerta) return;
   alerta = false; origen = 0;
+  silencioHasta = millis() + 1000;   // el buzzer se acaba de apagar
   evento(como);
 }
 
@@ -309,7 +264,6 @@ void orden(String s) {
   }
   else if (s.startsWith("ENTRADA:")) moverEntrada(valor(s, 8));
   else if (s == "ABRIR") moverEntrada(true);
-  else if (s.startsWith("DIST:")) { distEntrada = constrain(s.substring(5).toInt(), 5, 150); guardar(); evento("La entrada se abre a menos de " + String(distEntrada) + " cm"); }
   else if (s.startsWith("ANG_E:")) {
     angE = constrain(s.substring(6).toInt(), 10, 180); guardar();
     if (entrada) servoE.write(angE);
@@ -320,8 +274,7 @@ void orden(String s) {
     if (puertaQ) servoQ.write(angQ);
     evento("El quirofano abre " + String(angQ) + " grados");
   }
-  else if (s == "ULTRA") revisarUltra(true);
-  else if (s == "ULTRA2") diagnosticoEcho();
+  else if (s == "SONIDO") evento("Sensor de sonido: silencio=" + String(reposoS) + " ahora=" + String(digitalRead(P_SONIDO)) + " sonidos=" + String(sonidos));
   else if (s.startsWith("AUTO:")) { autoEntrada = valor(s, 5); guardar(); evento(autoEntrada ? "Entrada automatica prendida" : "Entrada automatica apagada"); }
   else if (s.startsWith("PUERTA_Q:")) moverQuirofano(valor(s, 9));
   else if (s.startsWith("USO:")) { enUso = valor(s, 4); evento(enUso ? "Quirofano en uso (sin alarma del PIR)" : "Quirofano libre"); }
@@ -369,8 +322,7 @@ void setup() {
   pinMode(P_BUZ, OUTPUT); pinMode(P_VERDE, OUTPUT); pinMode(P_ROJO, OUTPUT); pinMode(P_AMAR, OUTPUT);
   pinMode(P_AZUL, OUTPUT); pinMode(P_HAB1, OUTPUT); pinMode(P_HAB2, OUTPUT);
   pinMode(P_PIR, INPUT);
-  pinMode(P_TRIG, OUTPUT); pinMode(P_ECHO, INPUT); digitalWrite(P_TRIG, LOW);
-  revisarUltra(true);
+  pinMode(P_SONIDO, INPUT);
   cargar();
   servoE.attach(P_SERVO_E); servoE.write(CERRADA);
   servoQ.attach(P_SERVO_Q); servoQ.write(CERRADA);
@@ -383,7 +335,10 @@ void setup() {
   for (byte p : leds) digitalWrite(p, HIGH);
   digitalWrite(P_BUZ, HIGH); delay(150); digitalWrite(P_BUZ, LOW); delay(850);
   for (byte p : leds) digitalWrite(p, LOW);
+  calibrarSonido();
+  silencioHasta = millis() + 1500;
   evento("Hospital inteligente listo");
+  evento(String("Sensor de sonido en D12 (en silencio marca ") + reposoS + ")");
   if (!lcd) evento("No se encuentra la pantalla LCD: revisa SDA, SCL, 5V y GND");
 }
 
@@ -401,16 +356,8 @@ void loop() {
   }
   pir = p;
 
-  // ---- ultrasonico de la entrada (cada 100 ms) ----
-  static unsigned long tUltra = 0;
-  if (ahora - tUltra >= 100) {
-    tUltra = ahora;
-    dist = medir();
-    bool pr = dist < distEntrada;
-    if (pr && !persona) evento("Alguien llega a la entrada (" + String(dist) + " cm)");
-    persona = pr;
-    if (persona && autoEntrada) moverEntrada(true);   // abre y mantiene abierta mientras haya alguien
-  }
+  // ---- sensor de sonido de la entrada ----
+  tickSonido();
 
   // ---- puertas que se cierran solas ----
   if (entrada && (long)(ahora - entradaHasta) >= 0) moverEntrada(false);
