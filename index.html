@@ -364,7 +364,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
           <div class="rango" style="margin:4px 2px 0"><label for="rAngQ">Ángulo que abre la puerta del quirófano <b id="vAngQ">90°</b></label><input type="range" id="rAngQ" min="10" max="180" step="5" value="90"></div>
 
           <div class="fila"><b>🩺 Quirófano en uso</b><button class="btn" id="bUso" aria-pressed="false">No</button><span class="est" id="eUso">El PIR da alarma</span></div>
-          <div class="fila"><b>💡 Luces</b><button class="btn" id="bH1" aria-pressed="true">Hab 1</button><button class="btn" id="bH2" aria-pressed="true">Hab 2</button><button class="btn" id="bAm" aria-pressed="true">Amarilla</button></div>
+          <div class="fila"><b>💡 Luces</b><button class="btn" id="bH1" aria-pressed="true">Hab 1</button><button class="btn" id="bH2" aria-pressed="true">Hab 2</button><button class="btn" id="bAm" aria-pressed="true">Amarilla</button><button class="btn" id="bTodas">Apagar todas</button></div>
         </div>
         <p class="nota" style="margin-bottom:0">El sensor de sonido de la entrada abre la puerta sola con un aplauso o con pasos (su sensibilidad se ajusta con el tornillo azul del sensor). La puerta del quirófano solo abre con la clave (3 claves malas = alarma) y al abrirla queda <b>en uso</b>. Las puertas se cierran solas a los 10 s. Con alarma, la puerta del quirófano se cierra y no abre hasta silenciar. También puedes tocar las habitaciones o el pasillo en el plano.</p>
       </div>
@@ -442,6 +442,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>Entrada por sonido</td><td><code>AUTO:1</code> / <code>AUTO:0</code> · <code>SONIDO</code></td><td>Prende o apaga que un aplauso o pasos abran la entrada (se guarda). SONIDO dice cómo está el sensor</td></tr>
     <tr><td>Ángulo de las puertas</td><td><code>ANG_E:n</code> · <code>ANG_Q:n</code></td><td>Cuántos grados abre la entrada / el quirófano (10-180). Se guarda</td></tr>
     <tr><td>Luz amarilla</td><td><code>AMARILLA:1</code> / <code>AMARILLA:0</code></td><td>Prende o apaga la luz del pasillo</td></tr>
+    <tr><td>Todas las luces</td><td><code>LUCES:1</code> / <code>LUCES:0</code></td><td>Prende o apaga juntas Hab 1, Hab 2 y la amarilla. Cada orden suena con un pitido corto</td></tr>
   </table>
   <p class="nota">El Arduino avisa dos veces por segundo que está vivo. Si deja de responder, la página marca <b>EQUIPO SIN RESPUESTA</b>, y la alerta manual igual suena y vibra en el celular.</p>
   <h3>Programa del Arduino</h3>
@@ -710,6 +711,7 @@ const VA = (() => {
     else if (c === 'USO') { d.enUso = v === 1 ? 1 : 0; ev(d.enUso ? 'Quirofano en uso (sin alarma del PIR)' : 'Quirofano libre'); }
     else if (c === 'HAB' && partes.length >= 3) { const on = parseInt(partes[2]) === 1 ? 1 : 0; if (v === 0 || v === 1) d.hab1 = on; if (v === 0 || v === 2) d.hab2 = on; }
     else if (c === 'AMARILLA') d.amar = v === 1 ? 1 : 0;
+    else if (c === 'LUCES') { d.hab1 = d.hab2 = d.amar = v === 1 ? 1 : 0; ev(v === 1 ? 'Todas las luces prendidas' : 'Todas las luces apagadas'); }
     else if (c === 'SONIDO') ev('Sensor de sonido: silencio=0 ahora='+(mundo.sonido()?1:0)+' sonidos='+d.sonidos);
     else if (c === 'ANG_E' && v >= 0) { d.angE = Math.max(10, Math.min(180, v)); ev('La entrada abre '+d.angE+' grados'); }
     else if (c === 'ANG_Q' && v >= 0) { d.angQ = Math.max(10, Math.min(180, v)); ev('El quirofano abre '+d.angQ+' grados'); }
@@ -771,7 +773,7 @@ function pintar(){
   $('ledZ').classList.toggle('on', az);
   $('ledH1').classList.toggle('on', h1);
   $('ledH2').classList.toggle('on', h2);
-  $('ledB').classList.toggle('on', vivo && S.alerta && Math.floor(a/400) % 2 === 1);
+  $('ledB').classList.toggle('on', vivo && ((S.alerta && Math.floor(a/400) % 2 === 1) || a < beepHasta));
   $('chipTxt').textContent = !vivo ? 'sin respuesta' : S.calentando ? 'preparando PIR' : S.sistema ? 'vigilando' : 'en espera';
   $('btTxt').textContent = S.modo==='real' ? (vivo?'conectado':'sin señal') : (vivo ? 'enlazado' : 'caído');
   // controles
@@ -787,6 +789,7 @@ function pintar(){
   $('bH1').setAttribute('aria-pressed', String(S.hab1));
   $('bH2').setAttribute('aria-pressed', String(S.hab2));
   $('bAm').setAttribute('aria-pressed', String(S.amar));
+  $('bTodas').textContent = (S.hab1 || S.hab2 || S.amar) ? 'Apagar todas' : 'Prender todas';
   $('bNoche').querySelector('b').textContent = S.noche ? 'Vista de día' : 'Vista de noche';
   $('bNoche').querySelector('span').textContent = S.noche ? '☀' : '🌙';
   // interruptor
@@ -877,6 +880,14 @@ function quitarIntrusos(){
 }
 
 /* ---------- Acciones ---------- */
+let beepHasta = 0;
+// pitido corto del buzzer cada vez que haces algo en el simulador (botones y zonas del plano)
+document.addEventListener('click', e => {
+  const b = e.target.closest('button, #zH1, #zH2, #zA');
+  if (!b || b.disabled || b.getAttribute('role') === 'tab' || b.classList.contains('tab')) return;
+  pitido(2200, 60); beepHasta = Date.now() + 150;
+  setTimeout(pintar, 0); setTimeout(pintar, 170);
+}, true);
 function enviar(txt, callado){
   if (ctx) ctx.resume();
   if (S.modo === 'sim') { if (S.falla.E && !callado) log('El Arduino no responde: la orden no llegó', true); VA.orden(txt); return; }
@@ -923,6 +934,7 @@ const hab = n => enviar('HAB:'+n+':'+((n===1?S.hab1:S.hab2)?0:1));
 $('bH1').onclick = ()=>hab(1); $('zH1').addEventListener('click', ()=>hab(1));
 $('bH2').onclick = ()=>hab(2); $('zH2').addEventListener('click', ()=>hab(2));
 const amar = () => enviar('AMARILLA:'+(S.amar?0:1));
+$('bTodas').onclick = () => enviar('LUCES:'+((S.hab1 || S.hab2 || S.amar) ? 0 : 1));
 $('bAm').onclick = amar; $('zA').addEventListener('click', amar);
 document.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => { if (ctx) ctx.resume(); b.dataset.acc==='salir' ? todosSalen() : agregar(b.dataset.acc); });
 $('bMov').onclick = ()=>{ if (ctx) ctx.resume(); movManualHasta = Date.now() + 2500; log('👋 Algo se mueve dentro del quirófano'); };

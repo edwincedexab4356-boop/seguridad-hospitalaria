@@ -45,6 +45,7 @@
     USO:1 / USO:0                (quirofano en uso: el PIR solo prende la luz azul, sin alarma)
     HAB:n:1 / HAB:n:0            (luz de la habitacion n = 1 o 2; n = 0 las dos)
     AMARILLA:1 / AMARILLA:0      (luz amarilla del pasillo)
+    LUCES:1 / LUCES:0            (todas las luces: habitaciones 1 y 2 y amarilla)
     AUTO:1 / AUTO:0              (entrada automatica con el sensor de sonido prendida / apagada)
     ANG_E:n / ANG_Q:n            (grados que abre la entrada / el quirofano, 10-180; se guarda)
     SONIDO                       (dice como esta el sensor de sonido)
@@ -309,7 +310,13 @@ void orden(String s) {
     guardar();
   }
   else if (s.startsWith("AMARILLA:")) { amarilla = valor(s, 9); guardar(); }
+  else if (s.startsWith("LUCES:")) { hab1 = hab2 = amarilla = valor(s, 6); guardar(); evento(hab1 ? "Todas las luces prendidas" : "Todas las luces apagadas"); }
   else { evento("Orden desconocida: " + s); return; }
+  if (s != "ESTADO") {   // pitido corto en cada orden de la app
+    unsigned long t = millis();
+    if ((long)(pitidoHasta - t) < 60) pitidoHasta = t + 60;
+    if ((long)(silencioHasta - t) < 600) silencioHasta = t + 600;   // que el sensor de sonido no lo oiga
+  }
   enviarEstado();
 }
 void leer(Stream &p, String &lin) {
