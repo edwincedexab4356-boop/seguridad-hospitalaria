@@ -361,10 +361,9 @@ input[type=range]{width:100%;accent-color:var(--verde)}
           <div class="fila"><b>🚪 Puerta del quirófano</b><button class="btn ver" id="bQAbrir">Abrir</button><button class="btn" id="bQCerrar">Cerrar</button><span class="est" id="eQ">Cerrada</span></div>
           <div class="fila"><b>📡 Entrada automática</b><button class="btn" id="bAuto" aria-pressed="true">Sí</button><span class="est" id="eDist">—</span></div>
           <div class="rango" style="margin:0 2px"><label for="rDist">Abre sola si alguien está a menos de <b id="vDist">20 cm</b></label><input type="range" id="rDist" min="5" max="150" value="20"></div>
-          <div class="rango" style="margin:4px 2px 0"><label for="rAngE">Ángulo que abre la puerta de entrada <b id="vAngE">90°</b></label><input type="range" id="rAngE" min="10" max="180" step="5" value="90"></div>
-          <div class="rango" style="margin:4px 2px 0"><label for="rAngQ">Ángulo que abre la puerta del quirófano <b id="vAngQ">90°</b></label><input type="range" id="rAngQ" min="10" max="180" step="5" value="90"></div>
-          <div class="fila"><b>⚙ Calibrar servo 360</b><input type="number" id="nGiro" min="50" max="2000" step="10" value="400" aria-label="Milisegundos que tarda en girar 90 grados" style="width:84px;padding:7px 8px;border-radius:8px;border:1px solid #2a3060;background:#0b0e1d;color:inherit;font:inherit"><span class="est" style="margin-left:0">ms = 90°</span><button class="btn" id="bGiro">Guardar</button><button class="btn" id="bInv">Invertir giro</button></div>
-          <small class="nota" style="margin:0 2px">La puerta de entrada usa un servo de 360: no sabe dónde está, así que el ángulo se calcula por tiempo. Si al pedir 90° gira menos, sube los ms; si gira más, bájalos. Deja la puerta cerrada antes de apagar.</small>
+          <div class="rango" style="margin:4px 2px 0"><label for="rAngE">Ángulo que abre la puerta de entrada (servo 360°) <b id="vAngE">90°</b></label><input type="range" id="rAngE" min="10" max="360" step="5" value="90"></div>
+          <div class="rango" style="margin:4px 2px 0"><label for="rAngQ">Ángulo que abre la puerta del quirófano (servo 180°) <b id="vAngQ">90°</b></label><input type="range" id="rAngQ" min="10" max="180" step="5" value="90"></div>
+          <small class="nota" style="margin:0 2px">La puerta de entrada tiene un servo de 360°: puede abrir hasta 360°. La del quirófano es de 180°. Deja la entrada cerrada antes de apagar.</small>
           <div class="fila"><b>🩺 Quirófano en uso</b><button class="btn" id="bUso" aria-pressed="false">No</button><span class="est" id="eUso">El PIR da alarma</span></div>
           <div class="fila"><b>💡 Luces</b><button class="btn" id="bH1" aria-pressed="true">Hab 1</button><button class="btn" id="bH2" aria-pressed="true">Hab 2</button><button class="btn" id="bAm" aria-pressed="true">Amarilla</button></div>
         </div>
@@ -441,8 +440,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>Quirófano en uso</td><td><code>USO:1</code> / <code>USO:0</code></td><td>En uso, el PIR solo prende la luz azul y no da alarma</td></tr>
     <tr><td>Luces de las habitaciones</td><td><code>HAB:n:1</code> / <code>HAB:n:0</code></td><td>Prende o apaga la habitación n (1 o 2; 0 = las dos)</td></tr>
     <tr><td>Entrada automática / distancia</td><td><code>AUTO:1</code> / <code>AUTO:0</code> · <code>DIST:n</code></td><td>El ultrasónico abre la entrada sola si alguien está a menos de n cm (se guarda)</td></tr>
-    <tr><td>Ángulo de las puertas</td><td><code>ANG_E:n</code> · <code>ANG_Q:n</code></td><td>Cuántos grados abre la entrada / el quirófano (10-180, se guarda)</td></tr>
-    <tr><td>Calibrar servo 360 (entrada)</td><td><code>GIRO:n</code> · <code>INVERTIR</code></td><td>n = milisegundos que tarda en girar 90°. INVERTIR si abre hacia el otro lado</td></tr>
+    <tr><td>Ángulo de las puertas</td><td><code>ANG_E:n</code> · <code>ANG_Q:n</code></td><td>Cuántos grados abre la entrada (servo 360°: 10-360) / el quirófano (servo 180°: 10-180). Se guarda</td></tr>
     <tr><td>Luz amarilla</td><td><code>AMARILLA:1</code> / <code>AMARILLA:0</code></td><td>Prende o apaga la luz del pasillo</td></tr>
   </table>
   <p class="nota">El Arduino avisa dos veces por segundo que está vivo. Si deja de responder, la página marca <b>EQUIPO SIN RESPUESTA</b>, y la alerta manual igual suena y vibra en el celular.</p>
@@ -510,7 +508,7 @@ const ORIGEN = {0:'',1:'INTRUSO en el quirófano (lo detectó el PIR)',3:'Alerta
 const LS = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch { return d; } };
 const guardarLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const historial = LS('it_hist_q', []);
-let tocadoDist = 0, tocadoAng = 0, tocadoGiro = 0;
+let tocadoDist = 0, tocadoAng = 0;
 
 function hora(t){ return (t ? new Date(t) : new Date()).toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
 function log(msg, rojo){
@@ -696,7 +694,7 @@ const VA = (() => {
     else if (c === 'HAB' && partes.length >= 3) { const on = parseInt(partes[2]) === 1 ? 1 : 0; if (v === 0 || v === 1) d.hab1 = on; if (v === 0 || v === 2) d.hab2 = on; }
     else if (c === 'AMARILLA') d.amar = v === 1 ? 1 : 0;
     else if (c === 'DIST' && v >= 0) { d.distE = Math.max(5, Math.min(150, v)); ev('La entrada se abre a menos de '+d.distE+' cm'); }
-    else if (c === 'ANG_E' && v >= 0) { d.angE = Math.max(10, Math.min(180, v)); ev('La entrada abre '+d.angE+' grados'); }
+    else if (c === 'ANG_E' && v >= 0) { d.angE = Math.max(10, Math.min(360, v)); ev('La entrada abre '+d.angE+' grados'); }
     else if (c === 'ANG_Q' && v >= 0) { d.angQ = Math.max(10, Math.min(180, v)); ev('El quirofano abre '+d.angQ+' grados'); }
     else if (c === 'GIRO' && v >= 0) { d.giro = Math.round(Math.max(50, Math.min(2000, v)) / 10) * 10; ev('Calibrado: 90 grados = '+d.giro+' ms de giro'); }
     else if (c === 'INVERTIR') { d.inv = d.inv ? 0 : 1; ev(d.inv ? 'Entrada: giro invertido' : 'Entrada: giro normal'); }
@@ -767,8 +765,6 @@ function pintar(){
   $('bAuto').setAttribute('aria-pressed', String(S.auto)); $('bAuto').textContent = S.auto ? 'Sí' : 'No';
   $('eDist').textContent = !vivo ? '—' : S.dist >= 300 ? 'Mide: nadie cerca' : 'Mide: '+S.dist+' cm';
   if (Date.now() - tocadoAng > 1500) { $('rAngE').value = S.angE; $('vAngE').textContent = S.angE+'°'; $('rAngQ').value = S.angQ; $('vAngQ').textContent = S.angQ+'°'; }
-  if (Date.now() - tocadoGiro > 4000 && document.activeElement !== $('nGiro')) $('nGiro').value = S.giro;
-  $('bInv').setAttribute('aria-pressed', String(S.inv));
   if (Date.now() - tocadoDist > 1500) { $('rDist').value = S.distE; $('vDist').textContent = S.distE+' cm'; }
   $('bUso').setAttribute('aria-pressed', String(S.enUso)); $('bUso').textContent = S.enUso ? 'Sí, en uso' : 'No';
   $('eUso').textContent = S.enUso ? 'El PIR solo prende la luz azul' : 'El PIR da alarma';
@@ -905,8 +901,7 @@ $('bAuto').onclick = ()=>enviar('AUTO:'+(S.auto?0:1));
   $('rAng'+k).oninput = e => { tocadoAng = Date.now(); $('vAng'+k).textContent = e.target.value+'°'; };
   $('rAng'+k).onchange = e => { tocadoAng = Date.now(); enviar('ANG_'+k+':'+e.target.value); };
 });
-$('bGiro').onclick = () => { tocadoGiro = Date.now(); const v = parseInt($('nGiro').value); if (v >= 50 && v <= 2000) enviar('GIRO:'+v); else log('Pon un número entre 50 y 2000 ms', true); };
-$('bInv').onclick = () => enviar('INVERTIR');
+
 $('bUso').onclick = ()=>enviar('USO:'+(S.enUso?0:1));
 const hab = n => enviar('HAB:'+n+':'+((n===1?S.hab1:S.hab2)?0:1));
 $('bH1').onclick = ()=>hab(1); $('zH1').addEventListener('click', ()=>hab(1));

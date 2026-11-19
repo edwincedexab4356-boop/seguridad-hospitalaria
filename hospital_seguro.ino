@@ -45,7 +45,7 @@
     AMARILLA:1 / AMARILLA:0      (luz amarilla del pasillo)
     DIST:n                       (cm, 5-150: a que distancia se abre sola la entrada)
     AUTO:1 / AUTO:0              (entrada automatica con el ultrasonico prendida / apagada)
-    ANG_E:n / ANG_Q:n            (grados que abre la entrada / el quirofano, 10-180; se guarda)
+    ANG_E:n / ANG_Q:n            (grados que abre la entrada 10-360 (servo 360) / el quirofano 10-180; se guarda)
     GIRO:n                       (calibracion del servo 360 de la entrada: ms que tarda en girar 90 grados, 50-2000)
     INVERTIR                     (si la puerta de entrada abre hacia el lado contrario)
   ENVIA cada 0,5 s:
@@ -90,7 +90,7 @@ bool hab1 = true, hab2 = true, amarilla = true;
 int distEntrada = 20;      // cm: mas cerca = alguien en la entrada
 bool autoEntrada = true;   // abre sola con el ultrasonico
 int giroMs = 400;          // ms que tarda en girar 90 grados (se ajusta con GIRO:n)
-int angE = 90;             // grados que abre la entrada (ANG_E:n, 10-180)
+int angE = 90;             // grados que abre la entrada (ANG_E:n, 10-360: es servo de 360)
 int angQ = 90;             // grados que abre el quirofano (ANG_Q:n, 10-180)
 long objE = 0;             // hasta donde debe girar la entrada
 bool invertir = false;     // INVERTIR si abre hacia el lado contrario
@@ -153,7 +153,8 @@ void guardar() {
   EEPROM.update(6, autoEntrada);
   EEPROM.update(7, giroMs / 10);
   EEPROM.update(8, invertir);
-  EEPROM.update(9, angE);
+  EEPROM.update(9, angE & 0xFF);
+  EEPROM.update(11, angE >> 8);
   EEPROM.update(10, angQ);
 }
 void cargar() {
@@ -167,8 +168,9 @@ void cargar() {
   byte g = EEPROM.read(7);
   if (f == FIRMA && g >= 5 && g <= 200) {
     giroMs = g * 10; invertir = EEPROM.read(8) == 1;
-    byte a = EEPROM.read(9), b = EEPROM.read(10);
-    if (a >= 10 && a <= 180) angE = a;
+    int a = EEPROM.read(9) | (EEPROM.read(11) << 8);
+    byte b = EEPROM.read(10);
+    if (a >= 10 && a <= 360) angE = a;
     if (b >= 10 && b <= 180) angQ = b;
   }
 }
@@ -293,7 +295,7 @@ void orden(String s) {
     evento("Calibrado: 90 grados = " + String(giroMs) + " ms de giro");
   }
   else if (s.startsWith("ANG_E:")) {
-    angE = constrain(s.substring(6).toInt(), 10, 180); guardar();
+    angE = constrain(s.substring(6).toInt(), 10, 360); guardar();
     if (entrada) irEntrada(msAbierta());
     evento("La entrada abre " + String(angE) + " grados");
   }
