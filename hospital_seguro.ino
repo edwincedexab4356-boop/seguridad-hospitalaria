@@ -187,24 +187,50 @@ int mejor(byte t, byte e) {   // la menor de 3 lecturas
   for (byte i = 0; i < 3; i++) { m = min(m, medirCon(t, e)); delay(30); }
   return m;
 }
-// Prueba el ultrasonico en los dos sentidos y dice que pasa
+// Diagnostico fino: dice si ECHO esta "suelto" (flotando) o si algo lo empuja a 5V,
+// y cuantas veces cambia ECHO despues de un disparo de TRIG.
+void diagnosticoEcho() {
+  pinMode(P_TRIG, OUTPUT); digitalWrite(P_TRIG, LOW);
+  pinMode(P_ECHO, OUTPUT); digitalWrite(P_ECHO, LOW); delay(5);
+  pinMode(P_ECHO, INPUT);
+  delayMicroseconds(20); bool a = digitalRead(P_ECHO);
+  delay(1);              bool b = digitalRead(P_ECHO);
+  delay(20);             bool c = digitalRead(P_ECHO);
+  delay(100);            bool d = digitalRead(P_ECHO);
+  evento("ECHO despues de bajarlo: 20us=" + String(a) + " 1ms=" + String(b) + " 20ms=" + String(c) + " 120ms=" + String(d));
+  pinMode(P_ECHO, INPUT_PULLUP); delay(2); bool pu = digitalRead(P_ECHO);
+  pinMode(P_ECHO, INPUT);
+  evento("ECHO con pullup=" + String(pu));
+  // disparo y cuento cambios de ECHO durante 60 ms
+  delay(60);
+  bool antes = digitalRead(P_ECHO); int cambios = 0; unsigned long altoUs = 0, t0 = micros(), tAlto = 0;
+  digitalWrite(P_TRIG, HIGH); delayMicroseconds(10); digitalWrite(P_TRIG, LOW);
+  while (micros() - t0 < 60000) {
+    bool v = digitalRead(P_ECHO);
+    if (v != antes) { cambios++; if (v) tAlto = micros(); else altoUs += micros() - tAlto; antes = v; }
+  }
+  evento("Tras disparar TRIG: ECHO cambio " + String(cambios) + " veces, pulso " + String(altoUs) + " us, termina en " + String(antes));
+}
+
+// Prueba el ultrasonico en D12/D13 y en A0/A1 (en los dos sentidos) y usa el que responda
 void revisarUltra(bool avisar) {
-  pinMode(P_ECHO, INPUT); pinMode(P_TRIG, INPUT);
-  delay(5);
-  bool echoAlto = digitalRead(P_ECHO), trigAlto = digitalRead(P_TRIG);
-  int normal = mejor(P_TRIG, P_ECHO);
-  int alReves = mejor(P_ECHO, P_TRIG);
-  if (normal < DIST_MAX) { pTrig = P_TRIG; pEcho = P_ECHO; }
-  else if (alReves < DIST_MAX) { pTrig = P_ECHO; pEcho = P_TRIG; }
+  const byte pares[4][2] = {{P_TRIG, P_ECHO}, {P_ECHO, P_TRIG}, {A0, A1}, {A1, A0}};
+  const char *nombres[4] = {"TRIG D12/ECHO D13", "TRIG D13/ECHO D12", "TRIG A0/ECHO A1", "TRIG A1/ECHO A0"};
+  int res[4];
+  int bueno = -1;
+  for (byte k = 0; k < 4; k++) {
+    res[k] = mejor(pares[k][0], pares[k][1]);
+    pinMode(pares[k][0], INPUT); pinMode(pares[k][1], INPUT);
+    if (res[k] < DIST_MAX && bueno < 0) bueno = k;
+  }
+  if (bueno >= 0) { pTrig = pares[bueno][0]; pEcho = pares[bueno][1]; }
   pinMode(pTrig, OUTPUT); pinMode(pEcho, INPUT); digitalWrite(pTrig, LOW);
-  if (!avisar && normal < DIST_MAX) return;
-  String r = "Ultrasonico: D12->D13 " + (normal < DIST_MAX ? String(normal) + " cm" : String("sin eco")) +
-             ", al reves " + (alReves < DIST_MAX ? String(alReves) + " cm" : String("sin eco")) +
-             ", en reposo D12=" + String(trigAlto) + " D13=" + String(echoAlto) + ", destrabado " + String(trabas) + " veces";
+  if (!avisar && bueno == 0) return;
+  String r = "Ultrasonico:";
+  for (byte k = 0; k < 4; k++) r += String(" ") + nombres[k] + "=" + (res[k] < DIST_MAX ? String(res[k]) + "cm" : String("nada")) + ";";
   evento(r);
-  if (normal < DIST_MAX) evento("Ultrasonico bien conectado");
-  else if (alReves < DIST_MAX) evento("TRIG y ECHO estaban al reves: lo arregle por programa (o cambia los cables)");
-  else evento("El ultrasonico no responde: revisa VCC a 5V, GND, TRIG a D12 y ECHO a D13");
+  if (bueno >= 0) evento(String("Ultrasonico responde con ") + nombres[bueno] + ": ya lo uso asi");
+  else evento("El ultrasonico no responde en ningun pin: revisa VCC a 5V y GND, o el sensor esta danado");
 }
 
 // ---------- puertas ----------
@@ -295,6 +321,7 @@ void orden(String s) {
     evento("El quirofano abre " + String(angQ) + " grados");
   }
   else if (s == "ULTRA") revisarUltra(true);
+  else if (s == "ULTRA2") diagnosticoEcho();
   else if (s.startsWith("AUTO:")) { autoEntrada = valor(s, 5); guardar(); evento(autoEntrada ? "Entrada automatica prendida" : "Entrada automatica apagada"); }
   else if (s.startsWith("PUERTA_Q:")) moverQuirofano(valor(s, 9));
   else if (s.startsWith("USO:")) { enUso = valor(s, 4); evento(enUso ? "Quirofano en uso (sin alarma del PIR)" : "Quirofano libre"); }
