@@ -243,92 +243,86 @@ input[type=range]{width:100%;accent-color:var(--verde)}
         <g id="silla"><rect width="11" height="10" rx="2" fill="#c9b48e" stroke="#8a7350"/></g>
       </defs>
       <rect x="6" y="6" width="688" height="438" rx="6" fill="#e6e1d6"/>
+      <!-- pisos, igual que la maqueta (vista desde arriba, el frente abajo) -->
       <g fill="#3f8a5c">
-        <rect x="20" y="20" width="220" height="140"/><rect x="20" y="160" width="220" height="240"/>
-        <rect x="310" y="20" width="170" height="110"/>
-        <rect x="560" y="180" width="120" height="100"/><rect x="440" y="280" width="120" height="120"/><rect x="560" y="280" width="120" height="120"/>
+        <rect x="20" y="20" width="195" height="150"/><rect x="20" y="170" width="195" height="230"/>
+        <path d="M260 20H680V170H260Z"/>
       </g>
-      <rect id="zQ" class="zonaR" x="480" y="20" width="200" height="160" fill="#3f8a5c"/>
-      <rect x="240" y="20" width="70" height="180" fill="#cbc6bc"/>
-      <rect x="240" y="200" width="200" height="200" fill="#cbc6bc"/><rect x="440" y="180" width="120" height="100" fill="#cbc6bc"/>
-      <rect x="310" y="130" width="170" height="70" fill="#cbc6bc"/>
-      <path d="M312 133H478" stroke="#b08458" stroke-width="4"/>
+      <rect id="zQ" class="zonaR" x="420" y="215" width="260" height="185" fill="#3f8a5c"/>
+      <rect x="215" y="20" width="45" height="380" fill="#cbc6bc"/>
+      <rect x="260" y="170" width="160" height="230" fill="#cbc6bc"/>
+      <rect x="260" y="170" width="420" height="45" fill="#cbc6bc"/>
       <g filter="url(#sombraS)">
-        <use href="#cama" x="60" y="78"/><rect x="138" y="80" width="16" height="16" rx="2" fill="#a87b4f"/>
-        <rect x="186" y="56" width="40" height="52" rx="3" fill="#f1f0ec" stroke="#b5b2aa"/><rect x="100" y="24" width="56" height="6" fill="#e8eef3" stroke="#9fb2c2"/>
-        <use href="#cama" x="58" y="282"/><rect x="134" y="284" width="16" height="16" rx="2" fill="#a87b4f"/>
-        <rect x="178" y="196" width="34" height="56" rx="3" fill="#dfe2e5" stroke="#a5abb0"/><rect x="184" y="202" width="22" height="14" fill="#2b3a44"/>
-        <circle cx="60" cy="226" r="9" fill="#e9ecee" stroke="#9aa1a6"/><rect x="216" y="300" width="16" height="70" rx="2" fill="#a87b4f"/>
-        <use href="#cama" x="602" y="190"/><use href="#cama" x="602" y="230"/>
-        <rect x="322" y="24" width="146" height="16" rx="1" fill="#b08458"/>
-        <g fill="#e8e3d6"><rect x="326" y="27" width="138" height="4"/><rect x="326" y="34" width="138" height="4"/></g>
-        <rect x="452" y="50" width="22" height="48" rx="2" fill="#d6dde2" stroke="#8d989f"/>
-        <rect x="332" y="96" width="110" height="18" rx="9" fill="#b08458"/><rect x="336" y="99" width="102" height="8" rx="4" fill="#f1f0ec"/>
-        <use href="#silla" x="330" y="160"/><use href="#silla" x="344" y="160"/><use href="#silla" x="358" y="160"/><use href="#silla" x="372" y="160"/>
-        <use href="#silla" x="420" y="160"/><use href="#silla" x="434" y="160"/><use href="#silla" x="448" y="160"/>
-        <rect x="560" y="68" width="72" height="26" rx="3" fill="#2b3138"/><rect x="566" y="72" width="60" height="18" rx="2" fill="#3c454e"/>
-        <circle cx="596" cy="52" r="12" fill="#f4f6f7" stroke="#9aa1a6"/><circle cx="596" cy="52" r="5" fill="#fffbe0"/>
-        <rect x="500" y="38" width="24" height="30" rx="3" fill="#dfe2e5" stroke="#8d989f"/><rect x="504" y="42" width="16" height="11" fill="#1d3a4a"/>
-        <rect x="640" y="104" width="8" height="40" rx="2" fill="#dfe2e5" stroke="#8d989f"/>
-        <rect x="460" y="318" width="54" height="24" rx="2" fill="#b08458"/><rect x="480" y="322" width="16" height="10" fill="#1f2a33"/><circle cx="488" cy="356" r="8" fill="#2b3138"/>
-        <rect x="574" y="296" width="94" height="12" fill="#d6dde2" stroke="#8d989f"/><rect x="574" y="378" width="94" height="12" fill="#d6dde2" stroke="#8d989f"/>
-        <circle cx="340" cy="300" r="28" fill="none" stroke="#b08458" stroke-width="13"/><circle cx="340" cy="300" r="28" fill="none" stroke="#d9b98f" stroke-width="3"/>
-        <circle cx="260" cy="382" r="9" fill="url(#planta)"/><circle cx="420" cy="382" r="9" fill="url(#planta)"/><circle cx="258" cy="218" r="8" fill="url(#planta)"/>
+        <!-- Habitacion 2 (arriba) y Habitacion 1 (abajo, con la planta) -->
+        <use href="#cama" x="50" y="70"/><rect x="128" y="72" width="16" height="16" rx="2" fill="#a87b4f"/>
+        <use href="#cama" x="50" y="300"/><rect x="128" y="302" width="16" height="16" rx="2" fill="#a87b4f"/>
+        <circle cx="62" cy="200" r="11" fill="url(#planta)"/>
+        <!-- sala de espera -->
+        <use href="#silla" x="300" y="60"/><use href="#silla" x="314" y="60"/><use href="#silla" x="328" y="60"/><use href="#silla" x="342" y="60"/>
+        <use href="#silla" x="300" y="100"/><use href="#silla" x="314" y="100"/><use href="#silla" x="328" y="100"/>
+        <!-- recepcion con la maceta redonda -->
+        <circle cx="330" cy="300" r="26" fill="#f1f0ec" stroke="#b5b2aa" stroke-width="2"/><circle cx="330" cy="300" r="14" fill="url(#planta)"/>
+        <!-- quirofano: camilla de operaciones y lampara -->
+        <rect x="550" y="282" width="80" height="36" rx="4" fill="#f4f4f2" stroke="#9aa1a6"/><rect x="556" y="288" width="14" height="24" rx="3" fill="#fff" stroke="#c5c9cc"/><rect x="574" y="286" width="52" height="28" rx="3" fill="#cfd6dd"/>
+        <circle cx="590" cy="250" r="12" fill="#f4f6f7" stroke="#9aa1a6"/><circle cx="590" cy="250" r="5" fill="#fffbe0"/>
+      </g>
+      <!-- farmacia techada (en la maqueta tiene techo) -->
+      <g>
+        <rect x="420" y="20" width="260" height="112" fill="#f3f2ee" stroke="#cfcbc1" stroke-width="2" filter="url(#sombra)"/>
+        <path d="M420 20L680 132M680 20L420 132" stroke="#e2dfd6" stroke-width="1.5"/>
       </g>
       <!-- vista de noche (solo visual) -->
       <rect id="oscuro" x="6" y="6" width="688" height="438" rx="6" fill="#05070f" opacity="0" style="transition:opacity .6s"/>
-      <!-- luces: Hab 1 (D8), Hab 2 (D11), pasillo amarilla (D5), azul del quirófano (D6) -->
-      <g id="glowH1" opacity="0" style="transition:opacity .3s"><circle cx="130" cy="280" r="120" fill="url(#focoH)"/></g>
-      <g id="glowH2" opacity="0" style="transition:opacity .3s"><circle cx="130" cy="90" r="110" fill="url(#focoH)"/></g>
-      <g id="glowA" opacity="0" style="transition:opacity .3s"><circle cx="275" cy="110" r="70" fill="url(#foco)"/></g>
-      <g id="glowZ" opacity="0" style="transition:opacity .3s"><circle cx="580" cy="100" r="120" fill="url(#focoZ)"/></g>
-      <rect id="zH1" class="clic" x="20" y="160" width="220" height="240" fill="#000" opacity="0"><title>Luz de la Habitación 1 (D8) · toca para prender o apagar</title></rect>
-      <rect id="zH2" class="clic" x="20" y="20" width="220" height="140" fill="#000" opacity="0"><title>Luz de la Habitación 2 (D11) · toca para prender o apagar</title></rect>
-      <rect id="zA" class="clic" x="240" y="20" width="70" height="180" fill="#000" opacity="0"><title>Luz amarilla del pasillo (D5) · toca para prender o apagar</title></rect>
+      <!-- luces: Hab 1 (D8), Hab 2 (D11), amarilla (D5), azul del quirofano (D6) -->
+      <g id="glowH1" opacity="0" style="transition:opacity .3s"><circle cx="117" cy="285" r="115" fill="url(#focoH)"/></g>
+      <g id="glowH2" opacity="0" style="transition:opacity .3s"><circle cx="117" cy="95" r="95" fill="url(#focoH)"/></g>
+      <g id="glowA" opacity="0" style="transition:opacity .3s"><circle cx="360" cy="185" r="75" fill="url(#foco)"/></g>
+      <g id="glowZ" opacity="0" style="transition:opacity .3s"><circle cx="600" cy="305" r="125" fill="url(#focoZ)"/></g>
+      <rect id="zH1" class="clic" x="20" y="170" width="195" height="230" fill="#000" opacity="0"><title>Luz de la Habitación 1 (D8) · toca para prender o apagar</title></rect>
+      <rect id="zH2" class="clic" x="20" y="20" width="195" height="150" fill="#000" opacity="0"><title>Luz de la Habitación 2 (D11) · toca para prender o apagar</title></rect>
+      <rect id="zA" class="clic" x="260" y="170" width="160" height="45" fill="#000" opacity="0"><title>Luz amarilla (D5) · toca para prender o apagar</title></rect>
       <!-- paredes -->
       <g stroke="#f6f5f1" stroke-width="7" stroke-linecap="square" fill="none" filter="url(#sombra)">
-        <path d="M310 400H20V20H680V400H370"/>
-        <path d="M20 160H240 M240 20V100 M240 140V200 M240 240V400"/>
-        <path d="M310 20V60 M310 100V130H480 M480 20V180H500 M540 180H680"/>
-        <path d="M560 180V210 M560 250V280H680 M440 280H460 M500 280H560 M440 280V400 M560 280V320 M560 350V400"/>
+        <path d="M300 400H680V20H20V400H230"/>
+        <path d="M20 170H215 M215 20V105 M215 140V265 M215 300V400"/>
+        <path d="M260 20V125L300 170H395 M425 170H680"/>
+        <path d="M470 215H680 M420 215V400"/>
       </g>
-      <g stroke="#a87b4f" stroke-width="3" stroke-linecap="round"><path d="M240 100L214 92 M240 200L214 192 M560 210L586 202 M460 280L452 254 M310 60L336 68"/></g>
+      <g stroke="#a87b4f" stroke-width="3" stroke-linecap="round"><path d="M215 105L240 97 M215 265L240 257 M395 170L388 196"/></g>
       <!-- puertas con servo -->
-      <line id="pQ" class="puertaS" x1="502" y1="180" x2="538" y2="180" stroke="#8a5a32" stroke-width="6" stroke-linecap="round" style="transform-origin:502px 180px"/>
-      <line id="pE" class="puertaS" x1="312" y1="400" x2="368" y2="400" stroke="#8a5a32" stroke-width="6" stroke-linecap="round" style="transform-origin:312px 400px"/>
-      <g id="servoQ"><rect x="494" y="184" width="14" height="9" rx="2" fill="#2f6fb0"/><text x="501" y="202" fill="#1d4f80" font-size="7" font-weight="700" text-anchor="middle">SERVO</text></g>
-      <g id="conoU" opacity="0" style="transition:opacity .15s" fill="none" stroke="#ff3d5a" stroke-width="2" stroke-linecap="round"><path d="M378 410 q8 8 16 0"/><path d="M372 416 q14 13 28 0"/><path d="M366 422 q20 18 40 0"/></g>
-      <g id="ultraS"><rect x="378" y="392" width="16" height="10" rx="2" fill="#2f6fb0"/><circle cx="386" cy="397" r="3.2" fill="#cfd6dd"/><circle cx="386" cy="397" r="1.4" fill="#2f6fb0"/><text x="398" y="390" fill="#1d4f80" font-size="7" font-weight="700">SONIDO</text></g>
-      <g id="servoE"><rect x="296" y="388" width="14" height="9" rx="2" fill="#2f6fb0"/><text x="292" y="384" fill="#1d4f80" font-size="7" font-weight="700" text-anchor="middle">SERVO</text></g>
-      <!-- lámpara amarilla del pasillo -->
-      <circle id="lampA" cx="275" cy="110" r="5.5" fill="#7d7560" stroke="#5e5640"/>
+      <line id="pQ" class="puertaS" x1="425" y1="215" x2="467" y2="215" stroke="#8a5a32" stroke-width="6" stroke-linecap="round" style="transform-origin:425px 215px"/>
+      <line id="pE" class="puertaS" x1="232" y1="400" x2="298" y2="400" stroke="#8a5a32" stroke-width="6" stroke-linecap="round" style="transform-origin:232px 400px"/>
+      <g id="servoQ"><rect x="418" y="219" width="14" height="9" rx="2" fill="#2f6fb0"/><text x="440" y="238" fill="#1d4f80" font-size="7" font-weight="700" text-anchor="middle">SERVO</text></g>
+      <g id="conoU" opacity="0" style="transition:opacity .15s" fill="none" stroke="#ff3d5a" stroke-width="2" stroke-linecap="round"><path d="M310 386 q8 -8 16 0"/><path d="M304 380 q14 -13 28 0"/><path d="M298 374 q20 -18 40 0"/></g>
+      <g id="ultraS"><rect x="310" y="392" width="16" height="10" rx="2" fill="#2f6fb0"/><circle cx="318" cy="397" r="3.2" fill="#cfd6dd"/><circle cx="318" cy="397" r="1.4" fill="#ff3d5a"/><text x="330" y="390" fill="#1d4f80" font-size="7" font-weight="700">SONIDO</text></g>
+      <g id="servoE"><rect x="217" y="388" width="14" height="9" rx="2" fill="#2f6fb0"/><text x="224" y="384" fill="#1d4f80" font-size="7" font-weight="700" text-anchor="middle">SERVO</text></g>
+      <!-- luz amarilla (LED en la pared de la sala de espera) -->
+      <circle id="lampA" cx="360" cy="174" r="5.5" fill="#7d7560" stroke="#5e5640"/>
       <!-- carteles -->
       <g font-family="Exo 2, Segoe UI, sans-serif" font-weight="800" fill="#1f2a24" filter="url(#sombraS)">
-        <g transform="translate(32 30)"><rect width="122" height="20" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><use href="#cruz" x="4" y="3" fill="#2e9b5f"/><text x="22" y="14.5" font-size="11.5">HABITACIÓN 2</text></g>
-        <g transform="translate(32 170)"><rect width="122" height="20" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><use href="#cruz" x="4" y="3" fill="#2e9b5f"/><text x="22" y="14.5" font-size="11.5">HABITACIÓN 1</text></g>
-        <g transform="translate(356 58)"><rect width="78" height="18" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><text x="39" y="13" font-size="11" text-anchor="middle">FARMACIA</text></g>
-        <g transform="translate(364 137)"><rect width="62" height="17" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><text x="31" y="12.5" font-size="10.5" text-anchor="middle">ESPERA</text></g>
-        <g transform="translate(518 152)"><rect width="104" height="18" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><text x="52" y="13" font-size="10.5" text-anchor="middle">QUIRÓFANO 1</text></g>
-        <g transform="translate(566 262)"><rect width="66" height="15" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><text x="33" y="11" font-size="9" text-anchor="middle">HAB. 3</text></g>
-        <g transform="translate(448 288)"><rect width="104" height="16" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><text x="52" y="11.5" font-size="9" text-anchor="middle">CONSULTORIO</text></g>
-        <g transform="translate(588 340)"><rect width="70" height="16" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><text x="35" y="11.5" font-size="9" text-anchor="middle">DEPÓSITO</text></g>
-        <g transform="translate(254 40)"><rect width="42" height="11" rx="1.5" fill="#f6f5f1" stroke="#c9c5bb"/><text x="21" y="8.5" font-size="7" text-anchor="middle">ALARMA</text></g>
+        <g transform="translate(30 30)"><rect width="122" height="20" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><use href="#cruz" x="4" y="3" fill="#2e9b5f"/><text x="22" y="14.5" font-size="11.5">HABITACIÓN 2</text></g>
+        <g transform="translate(30 228)"><rect width="122" height="20" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><use href="#cruz" x="4" y="3" fill="#2e9b5f"/><text x="22" y="14.5" font-size="11.5">HABITACIÓN 1</text></g>
+        <g transform="translate(296 132)"><rect width="88" height="17" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><text x="44" y="12.5" font-size="10" text-anchor="middle">SALA DE ESPERA</text></g>
+        <g transform="translate(508 66)"><rect width="84" height="18" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><text x="42" y="13" font-size="10.5" text-anchor="middle">FARMACIA</text></g>
+        <g transform="translate(500 360)"><rect width="104" height="18" rx="2" fill="#f6f5f1" stroke="#c9c5bb"/><text x="52" y="13" font-size="10.5" text-anchor="middle">QUIRÓFANO</text></g>
+        <g transform="translate(218 30)"><rect width="38" height="11" rx="1.5" fill="#f6f5f1" stroke="#c9c5bb"/><text x="19" y="8.5" font-size="6.5" text-anchor="middle">ALARMA</text></g>
       </g>
-      <text x="340" y="345" fill="#5a554b" font-family="Exo 2, Segoe UI, sans-serif" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="2">RECEPCIÓN</text>
-      <text x="0" y="0" fill="#7a7468" font-family="Exo 2, Segoe UI, sans-serif" font-size="8.5" font-weight="700" letter-spacing="3" text-anchor="middle" transform="translate(251 160) rotate(-90)">PASILLO</text>
-      <!-- sensor PIR del quirófano -->
-      <path id="conoPir" d="M664 30 L560 70 L610 160 Z" fill="#3d8bff" opacity="0" style="transition:opacity .2s"/>
-      <g id="pirS"><circle cx="664" cy="30" r="8" fill="#f4f6f7" stroke="#5e646b"/><circle id="pirLed" cx="664" cy="30" r="3.2" fill="#555"/><text x="644" y="33" fill="#1d4f80" font-size="7.5" font-weight="700" text-anchor="end">PIR</text></g>
-      <circle id="bbZ" cx="610" cy="130" r="5" fill="#3a4a6b" stroke="#4a4536" stroke-width="1.2"/>
-      <circle id="bbH1" cx="226" cy="176" r="5" fill="#6b6656" stroke="#4a4536" stroke-width="1.2"/>
-      <circle id="bbH2" cx="172" cy="40" r="5" fill="#6b6656" stroke="#4a4536" stroke-width="1.2"/>
-      <g id="sirena"><circle cx="275" cy="30" r="8" fill="#7a1020" stroke="#ff3d5a" stroke-width="2"/><circle cx="275" cy="30" r="3.5" fill="#ff6b80"/></g>
-      <text id="txtE" x="340" y="392" fill="#2ef2a0" stroke="#1a1a1a" stroke-width="3" paint-order="stroke" font-size="10" font-weight="800" text-anchor="middle" font-family="Exo 2, Segoe UI, sans-serif"></text>
-      <text id="txtQ" x="520" y="214" fill="#2ef2a0" stroke="#1a1a1a" stroke-width="3" paint-order="stroke" font-size="10" font-weight="800" text-anchor="middle" font-family="Exo 2, Segoe UI, sans-serif"></text>
+      <text x="330" y="345" fill="#5a554b" font-family="Exo 2, Segoe UI, sans-serif" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="2">RECEPCIÓN</text>
+      <text x="0" y="0" fill="#7a7468" font-family="Exo 2, Segoe UI, sans-serif" font-size="8.5" font-weight="700" letter-spacing="3" text-anchor="middle" transform="translate(238 210) rotate(-90)">PASILLO</text>
+      <!-- sensor PIR del quirofano (pared derecha, junto a la luz azul) -->
+      <path id="conoPir" d="M670 300 L470 240 L470 390 Z" fill="#3d8bff" opacity="0" style="transition:opacity .2s"/>
+      <g id="pirS"><circle cx="670" cy="300" r="8" fill="#f4f6f7" stroke="#5e646b"/><circle id="pirLed" cx="670" cy="300" r="3.2" fill="#555"/><text x="670" y="322" fill="#1d4f80" font-size="7.5" font-weight="700" text-anchor="middle">PIR</text></g>
+      <circle id="bbZ" cx="668" cy="272" r="5" fill="#3a4a6b" stroke="#4a4536" stroke-width="1.2"/>
+      <circle id="bbH1" cx="205" cy="180" r="5" fill="#6b6656" stroke="#4a4536" stroke-width="1.2"/>
+      <circle id="bbH2" cx="205" cy="30" r="5" fill="#6b6656" stroke="#4a4536" stroke-width="1.2"/>
+      <!-- buzzer de la alarma en la pared del fondo -->
+      <g id="sirena"><circle cx="237" cy="56" r="8" fill="#7a1020" stroke="#ff3d5a" stroke-width="2"/><circle cx="237" cy="56" r="3.5" fill="#ff6b80"/></g>
+      <text id="txtE" x="265" y="390" fill="#2ef2a0" stroke="#1a1a1a" stroke-width="3" paint-order="stroke" font-size="10" font-weight="800" text-anchor="middle" font-family="Exo 2, Segoe UI, sans-serif"></text>
+      <text id="txtQ" x="447" y="205" fill="#2ef2a0" stroke="#1a1a1a" stroke-width="3" paint-order="stroke" font-size="10" font-weight="800" text-anchor="middle" font-family="Exo 2, Segoe UI, sans-serif"></text>
       <!-- frente de la maqueta -->
       <rect x="20" y="406" width="660" height="32" rx="2" fill="#f6f5f1" filter="url(#sombraS)"/>
-      <text x="170" y="428" fill="#6a6558" font-family="Exo 2, Segoe UI, sans-serif" font-size="15" font-weight="700" letter-spacing="3" text-anchor="middle">INFINITY TEC</text>
-      <text x="340" y="420" fill="#6a6558" font-family="Exo 2, Segoe UI, sans-serif" font-size="8" font-weight="700" letter-spacing="2" text-anchor="middle">▲ ENTRADA</text>
+      <text x="118" y="428" fill="#6a6558" font-family="Exo 2, Segoe UI, sans-serif" font-size="15" font-weight="700" letter-spacing="3" text-anchor="middle">INFINITY TEC</text>
+      <text x="265" y="420" fill="#6a6558" font-family="Exo 2, Segoe UI, sans-serif" font-size="8" font-weight="700" letter-spacing="2" text-anchor="middle">▲ ENTRADA</text>
       <g transform="translate(534 413)"><rect width="136" height="18" rx="2" fill="none" stroke="#9a958a"/><text x="68" y="12.5" fill="#6a6558" font-family="Exo 2, Segoe UI, sans-serif" font-size="8.5" font-weight="700" letter-spacing="1" text-anchor="middle">CONEXIÓN Y ESTADO</text></g>
       <rect x="414" y="408" width="114" height="29" rx="3" fill="#1d1f22"/>
       <rect id="lcdFondo" x="418" y="411" width="106" height="23" rx="1.5" fill="#2f5fd0"/>
@@ -556,12 +550,12 @@ function vibrar(on){
 
 /* ---------- Mundo simulado: personas ---------- */
 const gP = $('personas');
-const AFUERA = [340,470], FRENTE_E = [340,428], RECEP = [340,378], A = [300,330];
-const FRENTE_Q = [520,200], DENTRO_Q = [520,150];
+const AFUERA = [265,470], FRENTE_E = [265,428], RECEP = [290,370], A = [238,282];
+const FRENTE_Q = [447,192], DENTRO_Q = [447,245], ESQ = [300,192];
 const PERS = {
-  visita:  {color:'#1f8fd6', icono:'🧑', nombre:'El visitante', destino:[A,[275,225],[240,220],[160,240]]},
-  doctor:  {color:'#7a4dd8', icono:'🥼', nombre:'El doctor', quirofano:true, dentro:[[575,115]]},
-  intruso: {color:'#ff3d5a', icono:'🕵', nombre:'Un intruso', quirofano:true, dentro:[[600,60]]}
+  visita:  {color:'#1f8fd6', icono:'🧑', nombre:'El visitante', destino:[A,[200,282],[120,262]]},
+  doctor:  {color:'#7a4dd8', icono:'🥼', nombre:'El doctor', quirofano:true, dentro:[[520,300]]},
+  intruso: {color:'#ff3d5a', icono:'🕵', nombre:'Un intruso', quirofano:true, dentro:[[640,250]]}
 };
 const gente = [];
 let movManualHasta = 0;
@@ -597,7 +591,7 @@ function agregar(tipo){
     esperarPuerta(p, 'E', ()=>setTimeout(()=>{ if (!VA.d.entrada && !VA.d.auto && gente.includes(p)) { log('Recepción abre la puerta de entrada'); enviar('ENTRADA:1', true); } }, 1200), ()=>{
       p.dentro = true;
       if (!r.quirofano) { caminar(p, [RECEP, ...r.destino]); return; }
-      caminar(p, [RECEP, A, [420,240], FRENTE_Q], ()=>{
+      caminar(p, [RECEP, ESQ, FRENTE_Q], ()=>{
         if (tipo === 'doctor') {
           log('El doctor escribe la clave del quirófano');
           enviar('CODIGO:1234', true);
@@ -619,22 +613,22 @@ function salir(p){
   quitar(p);
   const r = PERS[p.tipo];
   const fuera = () => esperarPuerta(p, 'E', ()=>{ if (!VA.d.entrada) enviar('ENTRADA:1', true); }, ()=>caminar(p, [FRENTE_E, AFUERA], ()=>p.g.remove()), ()=>caminar(p, [FRENTE_E, AFUERA], ()=>p.g.remove()), 5000);
-  if (p.enQ || (p.g._pos && p.g._pos[1] < 180 && p.g._pos[0] > 480)) {
+  if (p.enQ || (p.g._pos && p.g._pos[1] > 218 && p.g._pos[0] > 422)) {
     p.enQ = false;
     caminar(p, [DENTRO_Q], ()=> esperarPuerta(p, 'Q', ()=>{ if (!VA.d.puertaQ) enviar('CODIGO:1234', true); }, ()=>{
       if (p.tipo === 'doctor') log('El doctor termina y marca el quirófano libre');
       enviar('USO:0', true);
-      caminar(p, [FRENTE_Q, [420,240], A, RECEP], fuera);
-    }, ()=>caminar(p, [FRENTE_Q, [420,240], A, RECEP], fuera), 5000));
+      caminar(p, [FRENTE_Q, ESQ, RECEP], fuera);
+    }, ()=>caminar(p, [FRENTE_Q, ESQ, RECEP], fuera), 5000));
   } else if (!p.dentro) caminar(p, [AFUERA], ()=>p.g.remove());
-  else if (p.tipo === 'visita') caminar(p, [[240,220],[275,225],A,RECEP], fuera);
-  else caminar(p, [[420,240], A, RECEP], fuera);
+  else if (p.tipo === 'visita') caminar(p, [[200,282],A,RECEP], fuera);
+  else caminar(p, [ESQ, RECEP], fuera);
 }
 function todosSalen(){ if (!gente.length) return; log('Todas las personas salen'); [...gente].forEach(salir); }
 // el PIR ve a quien está dentro del quirófano
-const enQuirofano = p => p.g._pos && p.g._pos[0] > 482 && p.g._pos[1] < 178;
+const enQuirofano = p => p.g._pos && p.g._pos[0] > 424 && p.g._pos[1] > 220 && p.g._pos[1] < 398;
 let aplausoHasta = 0;
-const mundo = { sonido: () => Date.now() < aplausoHasta || gente.some(p => p.g._pos && Math.abs(p.g._pos[0]-340) < 40 && p.g._pos[1] > 400 && p.g._pos[1] < 470) };
+const mundo = { sonido: () => Date.now() < aplausoHasta || gente.some(p => p.g._pos && Math.abs(p.g._pos[0]-265) < 40 && p.g._pos[1] > 400 && p.g._pos[1] < 470) };
 const pirMundo = () => !S.falla.P && (Date.now() < movManualHasta || gente.some(enQuirofano));
 
 /* ---------- Arduino simulado: mismas reglas que el programa real ---------- */
