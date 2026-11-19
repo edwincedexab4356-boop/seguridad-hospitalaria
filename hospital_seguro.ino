@@ -178,7 +178,7 @@ int medirCon(byte t, byte e) {
   digitalWrite(t, HIGH); delayMicroseconds(10);
   digitalWrite(t, LOW);
   unsigned long us = pulseIn(e, HIGH, 20000);   // 20 ms = unos 3 m
-  if (!us) return DIST_MAX;
+  if (us < 116) return DIST_MAX;   // menos de 2 cm no es un eco real (ruido o sensor sin 5V)
   return min((int)(us / 58), DIST_MAX);
 }
 int medir() { return medirCon(pTrig, pEcho); }
