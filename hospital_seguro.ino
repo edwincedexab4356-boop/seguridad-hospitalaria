@@ -162,8 +162,18 @@ void cargar() {
 
 // ---------- ultrasonico ----------
 byte pTrig = P_TRIG, pEcho = P_ECHO;   // si los cables TRIG y ECHO estan al reves, se cambian solos
+unsigned int trabas = 0;   // veces que el sensor se quedo trabado con ECHO en alto
 int medirCon(byte t, byte e) {
   pinMode(t, OUTPUT); pinMode(e, INPUT);
+  // Muchos HC-SR04 se traban con ECHO en alto cuando un pulso no vuelve, y ya no miden mas.
+  // Se destraban bajando ECHO a la fuerza un momento.
+  if (digitalRead(e) == HIGH) {
+    trabas++;
+    pinMode(e, OUTPUT); digitalWrite(e, LOW);
+    delay(2);
+    pinMode(e, INPUT);
+    delay(1);
+  }
   digitalWrite(t, LOW); delayMicroseconds(2);
   digitalWrite(t, HIGH); delayMicroseconds(10);
   digitalWrite(t, LOW);
@@ -190,7 +200,7 @@ void revisarUltra(bool avisar) {
   if (!avisar && normal < DIST_MAX) return;
   String r = "Ultrasonico: D12->D13 " + (normal < DIST_MAX ? String(normal) + " cm" : String("sin eco")) +
              ", al reves " + (alReves < DIST_MAX ? String(alReves) + " cm" : String("sin eco")) +
-             ", en reposo D12=" + String(trigAlto) + " D13=" + String(echoAlto);
+             ", en reposo D12=" + String(trigAlto) + " D13=" + String(echoAlto) + ", destrabado " + String(trabas) + " veces";
   evento(r);
   if (normal < DIST_MAX) evento("Ultrasonico bien conectado");
   else if (alReves < DIST_MAX) evento("TRIG y ECHO estaban al reves: lo arregle por programa (o cambia los cables)");
