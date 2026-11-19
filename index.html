@@ -358,7 +358,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
         <h2>Control del hospital</h2>
         <div class="ctl">
           <div class="fila"><b>🚪 Puerta de entrada</b><button class="btn ver" id="bEAbrir">Abrir</button><button class="btn" id="bECerrar">Cerrar</button><span class="est" id="eE">Cerrada</span></div>
-          <div class="fila"><b>🚪 Puerta del quirófano</b><button class="btn ver" id="bQAbrir">Abrir</button><button class="btn" id="bQCerrar">Cerrar</button><span class="est" id="eQ">Cerrada</span></div>
+          <div class="fila"><b>🚪 Puerta del quirófano</b><input type="password" id="iClave" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="Clave" aria-label="Clave del quirófano" style="width:84px;padding:7px 8px;border-radius:8px;border:1px solid #2a3060;background:#0b0e1d;color:inherit;font:inherit;letter-spacing:.2em"><button class="btn ver" id="bQAbrir">Abrir</button><button class="btn" id="bQCerrar">Cerrar</button><span class="est" id="eQ">Cerrada</span></div>
           <div class="fila"><b>👏 Entrada por sonido</b><button class="btn" id="bAuto" aria-pressed="true">Sí</button><span class="est" id="eDist">—</span></div>
           <div class="rango" style="margin:4px 2px 0"><label for="rAngE">Ángulo que abre la puerta de entrada <b id="vAngE">90°</b></label><input type="range" id="rAngE" min="10" max="180" step="5" value="90"></div>
           <div class="rango" style="margin:4px 2px 0"><label for="rAngQ">Ángulo que abre la puerta del quirófano <b id="vAngQ">90°</b></label><input type="range" id="rAngQ" min="10" max="180" step="5" value="90"></div>
@@ -366,7 +366,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
           <div class="fila"><b>🩺 Quirófano en uso</b><button class="btn" id="bUso" aria-pressed="false">No</button><span class="est" id="eUso">El PIR da alarma</span></div>
           <div class="fila"><b>💡 Luces</b><button class="btn" id="bH1" aria-pressed="true">Hab 1</button><button class="btn" id="bH2" aria-pressed="true">Hab 2</button><button class="btn" id="bAm" aria-pressed="true">Amarilla</button></div>
         </div>
-        <p class="nota" style="margin-bottom:0">El sensor de sonido de la entrada abre la puerta sola con un aplauso o con pasos (su sensibilidad se ajusta con el tornillo azul del sensor). Las puertas se cierran solas a los 10 s. Con alarma, la puerta del quirófano se cierra y no abre hasta silenciar. También puedes tocar las habitaciones o el pasillo en el plano.</p>
+        <p class="nota" style="margin-bottom:0">El sensor de sonido de la entrada abre la puerta sola con un aplauso o con pasos (su sensibilidad se ajusta con el tornillo azul del sensor). La puerta del quirófano solo abre con la clave (3 claves malas = alarma) y al abrirla queda <b>en uso</b>. Las puertas se cierran solas a los 10 s. Con alarma, la puerta del quirófano se cierra y no abre hasta silenciar. También puedes tocar las habitaciones o el pasillo en el plano.</p>
       </div>
       <div class="card solo-sim" id="ctrlSim">
         <h2>Escenarios de prueba</h2>
@@ -436,7 +436,7 @@ input[type=range]{width:100%;accent-color:var(--verde)}
     <tr><td>Interruptor encendido / apagado</td><td><code>ON</code> / <code>OFF</code></td><td>Vigila o deja de vigilar el quirófano (la luz azul sigue prendiéndose con el PIR)</td></tr>
     <tr><td>Alerta manual / Silenciar</td><td><code>ALERTA</code> / <code>SILENCIAR</code></td><td>Suena o se calla el buzzer y el LED rojo</td></tr>
     <tr><td>Puerta de entrada</td><td><code>ENTRADA:1</code> / <code>ENTRADA:0</code></td><td>Abre o cierra el servo de la entrada (se cierra solo a los 10 s)</td></tr>
-    <tr><td>Puerta del quirófano</td><td><code>PUERTA_Q:1</code> / <code>PUERTA_Q:0</code></td><td>Abre o cierra el servo del quirófano (se cierra solo a los 10 s; con alarma no abre)</td></tr>
+    <tr><td>Puerta del quirófano</td><td><code>CODIGO:1234</code> / <code>PUERTA_Q:0</code></td><td>Abre con la clave (queda en uso) o cierra. 3 claves malas seguidas = alarma. Se cierra sola a los 10 s; con alarma no abre</td></tr>
     <tr><td>Quirófano en uso</td><td><code>USO:1</code> / <code>USO:0</code></td><td>En uso, el PIR solo prende la luz azul y no da alarma</td></tr>
     <tr><td>Luces de las habitaciones</td><td><code>HAB:n:1</code> / <code>HAB:n:0</code></td><td>Prende o apaga la habitación n (1 o 2; 0 = las dos)</td></tr>
     <tr><td>Entrada por sonido</td><td><code>AUTO:1</code> / <code>AUTO:0</code> · <code>SONIDO</code></td><td>Prende o apaga que un aplauso o pasos abran la entrada (se guarda). SONIDO dice cómo está el sensor</td></tr>
@@ -503,7 +503,7 @@ const S = {
   alertasHoy: 0, sonido: true, ocultaAlarma: false, noche: false,
   ultimoLatido: Date.now()
 };
-const ORIGEN = {0:'',1:'INTRUSO en el quirófano (lo detectó el PIR)',3:'Alerta MANUAL activada desde la app'};
+const ORIGEN = {0:'',1:'INTRUSO en el quirófano (lo detectó el PIR)',3:'Alerta MANUAL activada desde la app',4:'3 CLAVES INCORRECTAS en la puerta del quirófano'};
 
 const LS = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch { return d; } };
 const guardarLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
@@ -598,9 +598,9 @@ function agregar(tipo){
       if (!r.quirofano) { caminar(p, [RECEP, ...r.destino]); return; }
       caminar(p, [RECEP, A, [420,240], FRENTE_Q], ()=>{
         if (tipo === 'doctor') {
-          log('El doctor pone el quirófano EN USO y abre la puerta');
-          enviar('USO:1', true); enviar('PUERTA_Q:1', true);
-        } else log('El intruso intenta entrar al quirófano…');
+          log('El doctor escribe la clave del quirófano');
+          enviar('CODIGO:1234', true);
+        } else { log('El intruso prueba una clave al azar…'); enviar('CODIGO:'+String(Math.floor(Math.random()*9000)+1000).replace('1234','4321'), true); }
         esperarPuerta(p, 'Q', null, ()=>{
           caminar(p, [DENTRO_Q, ...r.dentro], ()=>{ p.enQ = true; });
           if (tipo === 'intruso') log('¡El intruso entró al quirófano!', true);
@@ -620,8 +620,9 @@ function salir(p){
   const fuera = () => esperarPuerta(p, 'E', ()=>{ if (!VA.d.entrada) enviar('ENTRADA:1', true); }, ()=>caminar(p, [FRENTE_E, AFUERA], ()=>p.g.remove()), ()=>caminar(p, [FRENTE_E, AFUERA], ()=>p.g.remove()), 5000);
   if (p.enQ || (p.g._pos && p.g._pos[1] < 180 && p.g._pos[0] > 480)) {
     p.enQ = false;
-    caminar(p, [DENTRO_Q], ()=> esperarPuerta(p, 'Q', ()=>{ if (!VA.d.puertaQ) enviar('PUERTA_Q:1', true); }, ()=>{
-      if (p.tipo === 'doctor') { log('El doctor termina y marca el quirófano libre'); enviar('USO:0', true); }
+    caminar(p, [DENTRO_Q], ()=> esperarPuerta(p, 'Q', ()=>{ if (!VA.d.puertaQ) enviar('CODIGO:1234', true); }, ()=>{
+      if (p.tipo === 'doctor') log('El doctor termina y marca el quirófano libre');
+      enviar('USO:0', true);
       caminar(p, [FRENTE_Q, [420,240], A, RECEP], fuera);
     }, ()=>caminar(p, [FRENTE_Q, [420,240], A, RECEP], fuera), 5000));
   } else if (!p.dentro) caminar(p, [AFUERA], ()=>p.g.remove());
@@ -651,7 +652,7 @@ const VA = (() => {
   function silenciar(t){ if (!d.alerta) return; d.alerta = 0; d.origen = 0; ev(t); }
   function pantalla(){
     const a = Date.now(); let l1, l2;
-    if (d.alerta) { l1 = '!! ALERTA !!'; l2 = d.origen === 1 ? 'Intruso quirofan' : 'Alerta manual'; }
+    if (d.alerta) { l1 = '!! ALERTA !!'; l2 = d.origen === 1 ? 'Intruso quirofan' : d.origen === 4 ? '3 claves malas' : 'Alerta manual'; }
     else if (d.entrada || d.puertaQ) {
       l1 = d.entrada && d.puertaQ ? '2 PUERTAS ABIERT' : d.entrada ? 'ENTRADA ABIERTA' : 'QUIROFANO ABIERT';
       l2 = 'Cierra en ' + Math.max(seg(d.entrada, d.eHasta), seg(d.puertaQ, d.qHasta)) + ' s';
@@ -695,7 +696,17 @@ const VA = (() => {
     else if (c === 'SILENCIAR') silenciar('Alarma silenciada desde la app');
     else if (c === 'ESTADO') d.lcd1 = null;
     else if (c === 'ENTRADA' || c === 'ABRIR') moverE(c === 'ABRIR' || v === 1);
-    else if (c === 'PUERTA_Q') moverQ(v === 1);
+    else if (c === 'CODIGO') {   // igual que en el Arduino
+      const clave = (partes[1] || '').trim();
+      if (d.alerta) ev('Alarma activa: la puerta del quirofano no se abre');
+      else if (clave === '1234') { d.fallos = 0; d.enUso = 1; ev('Clave correcta: se abre el quirofano (queda en uso)'); moverQ(true); }
+      else {
+        d.fallos = (d.fallos || 0) + 1;
+        if (d.fallos >= 3) { d.fallos = 0; alertar(4, 'ALARMA: 3 claves incorrectas en el quirofano'); }
+        else ev('Clave incorrecta ('+d.fallos+' de 3)');
+      }
+    }
+    else if (c === 'PUERTA_Q') { if (v === 1) ev('El quirofano solo se abre con la clave'); else moverQ(false); }
     else if (c === 'USO') { d.enUso = v === 1 ? 1 : 0; ev(d.enUso ? 'Quirofano en uso (sin alarma del PIR)' : 'Quirofano libre'); }
     else if (c === 'HAB' && partes.length >= 3) { const on = parseInt(partes[2]) === 1 ? 1 : 0; if (v === 0 || v === 1) d.hab1 = on; if (v === 0 || v === 2) d.hab2 = on; }
     else if (c === 'AMARILLA') d.amar = v === 1 ? 1 : 0;
@@ -844,7 +855,7 @@ function procesar(l){
     pintar();
   } else if (p[0] === 'EV') {
     const raw = p.slice(1).join(','), t = esc(raw);
-    log((S.modo==='real' ? 'Arduino: ' : '') + t, /ALARMA:|ALERTA|no se encuentra|no se abre|desconocida/.test(t));
+    log((S.modo==='real' ? 'Arduino: ' : '') + t, /ALARMA:|ALERTA|no se encuentra|no se abre|desconocida|incorrecta|solo se abre con la clave/.test(t));
     if (/quirofano/i.test(raw) && !/libre|en uso/i.test(raw)) agregarHistorial(raw.replace(/quirofano/gi,'quirófano'), /ALARMA|no se abre/i.test(raw) ? 'mal' : /Movimiento/.test(raw) ? 'neutro' : '');
     if (/Puerta de entrada abierta|Puerta del quirofano abierta/.test(raw)) pitido(1400, 120);
   } else if (p[0] === 'LC') {
@@ -855,7 +866,7 @@ function dispararAlerta(origen){
   if (S.alerta) return;
   S.alerta = true; S.origen = origen; S.alertasHoy++; S.ocultaAlarma = false;
   log('🚨 '+ORIGEN[origen], true);
-  hablar(origen === 1 ? 'Alerta. Hay un intruso en el quirófano.' : 'Alerta manual activada.');
+  hablar(origen === 1 ? 'Alerta. Hay un intruso en el quirófano.' : origen === 4 ? 'Alerta. Tres claves incorrectas en el quirófano.' : 'Alerta manual activada.');
 }
 function quitarIntrusos(){
   if (S.modo !== 'sim') return;
@@ -896,7 +907,8 @@ $('bLimpiar').onclick = ()=>{ $('log').innerHTML=''; };
 $('bHistBorrar').onclick = ()=>{ historial.length = 0; guardarLS('it_hist_q', historial); pintarHistorial(); };
 $('bEAbrir').onclick = ()=>enviar('ENTRADA:1');
 $('bECerrar').onclick = ()=>enviar('ENTRADA:0');
-$('bQAbrir').onclick = ()=>enviar('PUERTA_Q:1');
+$('bQAbrir').onclick = ()=>{ const c = $('iClave').value.trim(); if (!c) { log('Escribe la clave del quirófano', true); $('iClave').focus(); return; } $('iClave').value = ''; enviar('CODIGO:'+c); };
+$('iClave').addEventListener('keydown', e => { if (e.key === 'Enter') $('bQAbrir').click(); });
 $('bQCerrar').onclick = ()=>enviar('PUERTA_Q:0');
 
 $('bAplauso').onclick = ()=>{ aplausoHasta = Date.now() + 250; log('👏 Alguien aplaude en la entrada'); };

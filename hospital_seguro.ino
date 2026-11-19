@@ -40,7 +40,8 @@
   ORDENES (una por linea, por Bluetooth o por el monitor serie a 9600):
     ON  OFF (vigilancia)   ALERTA  SILENCIAR  ESTADO
     ENTRADA:1 / ENTRADA:0        (abre / cierra la puerta de entrada)
-    PUERTA_Q:1 / PUERTA_Q:0      (abre / cierra la puerta del quirofano)
+    CODIGO:1234                  (abre la puerta del quirofano con la clave; 3 claves malas = ALARMA)
+    PUERTA_Q:0                   (cierra la puerta del quirofano; para abrirla hace falta la clave)
     USO:1 / USO:0                (quirofano en uso: el PIR solo prende la luz azul, sin alarma)
     HAB:n:1 / HAB:n:0            (luz de la habitacion n = 1 o 2; n = 0 las dos)
     AMARILLA:1 / AMARILLA:0      (luz amarilla del pasillo)
@@ -49,7 +50,7 @@
     SONIDO                       (dice como esta el sensor de sonido)
   ENVIA cada 0,5 s:
     ST,sistema,alerta,origen,pir,azul,entrada,puerta_q,seg_entrada,seg_q,hab1,hab2,amarilla,en_uso,lcd_ok,calentando,sonidos,oyendo,0,auto,ang_e,ang_q,0,0
-    origen: 0 ninguno, 1 intruso en quirofano, 3 manual (app)
+    origen: 0 ninguno, 1 intruso en quirofano, 3 manual (app), 4 tres claves malas
   Y ademas:  EV,texto      LC,linea1,linea2 (lo que muestra la LCD)
 */
 
@@ -67,6 +68,9 @@ const int CERRADA = 0;     // grados de los servos con la puerta cerrada
 const unsigned long PUERTA_MS = 10000;          // tiempo abierta antes de cerrarse sola
 const unsigned long AZUL_MS = 10000;            // luz azul tras el ultimo movimiento
 const unsigned long CALENTAR_MS = 30000;        // PIR calibrandose al encender
+const unsigned long PIR_FILTRO_MS = 400;        // el PIR tiene que ver algo 0,4 s seguidos (quita falsas alarmas)
+const char *CLAVE = "1234";                     // clave de la puerta del quirofano
+const byte MAX_FALLOS = 3;                      // claves malas seguidas antes de la alarma
 
 Servo servoE, servoQ;
 ArduinoLEDMatrix matriz;
@@ -76,6 +80,7 @@ byte lcdDir = 0;
 // ---------- estado ----------
 bool sistema = true, alerta = false, enUso = false;
 byte origen = 0;
+byte fallos = 0;           // claves malas seguidas
 bool pir = false;
 unsigned long azulHasta = 0;
 bool entrada = false, puertaQ = false;
@@ -226,7 +231,7 @@ void pantalla() {
   String l1, l2;
   if (alerta) {
     l1 = "!! ALERTA !!";
-    l2 = origen == 1 ? "Intruso quirofan" : "Alerta manual";
+    l2 = origen == 1 ? "Intruso quirofan" : origen == 4 ? "3 claves malas" : "Alerta manual";
   } else if (entrada || puertaQ) {
     l1 = entrada && puertaQ ? "2 PUERTAS ABIERT" : entrada ? "ENTRADA ABIERTA" : "QUIROFANO ABIERT";
     long s = max(segRestantes(entrada, entradaHasta), segRestantes(puertaQ, puertaQHasta));
@@ -276,7 +281,25 @@ void orden(String s) {
   }
   else if (s == "SONIDO") evento("Sensor de sonido: silencio=" + String(reposoS) + " ahora=" + String(digitalRead(P_SONIDO)) + " sonidos=" + String(sonidos));
   else if (s.startsWith("AUTO:")) { autoEntrada = valor(s, 5); guardar(); evento(autoEntrada ? "Entrada automatica prendida" : "Entrada automatica apagada"); }
-  else if (s.startsWith("PUERTA_Q:")) moverQuirofano(valor(s, 9));
+  else if (s.startsWith("CODIGO:")) {
+    String c = s.substring(7); c.trim();
+    if (alerta) evento("Alarma activa: la puerta del quirofano no se abre");
+    else if (c == CLAVE) {
+      fallos = 0;
+      enUso = true;   // quien sabe la clave es del personal: el PIR no da alarma
+      evento("Clave correcta: se abre el quirofano (queda en uso)");
+      moverQuirofano(true);
+    } else {
+      fallos++;
+      pitidoHasta = millis() + 400;
+      if (fallos >= MAX_FALLOS) { fallos = 0; alertar(4, "ALARMA: 3 claves incorrectas en el quirofano"); }
+      else evento("Clave incorrecta (" + String(fallos) + " de " + String(MAX_FALLOS) + ")");
+    }
+  }
+  else if (s.startsWith("PUERTA_Q:")) {
+    if (valor(s, 9)) evento("El quirofano solo se abre con la clave");
+    else moverQuirofano(false);
+  }
   else if (s.startsWith("USO:")) { enUso = valor(s, 4); evento(enUso ? "Quirofano en uso (sin alarma del PIR)" : "Quirofano libre"); }
   else if (s.startsWith("HAB:")) {
     int n = s.substring(4, 5).toInt();
@@ -348,7 +371,14 @@ void loop() {
   leer(BT, linBt);
 
   // ---- PIR del quirofano ----
-  bool p = digitalRead(P_PIR) == HIGH;
+  // solo cuenta si el PIR ve algo 0,4 s seguidos: los picos cortos (ruido de los servos,
+  // del WiFi o de la corriente) no dan alarma
+  static unsigned long pirDesde = 0;
+  static bool pirCrudo = false;
+  bool crudo = digitalRead(P_PIR) == HIGH;
+  if (crudo && !pirCrudo) pirDesde = ahora;
+  pirCrudo = crudo;
+  bool p = crudo && ahora - pirDesde >= PIR_FILTRO_MS;
   if (p) azulHasta = ahora + AZUL_MS;
   if (p && !pir) {
     evento("Movimiento en el quirofano");
